@@ -35,6 +35,7 @@ export async function POST(request: Request) {
     name?: string;
     plan?: string;
     billing_cycle?: string;
+    referral_code?: string;
     withSampleData?: boolean;
   };
   try {
@@ -79,14 +80,36 @@ export async function POST(request: Request) {
   }
 
   const userId = crypto.randomUUID();
+  const referralCode = `VF-${userId.slice(0, 6).toUpperCase()}`;
+  const rawRef = (body.referral_code ?? "").trim().toUpperCase().slice(0, 20);
+  let validReferredBy: string | null = null;
+  if (rawRef && /^VF-[A-Z0-9]{4,10}$/.test(rawRef)) {
+    const refRows = await sql<{ referral_code: string }>(
+      "select referral_code from users where referral_code = $1 and is_demo = false",
+      [rawRef],
+    );
+    if (refRows[0]?.referral_code) {
+      validReferredBy = refRows[0].referral_code;
+    }
+  }
 
   // Paid tiers (plus / pro) are only granted after verified Stripe Checkout payment.
   const initialPlan = "essentiel";
 
   await sql(
-    `insert into users (id, email, name, password_hash, plan, billing_cycle, subscription_status, company_name, siret, is_demo)
-     values ($1, $2, $3, $4, $5, $6, 'trialing', $7, '000 000 000 00000', false)`,
-    [userId, email, name, passwordHash, initialPlan, billingCycle, `${name} Studio`],
+    `insert into users (id, email, name, password_hash, plan, billing_cycle, subscription_status, company_name, siret, referral_code, referred_by, is_demo)
+     values ($1, $2, $3, $4, $5, $6, 'trialing', $7, '000 000 000 00000', $8, $9, false)`,
+    [
+      userId,
+      email,
+      name,
+      passwordHash,
+      initialPlan,
+      billingCycle,
+      `${name} Studio`,
+      referralCode,
+      validReferredBy,
+    ],
   );
 
   if (withSampleData) {

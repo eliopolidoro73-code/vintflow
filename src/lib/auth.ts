@@ -160,6 +160,7 @@ export interface AuthUser {
   auto_delist: boolean;
   ai_credits_used: number;
   crosslist_used: number;
+  referral_code: string;
   is_demo: boolean;
 }
 
@@ -186,17 +187,27 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     auto_delist: boolean;
     ai_credits_used: number;
     crosslist_used: number;
+    referral_code: string | null;
     is_demo: boolean;
   }>(
     `select id, email, name, plan, billing_cycle, subscription_status, trial_ends_at,
             company_name, siret, fiscal_regime, urssaf_rate, vat_threshold,
-            auto_crosslist, auto_delist, ai_credits_used, crosslist_used, is_demo
+            auto_crosslist, auto_delist, ai_credits_used, crosslist_used, referral_code, is_demo
      from users where id = $1`,
     [userId],
   );
 
   const row = rows[0];
   if (!row) return null;
+
+  let referralCode = row.referral_code;
+  if (!referralCode) {
+    referralCode = `VF-${row.id.slice(0, 6).toUpperCase()}`;
+    await sql("update users set referral_code = $1 where id = $2", [
+      referralCode,
+      row.id,
+    ]);
+  }
 
   return {
     id: row.id,
@@ -215,6 +226,7 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     auto_delist: Boolean(row.auto_delist),
     ai_credits_used: Number(row.ai_credits_used ?? 0),
     crosslist_used: Number(row.crosslist_used ?? 0),
+    referral_code: referralCode,
     is_demo: Boolean(row.is_demo),
   };
 }

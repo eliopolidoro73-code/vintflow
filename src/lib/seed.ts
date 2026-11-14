@@ -461,4 +461,84 @@ export async function seedUserWorkspace(userId: string, urssafRate = 12.3) {
       ],
     );
   }
+
+  const lotsSeed = [
+    {
+      title: "Ballot Workwear Carhartt & Dickies (8 pièces)",
+      supplier: "Grossiste Vintage EU",
+      items_count: 8,
+      items_sold: 5,
+      total_cost: 165,
+      shipping_cost: 14,
+      revenue_generated: 342,
+      purchased_at: daysAgoIso(24),
+    },
+    {
+      title: "Lot Ralph Lauren & Lacoste Maille (6 pièces)",
+      supplier: "Friperie Pro Lyon",
+      items_count: 6,
+      items_sold: 4,
+      total_cost: 84,
+      shipping_cost: 8,
+      revenue_generated: 215,
+      purchased_at: daysAgoIso(12),
+    },
+  ];
+
+  for (const lot of lotsSeed) {
+    await sql(
+      `insert into sourcing_lots (
+        id, user_id, title, supplier, items_count, items_sold,
+        total_cost, shipping_cost, revenue_generated, purchased_at
+      ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [
+        crypto.randomUUID(),
+        userId,
+        lot.title,
+        lot.supplier,
+        lot.items_count,
+        lot.items_sold,
+        lot.total_cost,
+        lot.shipping_cost,
+        lot.revenue_generated,
+        lot.purchased_at,
+      ],
+    );
+  }
+
+  const expensesSeed = [
+    {
+      label: "Rouleau 500 étiquettes thermiques 10×15",
+      category: "Emballage & Envoi",
+      amount: 14.9,
+      incurred_at: daysAgoIso(18),
+    },
+    {
+      label: "50 pochettes d'expédition recyclées",
+      category: "Emballage & Envoi",
+      amount: 12.5,
+      incurred_at: daysAgoIso(9),
+    },
+    {
+      label: "Détachant textile & pressing vestes",
+      category: "Remise en état",
+      amount: 9.0,
+      incurred_at: daysAgoIso(5),
+    },
+  ];
+
+  for (const exp of expensesSeed) {
+    await sql(
+      `insert into expenses (id, user_id, label, category, amount, incurred_at)
+       values ($1, $2, $3, $4, $5, $6)`,
+      [
+        crypto.randomUUID(),
+        userId,
+        exp.label,
+        exp.category,
+        exp.amount,
+        exp.incurred_at,
+      ],
+    );
+  }
 }

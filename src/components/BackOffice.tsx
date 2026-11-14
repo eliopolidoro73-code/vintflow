@@ -7,11 +7,14 @@ import {
   AlertTriangle,
   ArrowRight,
   Bot,
+  Boxes,
   Check,
   Copy,
   CreditCard,
   Download,
+  ExternalLink,
   FileText,
+  Gift,
   Layers,
   LayoutDashboard,
   Loader2,
@@ -20,6 +23,7 @@ import {
   MessageSquare,
   Plus,
   Printer,
+  Receipt,
   RefreshCw,
   Search,
   Send,
@@ -28,6 +32,7 @@ import {
   Sparkles,
   Trash2,
   TrendingUp,
+  Wallet,
   Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -99,16 +104,45 @@ interface MessageRecord {
   updated_at: string;
 }
 
+interface LotRecord {
+  id: string;
+  title: string;
+  supplier: string;
+  items_count: number;
+  items_sold: number;
+  total_cost: number;
+  shipping_cost: number;
+  revenue_generated: number;
+  unit_cost: number;
+  lot_profit: number;
+  purchased_at: string;
+}
+
+interface ExpenseRecord {
+  id: string;
+  label: string;
+  category: string;
+  amount: number;
+  incurred_at: string;
+}
+
 interface WorkspacePayload {
   user: AuthUser;
   accounts: ConnectedAccount[];
   items: InventoryItem[];
   sales: SaleRecord[];
   messages: MessageRecord[];
+  lots: LotRecord[];
+  expenses: ExpenseRecord[];
+  referralsCount: number;
   kpis: {
     totalRevenue: number;
     totalNetMargin: number;
     totalUrssaf: number;
+    totalExpenses: number;
+    trueProfitAfterExpenses: number;
+    settledNet: number;
+    pendingCashflow: number;
     marginPercent: number;
     activeListingsCount: number;
     stockCostValue: number;
@@ -129,6 +163,7 @@ type TabId =
   | "dressing"
   | "tools"
   | "sales"
+  | "finance"
   | "messages"
   | "assistant"
   | "accounts"
@@ -173,6 +208,7 @@ const VALID_TABS: TabId[] = [
   "dressing",
   "tools",
   "sales",
+  "finance",
   "messages",
   "assistant",
   "accounts",
@@ -249,6 +285,18 @@ export function BackOffice({
     vat_threshold: "85000",
   });
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+  const [lotForm, setLotForm] = useState({
+    title: "",
+    supplier: "Grossiste Vintage EU",
+    items_count: "8",
+    total_cost: "120",
+    shipping_cost: "10",
+  });
+  const [expenseForm, setExpenseForm] = useState({
+    label: "",
+    category: "Emballage & Envoi",
+    amount: "12",
+  });
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -595,6 +643,76 @@ export function BackOffice({
     router.refresh();
   }
 
+  async function handleCreateLot(e: React.FormEvent) {
+    e.preventDefault();
+    if (!lotForm.title.trim()) return;
+    const res = await fetch("/api/lots", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        action: "create",
+        title: lotForm.title,
+        supplier: lotForm.supplier,
+        items_count: Number(lotForm.items_count) || 1,
+        total_cost: Number(lotForm.total_cost) || 0,
+        shipping_cost: Number(lotForm.shipping_cost) || 0,
+      }),
+    });
+    if (res.ok) {
+      setLotForm((f) => ({ ...f, title: "" }));
+      await fetchWorkspace();
+      showToast("Lot d'achat enregistré dans ta trésorerie !");
+    }
+  }
+
+  async function handleLotAction(
+    action: "record_sale" | "delete",
+    id: string,
+    saleAmount?: number,
+  ) {
+    await fetch("/api/lots", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action, id, sale_amount: saleAmount }),
+    });
+    await fetchWorkspace();
+    showToast(
+      action === "record_sale"
+        ? "Vente rattachée au lot !"
+        : "Lot supprimé.",
+    );
+  }
+
+  async function handleCreateExpense(e: React.FormEvent) {
+    e.preventDefault();
+    if (!expenseForm.label.trim()) return;
+    const res = await fetch("/api/expenses", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        action: "create",
+        label: expenseForm.label,
+        category: expenseForm.category,
+        amount: Number(expenseForm.amount) || 0,
+      }),
+    });
+    if (res.ok) {
+      setExpenseForm((f) => ({ ...f, label: "" }));
+      await fetchWorkspace();
+      showToast("Dépense déductible ajoutée !");
+    }
+  }
+
+  async function handleDeleteExpense(id: string) {
+    await fetch("/api/expenses", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "delete", id }),
+    });
+    await fetchWorkspace();
+    showToast("Dépense supprimée.");
+  }
+
   if (loading || !data) {
     return (
       <div className="min-h-screen bg-[#090b0f] flex items-center justify-center text-zinc-400">
@@ -604,7 +722,17 @@ export function BackOffice({
     );
   }
 
-  const { user, accounts, sales, messages, kpis, integrations } = data;
+  const {
+    user,
+    accounts,
+    sales,
+    messages,
+    lots,
+    expenses,
+    referralsCount,
+    kpis,
+    integrations,
+  } = data;
   const activePlan = PLANS[user.plan];
   const selectedMsg = messages.find((m) => m.id === selectedMsgId) ?? messages[0];
   const vatProgress = Math.min(
@@ -641,6 +769,11 @@ export function BackOffice({
       label: "Ventes & Factures",
       icon: <ShoppingBag className="h-4 w-4" />,
       badge: kpis.toShipCount > 0 ? kpis.toShipCount : undefined,
+    },
+    {
+      id: "finance",
+      label: "Trésorerie & Lots",
+      icon: <Wallet className="h-4 w-4" />,
     },
     {
       id: "messages",
@@ -878,11 +1011,120 @@ export function BackOffice({
                 <Button
                   size="sm"
                   onClick={() => setTab("tools")}
-                  className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs"
+                  className="vf-shimmer-btn bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs"
                 >
                   Ouvrir la Boîte à outils
                   <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                 </Button>
+              </div>
+
+              {/* Financial Cashflow Strip + Visual Chart */}
+              <div className="grid gap-4 lg:grid-cols-12">
+                <div className="lg:col-span-8 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h2 className="text-sm font-bold text-white">
+                        Rentabilité par vente (CA Brut vs Marge Nette)
+                      </h2>
+                      <p className="text-[11px] text-zinc-400">
+                        Bénéfice net final après dépenses ({formatEuro(kpis.totalExpenses)}) :{" "}
+                        <strong className="text-emerald-400">
+                          {formatEuro(kpis.trueProfitAfterExpenses)}
+                        </strong>
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setTab("finance")}
+                      className="border-white/15 bg-white/5 text-zinc-200 hover:bg-white/10 text-xs h-8"
+                    >
+                      <Wallet className="h-3.5 w-3.5 mr-1.5 text-emerald-400" />
+                      Trésorerie &amp; Lots
+                    </Button>
+                  </div>
+
+                  {sales.length === 0 ? (
+                    <p className="text-xs text-zinc-500 py-8 text-center">
+                      Aucune vente enregistrée pour afficher le graphique.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-7 gap-2 items-end h-36 pt-3 px-1 border-b border-white/10 pb-2">
+                        {sales.slice(0, 7).reverse().map((s) => {
+                          const maxVal = Math.max(
+                            ...sales.slice(0, 7).map((x) => x.gross_amount),
+                            50,
+                          );
+                          const grossH = Math.max(
+                            14,
+                            Math.round((s.gross_amount / maxVal) * 100),
+                          );
+                          const netH = Math.max(
+                            8,
+                            Math.round((Math.max(0, s.net_margin) / maxVal) * 100),
+                          );
+                          return (
+                            <div
+                              key={s.id}
+                              className="group flex flex-col items-center justify-end h-full gap-1"
+                              title={`${s.item_title} · CA ${formatEuro(s.gross_amount)} / Net ${formatEuro(s.net_margin)}`}
+                            >
+                              <div className="w-full flex items-end justify-center gap-1 h-28">
+                                <div
+                                  className="w-2.5 sm:w-3.5 rounded-t bg-white/15 group-hover:bg-white/30 transition-all"
+                                  style={{ height: `${grossH}%` }}
+                                />
+                                <div
+                                  className="w-2.5 sm:w-3.5 rounded-t bg-emerald-500 group-hover:bg-emerald-400 transition-all"
+                                  style={{ height: `${netH}%` }}
+                                />
+                              </div>
+                              <span className="text-[10px] font-mono text-zinc-500 truncate max-w-full">
+                                {s.invoice_number.slice(-3)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-1">
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1.5">
+                            <span className="h-2.5 w-2.5 rounded-xs bg-white/20" /> CA Brut
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="h-2.5 w-2.5 rounded-xs bg-emerald-500" /> Marge Nette
+                          </span>
+                        </div>
+                        <span>Dernières ventes ({Math.min(7, sales.length)})</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="lg:col-span-4 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-3">
+                  <h2 className="text-sm font-bold text-white">Pilotage Trésorerie</h2>
+                  <div className="space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
+                      <span className="text-zinc-400">Net déjà encaissé</span>
+                      <strong className="text-emerald-400">{formatEuro(kpis.settledNet)}</strong>
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
+                      <span className="text-zinc-400">En transit / À expédier</span>
+                      <strong className="text-amber-300">{formatEuro(kpis.pendingCashflow)}</strong>
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
+                      <span className="text-zinc-400">Provision URSSAF à isoler</span>
+                      <strong className="text-white">{formatEuro(kpis.totalUrssaf)}</strong>
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5">
+                      <span className="text-emerald-200 font-medium">Bénéfice net réel</span>
+                      <strong className="text-emerald-400 font-extrabold">
+                        {formatEuro(kpis.trueProfitAfterExpenses)}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="grid gap-4 lg:grid-cols-3">
@@ -1378,6 +1620,272 @@ export function BackOffice({
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3B: TREASURY, SOURCING LOTS & DEDUCTIBLE EXPENSES */}
+          {tab === "finance" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="rounded-2xl border border-white/10 bg-[#10141c] p-4">
+                  <p className="text-xs text-zinc-400">Marge nette des ventes</p>
+                  <p className="mt-1.5 text-2xl font-extrabold text-white">
+                    {formatEuro(kpis.totalNetMargin)}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-[#10141c] p-4">
+                  <p className="text-xs text-zinc-400">Dépenses &amp; emballages</p>
+                  <p className="mt-1.5 text-2xl font-extrabold text-rose-400">
+                    −{formatEuro(kpis.totalExpenses)}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-4">
+                  <p className="text-xs text-emerald-300">Bénéfice net en poche</p>
+                  <p className="mt-1.5 text-2xl font-extrabold text-emerald-400">
+                    {formatEuro(kpis.trueProfitAfterExpenses)}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-[#10141c] p-4">
+                  <p className="text-xs text-zinc-400">Provision URSSAF à isoler</p>
+                  <p className="mt-1.5 text-2xl font-extrabold text-amber-300">
+                    {formatEuro(kpis.totalUrssaf)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-6 lg:grid-cols-12">
+                {/* Lots & Ballots Manager */}
+                <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Boxes className="h-4 w-4 text-emerald-400" />
+                      Lots &amp; Ballots achetés (Suivi ROI par lot)
+                    </h2>
+                    <span className="text-xs text-zinc-400">{lots.length} lot(s)</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {lots.map((lot) => {
+                      const pctSold = Math.min(
+                        100,
+                        Math.round(
+                          (lot.items_sold / Math.max(1, lot.items_count)) * 100,
+                        ),
+                      );
+                      return (
+                        <div
+                          key={lot.id}
+                          className="rounded-xl border border-white/10 bg-[#090b0f] p-4 space-y-2.5 text-xs"
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <p className="font-bold text-white text-sm">{lot.title}</p>
+                              <p className="text-[11px] text-zinc-400">
+                                {lot.supplier} · Coût/pièce :{" "}
+                                <strong className="text-white">{formatEuro(lot.unit_cost)}</strong> ·{" "}
+                                {lot.items_sold} / {lot.items_count} vendues ({pctSold}%)
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[11px] text-zinc-400">
+                                Encaissé {formatEuro(lot.revenue_generated)} / Coût{" "}
+                                {formatEuro(lot.total_cost + lot.shipping_cost)}
+                              </p>
+                              <p
+                                className={`text-sm font-extrabold ${
+                                  lot.lot_profit >= 0 ? "text-emerald-400" : "text-amber-300"
+                                }`}
+                              >
+                                {lot.lot_profit >= 0 ? "+" : ""}
+                                {formatEuro(lot.lot_profit)} net lot
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-emerald-500"
+                              style={{ width: `${Math.max(4, pctSold)}%` }}
+                            />
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+                            {lot.items_sold < lot.items_count && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  handleLotAction("record_sale", lot.id, 45)
+                                }
+                                className="h-7 text-[11px] border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                              >
+                                +1 vente (+45 €)
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleLotAction("delete", lot.id)}
+                              className="h-7 text-[11px] text-zinc-500 hover:text-red-400"
+                            >
+                              Supprimer
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <form
+                    onSubmit={handleCreateLot}
+                    className="border-t border-white/10 pt-4 space-y-2.5 text-xs"
+                  >
+                    <p className="font-bold text-white">Ajouter un nouveau lot d&apos;achat</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Input
+                        required
+                        value={lotForm.title}
+                        onChange={(e) =>
+                          setLotForm((f) => ({ ...f, title: e.target.value }))
+                        }
+                        placeholder="Ex: Lot 10 sweats Nike vintage"
+                        className="bg-white/5 border-white/10 text-white"
+                      />
+                      <Input
+                        value={lotForm.supplier}
+                        onChange={(e) =>
+                          setLotForm((f) => ({ ...f, supplier: e.target.value }))
+                        }
+                        placeholder="Fournisseur / Brocante"
+                        className="bg-white/5 border-white/10 text-white"
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={lotForm.items_count}
+                        onChange={(e) =>
+                          setLotForm((f) => ({ ...f, items_count: e.target.value }))
+                        }
+                        placeholder="Pièces"
+                        className="bg-white/5 border-white/10 text-white"
+                      />
+                      <Input
+                        type="number"
+                        step="0.5"
+                        value={lotForm.total_cost}
+                        onChange={(e) =>
+                          setLotForm((f) => ({ ...f, total_cost: e.target.value }))
+                        }
+                        placeholder="Coût lot (€)"
+                        className="bg-white/5 border-white/10 text-white"
+                      />
+                      <Input
+                        type="number"
+                        step="0.5"
+                        value={lotForm.shipping_cost}
+                        onChange={(e) =>
+                          setLotForm((f) => ({ ...f, shipping_cost: e.target.value }))
+                        }
+                        placeholder="Port (€)"
+                        className="bg-white/5 border-white/10 text-white"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold"
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Enregistrer le lot
+                    </Button>
+                  </form>
+                </div>
+
+                {/* Expenses Tracker */}
+                <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4">
+                  <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Receipt className="h-4 w-4 text-rose-400" />
+                    Dépenses &amp; Frais d&apos;activité
+                  </h2>
+
+                  <div className="space-y-2">
+                    {expenses.map((exp) => (
+                      <div
+                        key={exp.id}
+                        className="flex items-center justify-between rounded-xl border border-white/10 bg-[#090b0f] px-3.5 py-2.5 text-xs"
+                      >
+                        <div>
+                          <p className="font-semibold text-white">{exp.label}</p>
+                          <p className="text-[11px] text-zinc-400">
+                            {exp.category} · {formatDateFr(exp.incurred_at)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-bold text-rose-300">
+                            −{formatEuro(exp.amount)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteExpense(exp.id)}
+                            className="text-zinc-500 hover:text-red-400"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <form
+                    onSubmit={handleCreateExpense}
+                    className="border-t border-white/10 pt-4 space-y-2.5 text-xs"
+                  >
+                    <p className="font-bold text-white">Ajouter une dépense</p>
+                    <Input
+                      required
+                      value={expenseForm.label}
+                      onChange={(e) =>
+                        setExpenseForm((f) => ({ ...f, label: e.target.value }))
+                      }
+                      placeholder="Ex: Scotch, cartons, pressing..."
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={expenseForm.category}
+                        onChange={(e) =>
+                          setExpenseForm((f) => ({ ...f, category: e.target.value }))
+                        }
+                        className="h-9 rounded-md border border-white/10 bg-[#161b24] px-2.5 text-xs text-white"
+                      >
+                        <option value="Emballage & Envoi">Emballage &amp; Envoi</option>
+                        <option value="Remise en état">Remise en état</option>
+                        <option value="Matériel & Imprimante">Matériel &amp; Imprimante</option>
+                        <option value="Transport & Sourcing">Transport &amp; Sourcing</option>
+                      </select>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        value={expenseForm.amount}
+                        onChange={(e) =>
+                          setExpenseForm((f) => ({ ...f, amount: e.target.value }))
+                        }
+                        placeholder="Montant (€)"
+                        className="bg-white/5 border-white/10 text-white"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      className="w-full bg-white/10 hover:bg-white/15 text-white font-semibold"
+                    >
+                      Ajouter la dépense
+                    </Button>
+                  </form>
+                </div>
               </div>
             </div>
           )}
@@ -1972,6 +2480,37 @@ export function BackOffice({
                   );
                 })}
               </div>
+
+              {/* Referral & Creator Program Card */}
+              <div className="rounded-2xl border border-white/10 bg-[#10141c] p-5 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
+                    <Gift className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">
+                      Programme Parrainage &amp; Créateurs (30 % récurrent)
+                    </h3>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      Partage ton code parrain avec d&apos;autres revendeurs :{" "}
+                      <strong className="text-white font-mono">{user.referral_code}</strong>{" "}
+                      · Filleuls inscrits : <strong className="text-emerald-400">{referralsCount}</strong>
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(user.referral_code);
+                    showToast(`Code parrain ${user.referral_code} copié !`);
+                  }}
+                  className="border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 text-xs"
+                >
+                  <Copy className="h-3.5 w-3.5 mr-1.5" />
+                  Copier mon code ({user.referral_code})
+                </Button>
+              </div>
             </div>
           )}
         </main>
@@ -1998,14 +2537,59 @@ export function BackOffice({
         open={Boolean(copySheetItem)}
         onOpenChange={(open) => !open && setCopySheetItem(null)}
       >
-        <DialogContent className="bg-[#10141c] border-white/10 text-zinc-100 sm:max-w-xl shadow-2xl">
+        <DialogContent className="vf-tab-enter bg-[#10141c] border-white/10 text-zinc-100 sm:max-w-2xl shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-white">
-              Fiches préremplies · {copySheetItem?.title}
+              Crosslist Express · {copySheetItem?.title}
             </DialogTitle>
           </DialogHeader>
           {copySheetItem && (
             <div className="space-y-4 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#090b0f] p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(copySheetItem.title);
+                      showToast("Titre SEO copié !");
+                    }}
+                    className="h-7 text-[11px] border-white/15 bg-white/5 text-zinc-200"
+                  >
+                    <Copy className="h-3 w-3 mr-1" /> Copier Titre
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(String(copySheetItem.listing_price));
+                      showToast("Prix copié !");
+                    }}
+                    className="h-7 text-[11px] border-white/15 bg-white/5 text-zinc-200"
+                  >
+                    <Copy className="h-3 w-3 mr-1" /> Copier Prix ({formatEuro(copySheetItem.listing_price)})
+                  </Button>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <a
+                    href="https://www.vinted.fr/items/new"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 rounded-lg bg-teal-500/15 border border-teal-500/30 px-2.5 py-1.5 text-[11px] font-semibold text-teal-300 hover:bg-teal-500/25"
+                  >
+                    Ouvrir Vinted <ExternalLink className="h-3 w-3" />
+                  </a>
+                  <a
+                    href="https://www.leboncoin.fr/deposer-une-annonce"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 rounded-lg bg-orange-500/15 border border-orange-500/30 px-2.5 py-1.5 text-[11px] font-semibold text-orange-300 hover:bg-orange-500/25"
+                  >
+                    Ouvrir Leboncoin <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+
               <div className="rounded-xl border border-white/10 bg-[#090b0f] p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
                   <Badge className="bg-teal-500/15 text-teal-300 border-teal-500/30">

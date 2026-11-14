@@ -1122,6 +1122,46 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               Résiliable en 1 clic
             </span>
           </div>
+
+          {/* Crisp Comparison Matrix */}
+          <div className="mt-12 rounded-3xl border border-white/10 bg-[#10141c] p-5 sm:p-7 overflow-x-auto">
+            <h3 className="text-base font-bold text-white mb-4">
+              Comparatif rapide des formules
+            </h3>
+            <table className="w-full min-w-[540px] text-left text-xs">
+              <thead>
+                <tr className="border-b border-white/10 text-zinc-400">
+                  <th className="py-2.5 pr-4 font-semibold">Fonctionnalité</th>
+                  <th className="py-2.5 px-3 font-semibold">Essentiel (9 €)</th>
+                  <th className="py-2.5 px-3 font-semibold text-cyan-300">
+                    Vendeur Plus (29 €)
+                  </th>
+                  <th className="py-2.5 pl-3 font-semibold text-emerald-400">
+                    Pro Scale (49 €)
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.06] text-zinc-300">
+                {[
+                  ["Comptes Vinted + LBC + TikTok", "1 Vinted + 1 LBC", "3 Vinted + 1/plat.", "10 Vinted + 3/plat."],
+                  ["Stock SKU, Lots & Dépenses", "40 articles", "300 articles", "1 500 articles"],
+                  ["Marge nette, URSSAF & Export CSV", "Inclus", "Inclus", "Inclus"],
+                  ["Studio Photo, Détourage & IA 3-en-1", "Non inclus", "30 crédits / mois", "300 crédits / mois"],
+                  ["Crosslisting Vinted ↔ Leboncoin", "Non inclus", "100 / mois", "2 000 / mois + Auto 8h–23h"],
+                  ["Factures PDF & Bordereaux 10×15", "Non inclus", "Inclus", "Inclus + Envoi auto"],
+                  ["Messagerie multi-comptes", "Non inclus", "Inclus", "Inclus"],
+                  ["Assistant IA Nova (actions 1 clic)", "Non inclus", "Non inclus", "Inclus"],
+                ].map(([label, e, p, pro]) => (
+                  <tr key={label}>
+                    <td className="py-2.5 pr-4 font-medium text-white">{label}</td>
+                    <td className="py-2.5 px-3 text-zinc-400">{e}</td>
+                    <td className="py-2.5 px-3">{p}</td>
+                    <td className="py-2.5 pl-3 font-semibold text-emerald-300">{pro}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         {/* FAQ */}

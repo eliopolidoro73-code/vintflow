@@ -37,6 +37,7 @@ export function AuthModal({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [withSampleData, setWithSampleData] = useState(true);
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
@@ -60,6 +61,7 @@ export function AuthModal({
                 password,
                 plan,
                 billing_cycle: cycle,
+                referral_code: referralCode || undefined,
                 withSampleData,
               }
             : { email, password },
@@ -271,15 +273,30 @@ export function AuthModal({
           </div>
 
           {mode === "register" && (
-            <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={withSampleData}
-                onChange={(e) => setWithSampleData(e.target.checked)}
-                className="rounded border-white/20 bg-white/5 accent-emerald-500"
-              />
-              Pré-remplir avec des articles &amp; ventes d&apos;exemple
-            </label>
+            <>
+              <div className="space-y-1.5">
+                <Label htmlFor="auth-ref" className="text-xs text-zinc-400">
+                  Code parrain / créateur (optionnel)
+                </Label>
+                <Input
+                  id="auth-ref"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
+                  placeholder="Ex: VF-8A2C1B"
+                  className="bg-white/5 border-white/10 text-white font-mono text-xs"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={withSampleData}
+                  onChange={(e) => setWithSampleData(e.target.checked)}
+                  className="rounded border-white/20 bg-white/5 accent-emerald-500"
+                />
+                Pré-remplir avec des articles &amp; ventes d&apos;exemple
+              </label>
+            </>
           )}
 
           {error && (
