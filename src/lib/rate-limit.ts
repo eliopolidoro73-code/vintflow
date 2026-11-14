@@ -67,3 +67,19 @@ export async function checkRateLimit(params: {
     remaining: Math.max(0, params.limit - count),
   };
 }
+
+// Card-less trial accounts are cheap to create, so their AI calls also share
+// a per-IP daily budget; Stripe-verified subscribers are not affected.
+export async function checkTrialAiBudget(
+  request: Request,
+  subscriptionStatus: string,
+): Promise<boolean> {
+  if (subscriptionStatus === "active") return true;
+  const rl = await checkRateLimit({
+    scope: "ai_trial_ip",
+    key: getClientIp(request),
+    limit: 80,
+    windowSeconds: 86400,
+  });
+  return rl.allowed;
+}

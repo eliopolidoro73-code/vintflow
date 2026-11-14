@@ -4,7 +4,7 @@ import { callCloudAi } from "@/lib/ai";
 import { sql } from "@/lib/db";
 import { computeNetMargin, generateListingCopy } from "@/lib/format";
 import { PLANS } from "@/lib/plans";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, checkTrialAiBudget } from "@/lib/rate-limit";
 
 const BRAND_CATALOG = [
   { key: "carhartt", brand: "Carhartt", cat: "Vestes & Manteaux", avgPrice: 85 },
@@ -37,6 +37,13 @@ export async function POST(request: Request) {
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Trop de requêtes IA en peu de temps. Patiente quelques minutes." },
+      { status: 429 },
+    );
+  }
+
+  if (!(await checkTrialAiBudget(request, auth.user.subscription_status))) {
+    return NextResponse.json(
+      { error: "Limite IA quotidienne de l'essai gratuit atteinte. Réessaie demain." },
       { status: 429 },
     );
   }

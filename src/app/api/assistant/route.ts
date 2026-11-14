@@ -4,7 +4,7 @@ import { callCloudAi } from "@/lib/ai";
 import { sql } from "@/lib/db";
 import { daysSince, formatEuro } from "@/lib/format";
 import { PLANS } from "@/lib/plans";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, checkTrialAiBudget } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
@@ -34,6 +34,13 @@ export async function POST(request: Request) {
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Trop de requêtes vers Nova. Patiente quelques minutes." },
+      { status: 429 },
+    );
+  }
+
+  if (!(await checkTrialAiBudget(request, user.subscription_status))) {
+    return NextResponse.json(
+      { error: "Limite IA quotidienne de l'essai gratuit atteinte. Réessaie demain." },
       { status: 429 },
     );
   }
