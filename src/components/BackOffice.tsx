@@ -166,12 +166,39 @@ const PLATFORM_BADGE: Record<string, { label: string; cls: string }> = {
   },
 };
 
-export function BackOffice() {
+const VALID_TABS: TabId[] = [
+  "overview",
+  "dressing",
+  "tools",
+  "sales",
+  "messages",
+  "assistant",
+  "accounts",
+  "billing",
+];
+
+export function BackOffice({
+  initialTab,
+  initialCheckout,
+}: {
+  initialTab?: string;
+  initialCheckout?: string;
+}) {
   const router = useRouter();
   const [data, setData] = useState<WorkspacePayload | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<TabId>("overview");
-  const [toast, setToast] = useState<string | null>(null);
+  const [tab, setTab] = useState<TabId>(
+    initialTab && VALID_TABS.includes(initialTab as TabId)
+      ? (initialTab as TabId)
+      : "overview",
+  );
+  const [toast, setToast] = useState<string | null>(
+    initialCheckout === "success"
+      ? "Abonnement activé avec succès ! Merci pour ta confiance."
+      : initialCheckout === "cancelled"
+        ? "Paiement annulé. Ton essai gratuit reste actif."
+        : null,
+  );
   const [syncing, setSyncing] = useState(false);
 
   // Modals
@@ -466,7 +493,7 @@ export function BackOffice() {
 
   async function handleSaveSettings(e: React.FormEvent) {
     e.preventDefault();
-    await fetch("/api/auth/me", {
+    const res = await fetch("/api/auth/me", {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -477,6 +504,10 @@ export function BackOffice() {
         vat_threshold: Number(settingsForm.vat_threshold) || 85000,
       }),
     });
+    if (!res.ok) {
+      showToast("Erreur lors de la sauvegarde des paramètres.");
+      return;
+    }
     await fetchWorkspace();
     showToast("Paramètres fiscaux & URSSAF enregistrés.");
   }
@@ -768,6 +799,32 @@ export function BackOffice() {
                     {kpis.crosslistedCount} annonces crosslistées Vinted ↔ LBC
                   </p>
                 </div>
+              </div>
+
+              {/* Quick AI Studio Banner */}
+              <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/[0.08] via-[#10141c] to-cyan-500/[0.06] p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+                    <Wand2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-white">
+                      Suite IA Haute Performance : Studio Photo, Détourage &amp; Sniper Négo
+                    </h2>
+                    <p className="text-xs text-zinc-400">
+                      Détoure tes photos, scanne un article vers Vinted/Leboncoin/TikTok ou
+                      contre-attaque une offre à -40 % en 5 secondes.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setTab("tools")}
+                  className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs"
+                >
+                  Ouvrir la Boîte à outils IA
+                  <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                </Button>
               </div>
 
               {/* VAT Threshold + Platform Breakdown */}

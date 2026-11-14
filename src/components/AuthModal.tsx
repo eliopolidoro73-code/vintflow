@@ -110,11 +110,11 @@ export function AuthModal({
           <DialogTitle className="text-xl font-bold tracking-tight">
             {mode === "register"
               ? "Démarre ton essai gratuit 14 jours"
-              : "Connexion à VintFlow"}
+              : "Connexion à Vintflow"}
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
             {mode === "register"
-              ? "Sans engagement. Accès immédiat à tout le back-office Vinted & Leboncoin."
+              ? "Sans engagement. Accès immédiat à tout le back-office Vinted, Leboncoin & TikTok Shop."
               : "Retrouve tes ventes, ton stock SKU et tes marges en temps réel."}
           </DialogDescription>
         </DialogHeader>
@@ -277,7 +277,7 @@ export function AuthModal({
                 onChange={(e) => setWithSampleData(e.target.checked)}
                 className="rounded border-white/20 bg-white/5 accent-emerald-500"
               />
-              Pré-remplir avec des articles & ventes d&apos;exemple pour tester vite
+              Pré-remplir avec des articles &amp; ventes d&apos;exemple pour tester vite
             </label>
           )}
 

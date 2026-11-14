@@ -1030,6 +1030,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
       </footer>
 
       <AuthModal
+        key={`${authMode}-${selectedPlan}-${billingCycle}-${authOpen ? "1" : "0"}`}
         open={authOpen}
         onOpenChange={setAuthOpen}
         defaultMode={authMode}

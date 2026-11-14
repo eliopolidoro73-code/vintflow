@@ -38,6 +38,13 @@ export function generateListingCopy(params: {
     .join(" · ")
     .slice(0, 75);
 
+  const stripAccents = (val: string) =>
+    val
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
   const vinted = `${cleanTitle} — ${cleanBrand}
 Taille : ${params.size} | État : ${params.condition}
 
@@ -45,7 +52,7 @@ Article contrôlé et prêt à être expédié sous 24h (Mondial Relay, Vinted G
 Emballage soigné, maison non-fumeur.
 N'hésite pas si tu veux les mesures exactes ou faire un lot pour réduire les frais de port !
 
-#${cleanBrand.toLowerCase().replace(/[^a-z0-9]/g, "")} #${params.category.toLowerCase().replace(/[^a-z0-9]/g, "")} #secondemain #vintage`;
+#${stripAccents(cleanBrand)} #${stripAccents(params.category)} #secondemain #vintage`;
 
   const leboncoin = `${cleanTitle} (${cleanBrand}) en ${params.condition.toLowerCase()}.
 Taille : ${params.size} | Catégorie : ${params.category}.

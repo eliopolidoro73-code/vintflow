@@ -2,6 +2,21 @@ import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { computeNetMargin, generateListingCopy } from "@/lib/format";
 
+const BRAND_CATALOG = [
+  { key: "carhartt", brand: "Carhartt", cat: "Vestes & Manteaux", avgPrice: 85 },
+  { key: "ralph", brand: "Ralph Lauren", cat: "Pulls & Sweats", avgPrice: 52 },
+  { key: "nike", brand: "Nike", cat: "Sneakers & Sport", avgPrice: 65 },
+  { key: "adidas", brand: "Adidas", cat: "Chaussures & Streetwear", avgPrice: 58 },
+  { key: "north face", brand: "The North Face", cat: "Vestes & Manteaux", avgPrice: 135 },
+  { key: "tnf", brand: "The North Face", cat: "Vestes & Manteaux", avgPrice: 135 },
+  { key: "levis", brand: "Levi's", cat: "Pantalons", avgPrice: 44 },
+  { key: "levi's", brand: "Levi's", cat: "Pantalons", avgPrice: 44 },
+  { key: "lacoste", brand: "Lacoste", cat: "Polos & Chemises", avgPrice: 48 },
+  { key: "arcteryx", brand: "Arc'teryx", cat: "Vestes Techniques", avgPrice: 210 },
+  { key: "stone island", brand: "Stone Island", cat: "Streetwear Luxe", avgPrice: 195 },
+  { key: "stussy", brand: "Stüssy", cat: "Streetwear", avgPrice: 75 },
+];
+
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
   if (originError) return originError;
@@ -10,7 +25,7 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
 
   let body: {
-    mode?: "listing" | "antishadowban" | "negotiation";
+    mode?: "listing" | "antishadowban" | "negotiation" | "vision_analyze";
     title?: string;
     brand?: string;
     category?: string;
@@ -21,6 +36,9 @@ export async function POST(request: Request) {
     targetPrice?: number;
     offerPrice?: number;
     originalText?: string;
+    imageDataUrl?: string;
+    fileName?: string;
+    dominantColor?: string;
   };
   try {
     body = await request.json();
@@ -29,7 +47,135 @@ export async function POST(request: Request) {
   }
 
   const mode = body.mode ?? "listing";
+  const openaiKey = process.env.OPENAI_API_KEY?.trim();
 
+  // MODE 0: AI VISION PHOTO -> STRUCTURED LISTING EXTRACTION
+  if (mode === "vision_analyze") {
+    const imageDataUrl = (body.imageDataUrl ?? "").trim();
+    const fileName = (body.fileName ?? "").trim().slice(0, 120);
+    const dominantColor = (body.dominantColor ?? "Noir").trim().slice(0, 40);
+
+    if (
+      openaiKey &&
+      imageDataUrl.startsWith("data:image/") &&
+      imageDataUrl.length < 4_500_000
+    ) {
+      try {
+        const visionRes = await fetch(
+          "https://api.openai.com/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              authorization: `Bearer ${openaiKey}`,
+            },
+            body: JSON.stringify({
+              model: "gpt-4o-mini",
+              response_format: { type: "json_object" },
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "Tu es un expert revente seconde main (Vinted, Leboncoin, TikTok Shop). Analyse l'image et retourne uniquement un JSON valide avec les clés: title (string, titre vendeur FR), brand (string), category (string), size (string), condition (string: 'Neuf avec étiquette' | 'Neuf sans étiquette' | 'Très bon état' | 'Bon état'), defects (string, vide si aucun visible), estimatedPrice (number, prix de revente réaliste en EUR), seoKeywords (string[]).",
+                },
+                {
+                  role: "user",
+                  content: [
+                    {
+                      type: "text",
+                      text: `Analyse cet article pour préparer la fiche de vente (couleur détectée: ${dominantColor}).`,
+                    },
+                    {
+                      type: "image_url",
+                      image_url: { url: imageDataUrl, detail: "low" },
+                    },
+                  ],
+                },
+              ],
+              max_tokens: 320,
+            }),
+          },
+        );
+        if (visionRes.ok) {
+          const data = (await visionRes.json()) as {
+            choices?: Array<{ message?: { content?: string } }>;
+          };
+          const rawJson = data.choices?.[0]?.message?.content;
+          if (rawJson) {
+            const parsed = JSON.parse(rawJson) as Record<string, unknown>;
+            return NextResponse.json({
+              engine: "openai_vision",
+              title: String(parsed.title ?? "Pièce Seconde Main"),
+              brand: String(parsed.brand ?? "Vintage"),
+              category: String(parsed.category ?? "Vêtements"),
+              size: String(parsed.size ?? "M"),
+              condition: String(parsed.condition ?? "Très bon état"),
+              defects: String(parsed.defects ?? ""),
+              estimatedPrice: Number(parsed.estimatedPrice ?? 45),
+              seoKeywords: Array.isArray(parsed.seoKeywords)
+                ? parsed.seoKeywords.slice(0, 6)
+                : [],
+            });
+          }
+        }
+      } catch {
+        // Fall back to intelligent deterministic analyzer
+      }
+    }
+
+    // Smart local analyzer from filename + dominant image color
+    const cleanName = fileName
+      .replace(/\.[^.]+$/, "")
+      .replace(/[_-]+/g, " ")
+      .replace(/\b(img|photo|dsc|pxl|whatsapp|image|\d{4,})\b/gi, "")
+      .trim();
+    const lower = cleanName.toLowerCase();
+    const matchedBrand = BRAND_CATALOG.find((b) => lower.includes(b.key));
+
+    const guessedCategory = lower.includes("shoe") || lower.includes("sneaker") || lower.includes("air")
+      ? "Chaussures"
+      : lower.includes("jean") || lower.includes("pant")
+        ? "Pantalons"
+        : lower.includes("pull") || lower.includes("sweat") || lower.includes("hoodie")
+          ? "Pulls & Sweats"
+          : matchedBrand?.cat ?? "Vestes & Manteaux";
+
+    const guessedBrand = matchedBrand?.brand ?? "Sélection Vintage";
+    const formattedName = cleanName
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+    const hasColor = formattedName
+      .toLowerCase()
+      .includes(dominantColor.toLowerCase());
+    const guessedTitle =
+      cleanName.length >= 5
+        ? `${formattedName}${hasColor ? "" : ` ${dominantColor}`}`
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 80)
+        : `${guessedCategory === "Chaussures" ? "Sneakers" : "Pièce"} ${guessedBrand} ${dominantColor}`;
+
+    return NextResponse.json({
+      engine: "local_smart_vision",
+      title: guessedTitle,
+      brand: guessedBrand,
+      category: guessedCategory,
+      size: guessedCategory === "Chaussures" ? "42" : "M",
+      condition: "Très bon état",
+      defects: "",
+      estimatedPrice: matchedBrand?.avgPrice ?? 48,
+      seoKeywords: [
+        guessedBrand.toLowerCase(),
+        dominantColor.toLowerCase(),
+        guessedCategory.toLowerCase(),
+        "secondemain",
+      ],
+    });
+  }
+
+  // MODE 1: ANTI-SHADOWBAN
   if (mode === "antishadowban") {
     const raw = (body.originalText ?? "").trim().slice(0, 1200);
     const title = (body.title ?? "").trim().slice(0, 100);
@@ -40,11 +186,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const baseTitle = title || raw.split("\n")[0]?.slice(0, 65) || "Pièce seconde main";
+    const baseTitle =
+      title || raw.split("\n")[0]?.slice(0, 65) || "Pièce seconde main";
     const words = baseTitle.split(/\s+/).filter(Boolean);
     const reorderedTitle =
       words.length >= 3
-        ? `${words[words.length - 1]} · ${words.slice(0, -1).join(" ")}`.slice(0, 72)
+        ? `${words[words.length - 1]} · ${words.slice(0, -1).join(" ")}`.slice(
+            0,
+            72,
+          )
         : `Sélection ${baseTitle}`.slice(0, 72);
 
     const cleanedBody = raw
@@ -52,7 +202,7 @@ export async function POST(request: Request) {
       .replace(/\s+/g, " ")
       .trim();
 
-    const refreshedDescription = `${reorderedTitle}
+    let refreshedDescription = `${reorderedTitle}
 
 Pièce vérifiée en détail avant mise en ligne.
 ${cleanedBody ? `\nDétails : ${cleanedBody}\n` : ""}
@@ -61,6 +211,45 @@ ${cleanedBody ? `\nDétails : ${cleanedBody}\n` : ""}
 • Remise possible sur création de lot dans mon dressing
 
 Tu peux demander les mesures exactes en message avant achat.`;
+
+    if (openaiKey) {
+      try {
+        const aiRes = await fetch(
+          "https://api.openai.com/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              authorization: `Bearer ${openaiKey}`,
+            },
+            body: JSON.stringify({
+              model: "gpt-4o-mini",
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "Réécris cette annonce Vinted/Leboncoin en français pour éviter les filtres anti-duplication (sans spam de hashtags, ton humain, clair et rassurant). Retourne uniquement le nouveau texte.",
+                },
+                {
+                  role: "user",
+                  content: `Titre: ${baseTitle}\nDescription: ${cleanedBody}`,
+                },
+              ],
+              max_tokens: 240,
+            }),
+          },
+        );
+        if (aiRes.ok) {
+          const data = (await aiRes.json()) as {
+            choices?: Array<{ message?: { content?: string } }>;
+          };
+          const content = data.choices?.[0]?.message?.content?.trim();
+          if (content) refreshedDescription = content;
+        }
+      } catch {
+        // Keep deterministic rewrite
+      }
+    }
 
     return NextResponse.json({
       reorderedTitle,
@@ -71,7 +260,7 @@ Tu peux demander les mesures exactes en message avant achat.`;
         { day: "Vendredi", window: "17h00 – 20h00", score: "Pic weekend +31 %" },
       ],
       checklist: [
-        "Passe la photo dans le Studio Photo Vintflow (léger recadrage/luminosité) pour changer son empreinte numérique avant republication.",
+        "Passe la photo dans le Studio Photo Vintflow (Détourage IA ou légère retouche) pour changer son empreinte numérique avant republication.",
         "Supprime les séries de hashtags copiés-collés en bas d'annonce qui déclenchent la vérification 24h.",
         "Espace les republications d'au moins 3–5 minutes entre chaque article.",
         "Évite les mots-clés de marques non liées (spam de marques) qui provoquent un shadowban immédiat.",
@@ -79,6 +268,7 @@ Tu peux demander les mesures exactes en message avant achat.`;
     });
   }
 
+  // MODE 2: NEGOTIATION SNIPER
   if (mode === "negotiation") {
     const targetPrice = Math.max(1, Number(body.targetPrice ?? 50));
     const purchasePrice = Math.max(0, Number(body.purchasePrice ?? 15));
@@ -101,7 +291,9 @@ Tu peux demander les mesures exactes en message avant achat.`;
       Math.round((targetPrice + offerPrice) / 2),
     );
 
-    const discountPct = Math.round(((targetPrice - offerPrice) / targetPrice) * 100);
+    const discountPct = Math.round(
+      ((targetPrice - offerPrice) / targetPrice) * 100,
+    );
 
     return NextResponse.json({
       offerNetMargin: atOffer.netMargin,
@@ -113,8 +305,8 @@ Tu peux demander les mesures exactes en message avant achat.`;
         atOffer.netMargin <= 0
           ? "Offre à perte — refuse ou contre-offre impérativement."
           : discountPct >= 30
-            ? "Offre agressive (-" + discountPct + "%) — envoie une contre-offre ferme."
-            : "Offre acceptable — négociation possible autour de " + counterPrice + " €.",
+            ? `Offre agressive (-${discountPct}%) — envoie une contre-offre ferme.`
+            : `Offre acceptable — négociation possible autour de ${counterPrice} €.`,
       replies: [
         {
           tone: "Contre-offre psychologique",
@@ -132,10 +324,13 @@ Tu peux demander les mesures exactes en message avant achat.`;
     });
   }
 
-  // Default: mode === "listing"
+  // MODE 3: AI LISTING + TIKTOK SCRIPT GENERATOR
   const title = (body.title ?? "").trim().slice(0, 120);
   if (!title) {
-    return NextResponse.json({ error: "Titre de l'article requis" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Titre de l'article requis" },
+      { status: 400 },
+    );
   }
   const brand = (body.brand ?? "").trim().slice(0, 60);
   const category = (body.category ?? "Vêtements").trim().slice(0, 50);
@@ -158,7 +353,7 @@ Tu peux demander les mesures exactes en message avant achat.`;
     ? `\nÉtat transparent : ${defects} (visible sur les dernières photos).\n`
     : "\nAucun défaut constaté (ni trou, ni tâche).\n";
 
-  const vintedFull = `${baseCopy.seoTitle}
+  let vintedFull = `${baseCopy.seoTitle}
 ${defectLine}
 Mesures à plat (cm) :
 • Largeur aisselle à aisselle : __ cm
@@ -166,22 +361,97 @@ Mesures à plat (cm) :
 
 ${baseCopy.vinted}`;
 
-  const leboncoinFull = `${baseCopy.leboncoin}
+  let leboncoinFull = `${baseCopy.leboncoin}
 ${defects ? `\nÀ noter : ${defects}.` : ""}
 Disponible tant que l'annonce est en ligne.`;
 
-  const tiktokScript = `[0–3s HOOK] "Regarde cette ${title} (${brand || "pépite seconde main"}) que je viens de sourcer — et voici son état réel."
+  let tiktokScript = `[0–3s HOOK] "Regarde cette ${title} (${brand || "pépite seconde main"}) que je viens de sourcer — et voici son état réel."
 [3–10s PREUVE] "Taille ${size}, ${condition.toLowerCase()}${defects ? ` (${defects})` : ", zéro défaut"}. Je montre les coutures et l'étiquette de près."
 [10–15s CTA] "Dispo maintenant à ${targetPrice} € dans ma boutique TikTok Shop / lien Vinted en bio. Envoi en 24h !"`;
+
+  if (openaiKey) {
+    try {
+      const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${openaiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content:
+                "Tu es copywriter e-commerce seconde main. Retourne uniquement un JSON avec les clés: vinted (annonce Vinted structurée avec mesures et hashtags pertinents), leboncoin (annonce Leboncoin claire et rassurante), tiktokScript (script vidéo court 15s Hook/Preuve/CTA).",
+            },
+            {
+              role: "user",
+              content: `Article: ${title}, Marque: ${brand}, Catégorie: ${category}, Taille: ${size}, État: ${condition}, Défauts: ${defects || "Aucun"}, Prix: ${targetPrice} €.`,
+            },
+          ],
+          max_tokens: 450,
+        }),
+      });
+      if (aiRes.ok) {
+        const data = (await aiRes.json()) as {
+          choices?: Array<{ message?: { content?: string } }>;
+        };
+        const content = data.choices?.[0]?.message?.content;
+        if (content) {
+          const parsed = JSON.parse(content) as Record<string, string>;
+          if (parsed.vinted) vintedFull = parsed.vinted;
+          if (parsed.leboncoin) leboncoinFull = parsed.leboncoin;
+          if (parsed.tiktokScript) tiktokScript = parsed.tiktokScript;
+        }
+      }
+    } catch {
+      // Fall back to deterministic templates
+    }
+  }
 
   const fastPrice = Math.max(5, Math.round(targetPrice * 0.85));
   const idealPrice = Math.round(targetPrice);
   const premiumPrice = Math.round(targetPrice * 1.18);
 
   const pricingTiers = [
-    { label: "Vente rapide", price: fastPrice, ...computeNetMargin({ grossAmount: fastPrice, purchaseCost: purchasePrice, platformFees: 0, boostCost: 0, shippingCost: 0, urssafRate: auth.user.urssaf_rate }) },
-    { label: "Prix idéal", price: idealPrice, ...computeNetMargin({ grossAmount: idealPrice, purchaseCost: purchasePrice, platformFees: 0, boostCost: 0, shippingCost: 0, urssafRate: auth.user.urssaf_rate }) },
-    { label: "Premium", price: premiumPrice, ...computeNetMargin({ grossAmount: premiumPrice, purchaseCost: purchasePrice, platformFees: 0, boostCost: 0, shippingCost: 0, urssafRate: auth.user.urssaf_rate }) },
+    {
+      label: "Vente rapide",
+      price: fastPrice,
+      ...computeNetMargin({
+        grossAmount: fastPrice,
+        purchaseCost: purchasePrice,
+        platformFees: 0,
+        boostCost: 0,
+        shippingCost: 0,
+        urssafRate: auth.user.urssaf_rate,
+      }),
+    },
+    {
+      label: "Prix idéal",
+      price: idealPrice,
+      ...computeNetMargin({
+        grossAmount: idealPrice,
+        purchaseCost: purchasePrice,
+        platformFees: 0,
+        boostCost: 0,
+        shippingCost: 0,
+        urssafRate: auth.user.urssaf_rate,
+      }),
+    },
+    {
+      label: "Premium",
+      price: premiumPrice,
+      ...computeNetMargin({
+        grossAmount: premiumPrice,
+        purchaseCost: purchasePrice,
+        platformFees: 0,
+        boostCost: 0,
+        shippingCost: 0,
+        urssafRate: auth.user.urssaf_rate,
+      }),
+    },
   ];
 
   return NextResponse.json({

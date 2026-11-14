@@ -8,19 +8,24 @@ import {
   Clock,
   Copy,
   Download,
+  Eraser,
+  Eye,
   ImagePlus,
   Loader2,
   Plus,
+  ScanSearch,
   ShieldAlert,
   Sparkles,
   Swords,
   Video,
+  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { formatEuro } from "@/lib/format";
 
 interface ResellerToolsStudioProps {
@@ -38,11 +43,130 @@ const PHOTO_FORMATS = {
 };
 
 const STUDIO_BACKGROUNDS = [
-  { id: "white", label: "Studio Blanc", color: "#ffffff", text: "#0f172a" },
-  { id: "cream", label: "Lin Naturel", color: "#f5f1ea", text: "#1c1917" },
-  { id: "slate", label: "Gris Galerie", color: "#e2e8f0", text: "#0f172a" },
-  { id: "dark", label: "Dark Luxe", color: "#111827", text: "#f8fafc" },
+  { id: "white", label: "Studio Blanc", color: "#ffffff" },
+  { id: "cream", label: "Lin Naturel", color: "#f5f1ea" },
+  { id: "slate", label: "Gris Galerie", color: "#e2e8f0" },
+  { id: "dark", label: "Dark Luxe", color: "#111827" },
 ];
+
+function detectColorName(r: number, g: number, b: number): string {
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  if (max < 55) return "Noir";
+  if (min > 205) return "Blanc";
+  if (max - min < 22) return max > 130 ? "Gris Clair" : "Gris Anthracite";
+  if (r > g + 35 && r > b + 35) return r > 170 && g > 80 ? "Orange" : "Rouge";
+  if (g > r + 20 && g > b + 20) return "Vert";
+  if (b > r + 20 && b > g + 15) return b < 110 ? "Bleu Marine" : "Bleu";
+  if (r > 150 && g > 120 && b < 100) return "Beige / Camel";
+  return "Multicolore";
+}
+
+function removeBackgroundByEdgeFlood(
+  srcImg: HTMLImageElement,
+  tolerance: number,
+): HTMLCanvasElement {
+  const maxSide = 720;
+  const scale = Math.min(1, maxSide / Math.max(srcImg.width, srcImg.height));
+  const w = Math.max(1, Math.round(srcImg.width * scale));
+  const h = Math.max(1, Math.round(srcImg.height * scale));
+
+  const off = document.createElement("canvas");
+  off.width = w;
+  off.height = h;
+  const octx = off.getContext("2d");
+  if (!octx) return off;
+
+  octx.drawImage(srcImg, 0, 0, w, h);
+  const imgData = octx.getImageData(0, 0, w, h);
+  const data = imgData.data;
+
+  // Sample average edge color from the 4 corners
+  const corners = [
+    [2, 2],
+    [w - 3, 2],
+    [2, h - 3],
+    [w - 3, h - 3],
+  ];
+  let sr = 0;
+  let sg = 0;
+  let sb = 0;
+  let valid = 0;
+  for (const [cx, cy] of corners) {
+    if (cx >= 0 && cy >= 0 && cx < w && cy < h) {
+      const idx = (cy * w + cx) * 4;
+      sr += data[idx];
+      sg += data[idx + 1];
+      sb += data[idx + 2];
+      valid += 1;
+    }
+  }
+  const bgR = sr / Math.max(1, valid);
+  const bgG = sg / Math.max(1, valid);
+  const bgB = sb / Math.max(1, valid);
+
+  const visited = new Uint8Array(w * h);
+  const queue = new Int32Array(w * h);
+  let head = 0;
+  let tail = 0;
+
+  const pushIfBg = (x: number, y: number) => {
+    if (x < 0 || y < 0 || x >= w || y >= h) return;
+    const p = y * w + x;
+    if (visited[p]) return;
+    const idx = p * 4;
+    const dist = Math.sqrt(
+      (data[idx] - bgR) ** 2 +
+        (data[idx + 1] - bgG) ** 2 +
+        (data[idx + 2] - bgB) ** 2,
+    );
+    if (dist <= tolerance) {
+      visited[p] = 1;
+      queue[tail++] = p;
+    }
+  };
+
+  for (let x = 0; x < w; x++) {
+    pushIfBg(x, 0);
+    pushIfBg(x, h - 1);
+  }
+  for (let y = 0; y < h; y++) {
+    pushIfBg(0, y);
+    pushIfBg(w - 1, y);
+  }
+
+  while (head < tail) {
+    const p = queue[head++];
+    const x = p % w;
+    const y = (p - x) / w;
+    const idx = p * 4;
+    data[idx + 3] = 0;
+
+    pushIfBg(x + 1, y);
+    pushIfBg(x - 1, y);
+    pushIfBg(x, y + 1);
+    pushIfBg(x, y - 1);
+  }
+
+  // Soften edges adjacent to removed background
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const p = y * w + x;
+      if (visited[p]) continue;
+      if (
+        visited[p - 1] ||
+        visited[p + 1] ||
+        visited[p - w] ||
+        visited[p + w]
+      ) {
+        data[p * 4 + 3] = Math.min(data[p * 4 + 3], 175);
+      }
+    }
+  }
+
+  octx.putImageData(imgData, 0, 0);
+  return off;
+}
 
 export function ResellerToolsStudio({
   urssafRate,
@@ -55,6 +179,7 @@ export function ResellerToolsStudio({
   // --- 1. STUDIO PHOTO CANVAS STATE ---
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [photoSrc, setPhotoSrc] = useState<string | null>(null);
+  const [photoFileName, setPhotoFileName] = useState<string>("");
   const [photoFormat, setPhotoFormat] = useState<keyof typeof PHOTO_FORMATS>("vinted");
   const [studioBg, setStudioBg] = useState(STUDIO_BACKGROUNDS[0]);
   const [brightness, setBrightness] = useState(106);
@@ -62,6 +187,10 @@ export function ResellerToolsStudio({
   const [saturation, setSaturation] = useState(105);
   const [paddingPct, setPaddingPct] = useState(7);
   const [badgeText, setBadgeText] = useState("ENVOI 24H · VÉRIFIÉ");
+  const [removeBg, setRemoveBg] = useState(false);
+  const [bgTolerance, setBgTolerance] = useState(38);
+  const [showOriginal, setShowOriginal] = useState(false);
+  const [visionLoading, setVisionLoading] = useState(false);
 
   // --- 2. LISTING + TIKTOK GENERATOR STATE ---
   const [genTitle, setGenTitle] = useState("Veste Carhartt Detroit Canvas Noir");
@@ -124,7 +253,16 @@ export function ResellerToolsStudio({
     setTimeout(() => setCopiedKey(null), 2000);
   }
 
-  // Render Studio Photo Canvas whenever settings or image change
+  function handleAutoEnhance() {
+    setBrightness(110);
+    setContrast(112);
+    setSaturation(108);
+    setPaddingPct(7);
+    setShowOriginal(false);
+    onToast("Auto-éclairage Studio appliqué !");
+  }
+
+  // Render Studio Photo Canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -136,7 +274,16 @@ export function ResellerToolsStudio({
     canvas.height = fmt.h;
 
     const drawFrame = (img: HTMLImageElement | null) => {
-      // Background studio fill
+      if (img && showOriginal) {
+        ctx.fillStyle = "#090b0f";
+        ctx.fillRect(0, 0, fmt.w, fmt.h);
+        const scale = Math.min(fmt.w / img.width, fmt.h / img.height);
+        const dw = img.width * scale;
+        const dh = img.height * scale;
+        ctx.drawImage(img, (fmt.w - dw) / 2, (fmt.h - dh) / 2, dw, dh);
+        return;
+      }
+
       ctx.fillStyle = studioBg.color;
       ctx.fillRect(0, 0, fmt.w, fmt.h);
 
@@ -145,23 +292,33 @@ export function ResellerToolsStudio({
       const innerH = fmt.h - pad * 2;
 
       if (img) {
+        const sourceToDraw: CanvasImageSource = removeBg
+          ? removeBackgroundByEdgeFlood(img, bgTolerance)
+          : img;
+        const srcW =
+          sourceToDraw instanceof HTMLCanvasElement
+            ? sourceToDraw.width
+            : img.width;
+        const srcH =
+          sourceToDraw instanceof HTMLCanvasElement
+            ? sourceToDraw.height
+            : img.height;
+
         ctx.save();
         ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
-        const scale = Math.min(innerW / img.width, innerH / img.height);
-        const drawW = img.width * scale;
-        const drawH = img.height * scale;
+        const scale = Math.min(innerW / srcW, innerH / srcH);
+        const drawW = srcW * scale;
+        const drawH = srcH * scale;
         const dx = (fmt.w - drawW) / 2;
         const dy = (fmt.h - drawH) / 2;
 
-        // Subtle studio drop shadow
-        ctx.shadowColor = "rgba(0,0,0,0.18)";
-        ctx.shadowBlur = 28;
-        ctx.shadowOffsetY = 12;
+        ctx.shadowColor = "rgba(0,0,0,0.22)";
+        ctx.shadowBlur = 32;
+        ctx.shadowOffsetY = 14;
 
-        ctx.drawImage(img, dx, dy, drawW, drawH);
+        ctx.drawImage(sourceToDraw, dx, dy, drawW, drawH);
         ctx.restore();
       } else {
-        // Sample vector garment preview when no file uploaded yet
         ctx.save();
         ctx.fillStyle = studioBg.id === "dark" ? "#1e293b" : "#f1f5f9";
         ctx.strokeStyle = studioBg.id === "dark" ? "#334155" : "#cbd5e1";
@@ -171,7 +328,6 @@ export function ResellerToolsStudio({
         ctx.fill();
         ctx.stroke();
 
-        // Stylized jacket silhouette
         ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
         ctx.fillStyle = "#0f766e";
         ctx.beginPath();
@@ -195,7 +351,7 @@ export function ResellerToolsStudio({
         ctx.fillStyle = studioBg.id === "dark" ? "#94a3b8" : "#475569";
         ctx.font = "600 28px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("Importe ta vraie photo ci-contre", cx, cy + 305);
+        ctx.fillText("Importe ta photo pour activer le Studio IA", cx, cy + 305);
         ctx.restore();
       }
 
@@ -209,7 +365,7 @@ export function ResellerToolsStudio({
         const px = fmt.w - pillW - 36;
         const py = fmt.h - pillH - 36;
 
-        ctx.fillStyle = "rgba(9, 11, 15, 0.86)";
+        ctx.fillStyle = "rgba(9, 11, 15, 0.88)";
         ctx.beginPath();
         ctx.roundRect(px, py, pillW, pillH, 26);
         ctx.fill();
@@ -229,15 +385,29 @@ export function ResellerToolsStudio({
     } else {
       drawFrame(null);
     }
-  }, [photoSrc, photoFormat, studioBg, brightness, contrast, saturation, paddingPct, badgeText]);
+  }, [
+    photoSrc,
+    photoFormat,
+    studioBg,
+    brightness,
+    contrast,
+    saturation,
+    paddingPct,
+    badgeText,
+    removeBg,
+    bgTolerance,
+    showOriginal,
+  ]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setPhotoFileName(file.name);
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
         setPhotoSrc(reader.result);
+        setShowOriginal(false);
       }
     };
     reader.readAsDataURL(file);
@@ -251,6 +421,95 @@ export function ResellerToolsStudio({
     link.href = canvas.toDataURL("image/png");
     link.click();
     onToast(`Photo exportée au format ${PHOTO_FORMATS[photoFormat].label} !`);
+  }
+
+  async function handleAnalyzePhotoToListing() {
+    setVisionLoading(true);
+    try {
+      let dominantColor = "Noir";
+      const canvas = canvasRef.current;
+      if (canvas && photoSrc) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          const cx = Math.floor(canvas.width / 2);
+          const cy = Math.floor(canvas.height / 2);
+          const px = ctx.getImageData(Math.max(0, cx - 25), Math.max(0, cy - 25), 50, 50).data;
+          let r = 0;
+          let g = 0;
+          let b = 0;
+          let count = 0;
+          for (let i = 0; i < px.length; i += 4) {
+            if (px[i + 3] > 200) {
+              r += px[i];
+              g += px[i + 1];
+              b += px[i + 2];
+              count++;
+            }
+          }
+          if (count > 0) {
+            dominantColor = detectColorName(r / count, g / count, b / count);
+          }
+        }
+      }
+
+      const res = await fetch("/api/tools/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          mode: "vision_analyze",
+          imageDataUrl: photoSrc ?? undefined,
+          fileName: photoFileName,
+          dominantColor,
+        }),
+      });
+      if (res.ok) {
+        const analysis = (await res.json()) as {
+          engine: string;
+          title: string;
+          brand: string;
+          category: string;
+          size: string;
+          condition: string;
+          defects: string;
+          estimatedPrice: number;
+        };
+        setGenTitle(analysis.title);
+        setGenBrand(analysis.brand);
+        setGenCategory(analysis.category);
+        setGenSize(analysis.size);
+        setGenCondition(analysis.condition);
+        setGenDefects(analysis.defects);
+        setGenTargetPrice(String(analysis.estimatedPrice));
+        setSubTab("listing");
+
+        // Auto-generate the 3 platform listings right away
+        const genRes = await fetch("/api/tools/generate", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            mode: "listing",
+            title: analysis.title,
+            brand: analysis.brand,
+            category: analysis.category,
+            size: analysis.size,
+            condition: analysis.condition,
+            defects: analysis.defects,
+            purchasePrice: Number(genBuyPrice) || 15,
+            targetPrice: analysis.estimatedPrice,
+          }),
+        });
+        if (genRes.ok) {
+          setGenResult(await genRes.json());
+        }
+        onToast(
+          analysis.engine === "openai_vision"
+            ? "Photo analysée par OpenAI Vision + 3 annonces générées !"
+            : `Analyse IA locale (${dominantColor}) : fiche pré-remplie et prête !`,
+        );
+      }
+    } finally {
+      setVisionLoading(false);
+    }
   }
 
   async function handleGenerateListing(e: React.FormEvent) {
@@ -349,10 +608,8 @@ export function ResellerToolsStudio({
   }
 
   const unitLotCost =
-    Math.max(1, Number(lotCount) || 1) > 0
-      ? ((Number(lotTotalCost) || 0) + (Number(lotShipping) || 0)) /
-        Math.max(1, Number(lotCount) || 1)
-      : 0;
+    ((Number(lotTotalCost) || 0) + (Number(lotShipping) || 0)) /
+    Math.max(1, Number(lotCount) || 1);
 
   return (
     <div className="space-y-5">
@@ -361,8 +618,8 @@ export function ResellerToolsStudio({
         {[
           {
             id: "photo" as ToolSubTab,
-            title: "Studio Photo & Formats",
-            sub: "Retouche + 1080px Vinted/LBC/TT",
+            title: "Studio Photo & Vision IA",
+            sub: "Détourage + 1080px + Scan IA",
             icon: <Camera className="h-4 w-4 text-emerald-400" />,
           },
           {
@@ -403,24 +660,35 @@ export function ResellerToolsStudio({
         ))}
       </div>
 
-      {/* TOOL 1: STUDIO PHOTO CANVAS */}
+      {/* TOOL 1: STUDIO PHOTO CANVAS + MAGIC BACKGROUND REMOVAL + AI VISION */}
       {subTab === "photo" && (
         <div className="grid gap-6 lg:grid-cols-12 rounded-2xl border border-white/10 bg-[#10141c] p-5">
           <div className="lg:col-span-5 space-y-4">
-            <div>
-              <h2 className="text-sm font-bold text-white">
-                Retouche Studio &amp; Empreinte Anti-Shadowban
-              </h2>
-              <p className="mt-1 text-xs text-zinc-400">
-                Redimensionne et éclaire tes photos aux dimensions exactes Vinted,
-                Leboncoin ou TikTok Shop. Change aussi l&apos;empreinte numérique du fichier
-                pour éviter le flag lors d&apos;une republication.
-              </p>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-bold text-white">
+                  Studio Photo IA &amp; Détourage
+                </h2>
+                <p className="mt-1 text-xs text-zinc-400">
+                  Détoure le fond, illumine l&apos;article, change l&apos;empreinte anti-shadowban
+                  et envoie la photo à l&apos;IA pour créer l&apos;annonce.
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleAutoEnhance}
+                className="shrink-0 border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 text-[11px] h-8"
+              >
+                <Wand2 className="h-3.5 w-3.5 mr-1" />
+                Auto
+              </Button>
             </div>
 
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-500/40 bg-emerald-500/[0.06] px-4 py-3 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10">
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-500/40 bg-emerald-500/[0.06] px-4 py-3 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10 transition">
               <ImagePlus className="h-4 w-4" />
-              Importer une photo de mon article
+              {photoSrc ? "Changer la photo" : "Importer une photo de mon article"}
               <input
                 type="file"
                 accept="image/*"
@@ -428,6 +696,30 @@ export function ResellerToolsStudio({
                 className="hidden"
               />
             </label>
+
+            {/* Magic background removal */}
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-xs font-semibold text-white">
+                  <Eraser className="h-3.5 w-3.5 text-emerald-400" />
+                  Détourage intelligent du fond
+                </span>
+                <Switch checked={removeBg} onCheckedChange={setRemoveBg} />
+              </div>
+              {removeBg && (
+                <label className="block space-y-1 text-[11px] text-zinc-400">
+                  <span>Sensibilité détourage ({bgTolerance})</span>
+                  <input
+                    type="range"
+                    min={15}
+                    max={95}
+                    value={bgTolerance}
+                    onChange={(e) => setBgTolerance(Number(e.target.value))}
+                    className="w-full accent-emerald-500"
+                  />
+                </label>
+              )}
+            </div>
 
             <div className="space-y-1.5">
               <Label className="text-xs text-zinc-400">Format plateforme</Label>
@@ -534,21 +826,55 @@ export function ResellerToolsStudio({
               />
             </div>
 
-            <Button
-              onClick={handleDownloadCanvas}
-              className="w-full bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs h-10"
-            >
-              <Download className="h-4 w-4 mr-1.5" />
-              Télécharger l&apos;image retouchée (.png)
-            </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Button
+                type="button"
+                onClick={handleDownloadCanvas}
+                variant="outline"
+                className="border-white/15 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs h-10"
+              >
+                <Download className="h-4 w-4 mr-1.5" />
+                Télécharger (.png)
+              </Button>
+              <Button
+                type="button"
+                disabled={visionLoading}
+                onClick={handleAnalyzePhotoToListing}
+                className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs h-10"
+              >
+                {visionLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                ) : (
+                  <ScanSearch className="h-4 w-4 mr-1.5" />
+                )}
+                Scanner IA → Annonce
+              </Button>
+            </div>
           </div>
 
-          <div className="lg:col-span-7 flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#090b0f] p-4">
+          <div className="lg:col-span-7 flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#090b0f] p-4 gap-3">
+            {photoSrc && (
+              <div className="flex w-full items-center justify-between px-2">
+                <span className="text-[11px] text-zinc-400 font-mono truncate max-w-[220px]">
+                  {photoFileName || "image-article.png"}
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowOriginal((v) => !v)}
+                  className="text-xs text-zinc-300 hover:text-white h-7"
+                >
+                  <Eye className="h-3.5 w-3.5 mr-1.5" />
+                  {showOriginal ? "Voir Studio IA" : "Comparer l'original"}
+                </Button>
+              </div>
+            )}
             <canvas
               ref={canvasRef}
               className="max-h-[430px] w-auto max-w-full rounded-xl border border-white/10 shadow-2xl"
             />
-            <p className="mt-2.5 text-[11px] text-zinc-500">
+            <p className="text-[11px] text-zinc-500">
               Aperçu temps réel · Export haute résolution {PHOTO_FORMATS[photoFormat].w}×
               {PHOTO_FORMATS[photoFormat].h} px
             </p>
@@ -661,9 +987,10 @@ export function ResellerToolsStudio({
             {!genResult ? (
               <div className="flex h-full min-h-[300px] flex-col items-center justify-center text-center text-xs text-zinc-400">
                 <Sparkles className="h-8 w-8 text-emerald-400/70 mb-2" />
-                Clique sur <strong>Générer mes 3 fiches + prix</strong> pour obtenir
-                ton titre SEO, tes descriptions Vinted &amp; Leboncoin, ton script vidéo
-                TikTok Shop et ta marge nette ({urssafRate}% URSSAF).
+                Clique sur <strong>Générer mes 3 fiches + prix</strong> (ou scanne une
+                photo dans le Studio) pour obtenir ton titre SEO, tes descriptions Vinted
+                &amp; Leboncoin, ton script vidéo TikTok Shop et ta marge nette (
+                {urssafRate}% URSSAF).
               </div>
             ) : (
               <>
@@ -890,7 +1217,6 @@ export function ResellerToolsStudio({
       {/* TOOL 4: BUNDLE CALCULATOR & NEGOTIATION SNIPER */}
       {subTab === "negotiation" && (
         <div className="grid gap-6 lg:grid-cols-12">
-          {/* Bundle Calculator */}
           <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4 text-xs">
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
               <Calculator className="h-4 w-4 text-emerald-400" />
@@ -948,7 +1274,6 @@ export function ResellerToolsStudio({
               </div>
             </div>
 
-            {/* Negotiation Sniper Form */}
             <form
               onSubmit={handleNegotiation}
               className="space-y-3 border-t border-white/10 pt-4"
