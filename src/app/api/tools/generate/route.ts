@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
+import { callCloudAi } from "@/lib/ai";
 import { sql } from "@/lib/db";
 import { computeNetMargin, generateListingCopy } from "@/lib/format";
 import { PLANS } from "@/lib/plans";
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   const mode = body.mode ?? "listing";
-  const openaiKey = !auth.user.is_demo ? process.env.OPENAI_API_KEY?.trim() : undefined;
+  const allowCloudAi = !auth.user.is_demo;
 
   // MODE 0: AI VISION PHOTO -> STRUCTURED LISTING EXTRACTION
   if (mode === "vision_analyze") {
@@ -94,71 +95,35 @@ export async function POST(request: Request) {
     const fileName = (body.fileName ?? "").trim().slice(0, 120);
     const dominantColor = (body.dominantColor ?? "Noir").trim().slice(0, 40);
 
-    if (
-      openaiKey &&
-      imageDataUrl.startsWith("data:image/") &&
-      imageDataUrl.length < 4_500_000
-    ) {
-      try {
-        const visionRes = await fetch(
-          "https://api.openai.com/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-              authorization: `Bearer ${openaiKey}`,
-            },
-            body: JSON.stringify({
-              model: "gpt-4o-mini",
-              response_format: { type: "json_object" },
-              messages: [
-                {
-                  role: "system",
-                  content:
-                    "Tu es un expert revente seconde main (Vinted, Leboncoin, TikTok Shop). Analyse l'image et retourne uniquement un JSON valide avec les clés: title (string, titre vendeur FR), brand (string), category (string), size (string), condition (string: 'Neuf avec étiquette' | 'Neuf sans étiquette' | 'Très bon état' | 'Bon état'), defects (string, vide si aucun visible), estimatedPrice (number, prix de revente réaliste en EUR), seoKeywords (string[]).",
-                },
-                {
-                  role: "user",
-                  content: [
-                    {
-                      type: "text",
-                      text: `Analyse cet article pour préparer la fiche de vente (couleur détectée: ${dominantColor}).`,
-                    },
-                    {
-                      type: "image_url",
-                      image_url: { url: imageDataUrl, detail: "low" },
-                    },
-                  ],
-                },
-              ],
-              max_tokens: 320,
-            }),
-          },
-        );
-        if (visionRes.ok) {
-          const data = (await visionRes.json()) as {
-            choices?: Array<{ message?: { content?: string } }>;
-          };
-          const rawJson = data.choices?.[0]?.message?.content;
-          if (rawJson) {
-            const parsed = JSON.parse(rawJson) as Record<string, unknown>;
-            return NextResponse.json({
-              engine: "openai_vision",
-              title: String(parsed.title ?? "Pièce Seconde Main"),
-              brand: String(parsed.brand ?? "Vintage"),
-              category: String(parsed.category ?? "Vêtements"),
-              size: String(parsed.size ?? "M"),
-              condition: String(parsed.condition ?? "Très bon état"),
-              defects: String(parsed.defects ?? ""),
-              estimatedPrice: Number(parsed.estimatedPrice ?? 45),
-              seoKeywords: Array.isArray(parsed.seoKeywords)
-                ? parsed.seoKeywords.slice(0, 6)
-                : [],
-            });
-          }
+    if (allowCloudAi && imageDataUrl.startsWith("data:image/")) {
+      const aiOut = await callCloudAi({
+        systemPrompt:
+          "Tu es un expert revente seconde main (Vinted, Leboncoin, TikTok Shop). Analyse l'image et retourne uniquement un JSON valide avec les clés: title (string, titre vendeur FR), brand (string), category (string), size (string), condition (string: 'Neuf avec étiquette' | 'Neuf sans étiquette' | 'Très bon état' | 'Bon état'), defects (string, vide si aucun visible), estimatedPrice (number, prix de revente réaliste en EUR), seoKeywords (string[]).",
+        userPrompt: `Analyse cet article pour préparer la fiche de vente (couleur détectée: ${dominantColor}).`,
+        imageDataUrl,
+        jsonMode: true,
+        maxTokens: 320,
+      });
+      if (aiOut) {
+        try {
+          const parsed = JSON.parse(aiOut.text) as Record<string, unknown>;
+          return NextResponse.json({
+            engine:
+              aiOut.provider === "gemini" ? "gemini_vision" : "openai_vision",
+            title: String(parsed.title ?? "Pièce Seconde Main"),
+            brand: String(parsed.brand ?? "Vintage"),
+            category: String(parsed.category ?? "Vêtements"),
+            size: String(parsed.size ?? "M"),
+            condition: String(parsed.condition ?? "Très bon état"),
+            defects: String(parsed.defects ?? ""),
+            estimatedPrice: Number(parsed.estimatedPrice ?? 45),
+            seoKeywords: Array.isArray(parsed.seoKeywords)
+              ? parsed.seoKeywords.slice(0, 6)
+              : [],
+          });
+        } catch {
+          // Fall back to deterministic analyzer
         }
-      } catch {
-        // Fall back to intelligent deterministic analyzer
       }
     }
 
@@ -251,42 +216,15 @@ ${cleanedBody ? `\nDétails : ${cleanedBody}\n` : ""}
 
 Tu peux demander les mesures exactes en message avant achat.`;
 
-    if (openaiKey) {
-      try {
-        const aiRes = await fetch(
-          "https://api.openai.com/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-              authorization: `Bearer ${openaiKey}`,
-            },
-            body: JSON.stringify({
-              model: "gpt-4o-mini",
-              messages: [
-                {
-                  role: "system",
-                  content:
-                    "Réécris cette annonce Vinted/Leboncoin en français pour éviter les filtres anti-duplication (sans spam de hashtags, ton humain, clair et rassurant). Retourne uniquement le nouveau texte.",
-                },
-                {
-                  role: "user",
-                  content: `Titre: ${baseTitle}\nDescription: ${cleanedBody}`,
-                },
-              ],
-              max_tokens: 240,
-            }),
-          },
-        );
-        if (aiRes.ok) {
-          const data = (await aiRes.json()) as {
-            choices?: Array<{ message?: { content?: string } }>;
-          };
-          const content = data.choices?.[0]?.message?.content?.trim();
-          if (content) refreshedDescription = content;
-        }
-      } catch {
-        // Keep deterministic rewrite
+    if (allowCloudAi) {
+      const aiOut = await callCloudAi({
+        systemPrompt:
+          "Réécris cette annonce Vinted/Leboncoin en français pour éviter les filtres anti-duplication (sans spam de hashtags, ton humain, clair et rassurant). Retourne uniquement le nouveau texte.",
+        userPrompt: `Titre: ${baseTitle}\nDescription: ${cleanedBody}`,
+        maxTokens: 240,
+      });
+      if (aiOut?.text) {
+        refreshedDescription = aiOut.text;
       }
     }
 
@@ -404,45 +342,23 @@ Disponible tant que l'annonce est en ligne.`;
 [3–10s PREUVE] "Taille ${size}, ${condition.toLowerCase()}${defects ? ` (${defects})` : ", zéro défaut"}. Je montre les coutures et l'étiquette de près."
 [10–15s CTA] "Dispo maintenant à ${targetPrice} € dans ma boutique TikTok Shop / lien Vinted en bio. Envoi en 24h !"`;
 
-  if (openaiKey) {
-    try {
-      const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${openaiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          response_format: { type: "json_object" },
-          messages: [
-            {
-              role: "system",
-              content:
-                "Tu es copywriter e-commerce seconde main. Retourne uniquement un JSON avec les clés: vinted (annonce Vinted structurée avec mesures et hashtags pertinents), leboncoin (annonce Leboncoin claire et rassurante), tiktokScript (script vidéo court 15s Hook/Preuve/CTA).",
-            },
-            {
-              role: "user",
-              content: `Article: ${title}, Marque: ${brand}, Catégorie: ${category}, Taille: ${size}, État: ${condition}, Défauts: ${defects || "Aucun"}, Prix: ${targetPrice} €.`,
-            },
-          ],
-          max_tokens: 450,
-        }),
-      });
-      if (aiRes.ok) {
-        const data = (await aiRes.json()) as {
-          choices?: Array<{ message?: { content?: string } }>;
-        };
-        const content = data.choices?.[0]?.message?.content;
-        if (content) {
-          const parsed = JSON.parse(content) as Record<string, string>;
-          if (parsed.vinted) vintedFull = parsed.vinted;
-          if (parsed.leboncoin) leboncoinFull = parsed.leboncoin;
-          if (parsed.tiktokScript) tiktokScript = parsed.tiktokScript;
-        }
+  if (allowCloudAi) {
+    const aiOut = await callCloudAi({
+      systemPrompt:
+        "Tu es copywriter e-commerce seconde main. Retourne uniquement un JSON avec les clés: vinted (annonce Vinted structurée avec mesures et hashtags pertinents), leboncoin (annonce Leboncoin claire et rassurante), tiktokScript (script vidéo court 15s Hook/Preuve/CTA).",
+      userPrompt: `Article: ${title}, Marque: ${brand}, Catégorie: ${category}, Taille: ${size}, État: ${condition}, Défauts: ${defects || "Aucun"}, Prix: ${targetPrice} €.`,
+      jsonMode: true,
+      maxTokens: 450,
+    });
+    if (aiOut?.text) {
+      try {
+        const parsed = JSON.parse(aiOut.text) as Record<string, string>;
+        if (parsed.vinted) vintedFull = parsed.vinted;
+        if (parsed.leboncoin) leboncoinFull = parsed.leboncoin;
+        if (parsed.tiktokScript) tiktokScript = parsed.tiktokScript;
+      } catch {
+        // Keep deterministic templates
       }
-    } catch {
-      // Fall back to deterministic templates
     }
   }
 

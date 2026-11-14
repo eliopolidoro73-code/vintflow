@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
+import { callCloudAi } from "@/lib/ai";
 import { sql } from "@/lib/db";
 import { daysSince, formatEuro } from "@/lib/format";
 import { PLANS } from "@/lib/plans";
@@ -201,57 +202,33 @@ export async function POST(request: Request) {
     null,
   );
 
-  const openaiKey = !user.is_demo ? process.env.OPENAI_API_KEY?.trim() : undefined;
-  if (openaiKey) {
-    try {
-      const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${openaiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content: `Tu es Nova, l'assistant IA stratégique de Vintflow pour revendeurs Vinted, Leboncoin, TikTok Shop et eBay. Réponds en français de façon directe, chiffrée et actionnable avec ces vraies données : Chiffre d'affaires total=${formatEuro(totalCa)}, Marge commerciale=${formatEuro(totalNet)}, ROI sur coût de revient=${roiPct}%, Seuil TVA=${formatEuro(user.vat_threshold)}, Meilleure vente=${bestSale ? `${bestSale.item_title} (+${formatEuro(Number(bestSale.net_margin))})` : "Aucune"}, Colis à expédier=${pendingShip.length}, En transit=${pendingTransit.length} (${formatEuro(pendingAmount)} en attente), Messages non lus=${unreadCount}, Articles actifs=${items.length}, Dormants +14j=${dormant.length}, Non crosslistés Leboncoin=${notCrosslisted.length}.`,
-            },
-            { role: "user", content: question },
-          ],
-          max_tokens: 300,
-        }),
+  if (!user.is_demo) {
+    const aiOut = await callCloudAi({
+      systemPrompt: `Tu es Nova, l'assistant IA stratégique de Vintflow pour revendeurs Vinted, Leboncoin, TikTok Shop et eBay. Réponds en français de façon directe, chiffrée et actionnable avec ces vraies données : Chiffre d'affaires total=${formatEuro(totalCa)}, Marge commerciale=${formatEuro(totalNet)}, ROI sur coût de revient=${roiPct}%, Seuil TVA=${formatEuro(user.vat_threshold)}, Meilleure vente=${bestSale ? `${bestSale.item_title} (+${formatEuro(Number(bestSale.net_margin))})` : "Aucune"}, Colis à expédier=${pendingShip.length}, En transit=${pendingTransit.length} (${formatEuro(pendingAmount)} en attente), Messages non lus=${unreadCount}, Articles actifs=${items.length}, Dormants +14j=${dormant.length}, Non crosslistés Leboncoin=${notCrosslisted.length}.`,
+      userPrompt: question,
+      maxTokens: 300,
+    });
+    if (aiOut?.text) {
+      return NextResponse.json({
+        answer: aiOut.text,
+        proposedAction:
+          dormant.length > 0 && question.toLowerCase().includes("dorm")
+            ? {
+                id: "discount_dormant",
+                label: `Baisser de 10 % les ${dormant.length} article(s) dormant(s)`,
+                before: `${dormant.length} articles en ligne >= 14 jours`,
+                after: `Prix ajustés de -10 % pour accélérer la vente`,
+              }
+            : notCrosslisted.length > 0 &&
+                question.toLowerCase().includes("cross")
+              ? {
+                  id: "crosslist_all_lbc",
+                  label: `Crosslister ${notCrosslisted.length} annonce(s) vers Leboncoin`,
+                  before: `${notCrosslisted.length} annonce(s) uniquement sur Vinted`,
+                  after: `Publiées sur Vinted + Leboncoin avec retrait auto`,
+                }
+              : null,
       });
-      if (aiRes.ok) {
-        const data = (await aiRes.json()) as {
-          choices?: Array<{ message?: { content?: string } }>;
-        };
-        const content = data.choices?.[0]?.message?.content?.trim();
-        if (content) {
-          return NextResponse.json({
-            answer: content,
-            proposedAction:
-              dormant.length > 0 && question.toLowerCase().includes("dorm")
-                ? {
-                    id: "discount_dormant",
-                    label: `Baisser de 10 % les ${dormant.length} article(s) dormant(s)`,
-                    before: `${dormant.length} articles en ligne >= 14 jours`,
-                    after: `Prix ajustés de -10 % pour accélérer la vente`,
-                  }
-                : notCrosslisted.length > 0 &&
-                    question.toLowerCase().includes("cross")
-                  ? {
-                      id: "crosslist_all_lbc",
-                      label: `Crosslister ${notCrosslisted.length} annonce(s) vers Leboncoin`,
-                      before: `${notCrosslisted.length} annonce(s) uniquement sur Vinted`,
-                      after: `Publiées sur Vinted + Leboncoin avec retrait auto`,
-                    }
-                  : null,
-          });
-        }
-      }
-    } catch {
-      // Fallback to local deterministic analytics engine
     }
   }
 

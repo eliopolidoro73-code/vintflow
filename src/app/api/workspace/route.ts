@@ -250,7 +250,10 @@ export async function GET() {
       },
       integrations: {
         stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY?.trim()),
-        openaiConfigured: Boolean(process.env.OPENAI_API_KEY?.trim()),
+        openaiConfigured: Boolean(
+          process.env.GEMINI_API_KEY?.trim() ||
+            process.env.OPENAI_API_KEY?.trim(),
+        ),
       },
     },
     { headers: { "cache-control": "private, no-store" } },
