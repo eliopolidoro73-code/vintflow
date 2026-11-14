@@ -128,7 +128,7 @@ const FAQS = [
   },
   {
     q: "Quelle différence entre Essentiel (9 €), Vendeur Plus (29 €) et Pro Scale (49 €) ?",
-    a: "Essentiel (9 €) couvre uniquement le suivi de stock (40 SKU), marge/URSSAF et export CSV sans IA ni crosslisting. Vendeur Plus (29 €) débloque les meilleurs outils (Studio Photo, Annonces IA, Crosslisting, Factures PDF, Messagerie) avec des quotas mensuels (30 crédits IA, 100 crosslistings). Pro Scale (49 €) passe tout en illimité avec l'auto-crosslisting 8h–23h et l'Assistant IA Nova.",
+    a: "Essentiel (9 €) couvre uniquement le suivi de stock (40 SKU), marge/URSSAF et export CSV sans IA ni crosslisting. Vendeur Plus (29 €) débloque les meilleurs outils (Studio Photo, Annonces IA, Crosslisting, Factures PDF, Messagerie) avec des quotas mensuels (30 crédits IA, 100 crosslistings). Pro Scale (49 €) passe à la haute capacité avec auto-crosslisting 8h–23h et l'Assistant IA Nova.",
   },
   {
     q: "Est-ce risqué pour mon compte Vinted ou Leboncoin ?",
@@ -146,10 +146,12 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [authMode, setAuthMode] = useState<"register" | "login">("register");
   const [selectedPlan, setSelectedPlan] = useState<PlanId>("plus");
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+  const [heroTab, setHeroTab] = useState<"kpi" | "crosslist" | "studio">("kpi");
   const [autoPublishDemo, setAutoPublishDemo] = useState(true);
   const [activeAiIdx, setActiveAiIdx] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [demoLoading, setDemoLoading] = useState(false);
+  const [monthlySalesEst, setMonthlySalesEst] = useState(60);
 
   const [simTitle, setSimTitle] = useState("Veste Carhartt Detroit Canvas");
   const [simBuy, setSimBuy] = useState("28");
@@ -173,6 +175,10 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
     urssafRate: 12.3,
   });
 
+  const hoursSaved = Math.max(2, Math.round((monthlySalesEst / 100) * 20));
+  const extraSalesEst = Math.max(2, Math.round(monthlySalesEst * 0.22));
+  const extraProfitEst = extraSalesEst * 16;
+
   function openSignup(plan: PlanId = "plus") {
     setSelectedPlan(plan);
     setAuthMode("register");
@@ -190,7 +196,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
       const res = await fetch("/api/auth/demo", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan: "pro" }),
+        body: JSON.stringify({ plan: "essentiel" }),
       });
       if (res.ok) {
         router.push("/app");
@@ -203,26 +209,26 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   return (
     <div className="min-h-screen bg-[#090b0f] text-zinc-100 selection:bg-emerald-500/30">
-      <div className="pointer-events-none fixed inset-x-0 top-0 h-[520px] bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.16),transparent_68%)]" />
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-[560px] bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.18),transparent_68%)]" />
 
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#090b0f]/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <a href="#">
+          <a href="#" className="vf-click-press">
             <VintflowLogo />
           </a>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
-            <a href="#fonctionnalites" className="hover:text-white transition">
+            <a href="#fonctionnalites" className="hover:text-white transition-colors">
               Fonctionnalités
             </a>
-            <a href="#outils-ia" className="hover:text-white transition">
+            <a href="#outils-ia" className="hover:text-white transition-colors">
               Outils IA
             </a>
-            <a href="#crosslisting" className="hover:text-white transition">
+            <a href="#crosslisting" className="hover:text-white transition-colors">
               Crosslisting
             </a>
-            <a href="#tarifs" className="hover:text-white transition">
+            <a href="#tarifs" className="hover:text-white transition-colors">
               Tarifs
             </a>
           </nav>
@@ -231,7 +237,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
             {isLoggedIn ? (
               <Button
                 onClick={() => router.push("/app")}
-                className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold rounded-xl"
+                className="vf-shimmer-btn bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold rounded-xl"
               >
                 Ouvrir mon espace
                 <ArrowRight className="ml-1.5 h-4 w-4" />
@@ -247,7 +253,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 </Button>
                 <Button
                   onClick={() => openSignup("plus")}
-                  className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold rounded-xl"
+                  className="vf-shimmer-btn bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.28)]"
                 >
                   Essai gratuit 14j
                 </Button>
@@ -260,11 +266,12 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
       <main className="relative">
         {/* Hero */}
         <section className="mx-auto max-w-5xl px-4 pt-16 pb-20 sm:px-6 md:pt-24 text-center">
-          <Badge className="mb-6 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold text-emerald-300">
+          <div className="vf-fade-up inline-flex items-center gap-2 mb-6 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold text-emerald-300">
+            <span className="vf-live-dot h-2 w-2 rounded-full bg-emerald-400" />
             Conçu pour Vinted, Leboncoin, TikTok Shop, eBay &amp; Whatnot
-          </Badge>
+          </div>
 
-          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl leading-[1.08]">
+          <h1 className="vf-fade-up-delay-1 text-4xl font-extrabold tracking-tight text-white sm:text-6xl leading-[1.08]">
             Domine la revente.
             <br />
             <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
@@ -272,17 +279,17 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
             </span>
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-zinc-400 leading-relaxed">
+          <p className="vf-fade-up-delay-2 mx-auto mt-6 max-w-2xl text-base sm:text-lg text-zinc-400 leading-relaxed">
             Excel te fait perdre des heures et sous-déclarer ton CA. Vintflow centralise
             tout au même endroit : ventes, marge réelle après URSSAF, crosslisting Vinted ↔
             Leboncoin, studio photo IA, factures PDF et bordereaux 10×15.
           </p>
 
-          <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+          <div className="vf-fade-up-delay-2 mt-9 flex flex-col sm:flex-row items-center justify-center gap-3.5">
             <Button
               size="lg"
               onClick={() => (isLoggedIn ? router.push("/app") : openSignup("plus"))}
-              className="w-full sm:w-auto h-12 rounded-xl bg-emerald-500 px-7 text-base font-bold text-emerald-950 hover:bg-emerald-400 shadow-[0_0_28px_rgba(16,185,129,0.28)]"
+              className="vf-shimmer-btn w-full sm:w-auto h-12 rounded-xl bg-emerald-500 px-8 text-base font-bold text-emerald-950 hover:bg-emerald-400 shadow-[0_0_32px_rgba(16,185,129,0.35)]"
             >
               Essai gratuit 14 jours
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -292,7 +299,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               variant="outline"
               disabled={demoLoading}
               onClick={launchDemo}
-              className="w-full sm:w-auto h-12 rounded-xl border-white/15 bg-white/[0.04] px-6 text-base font-semibold text-white hover:bg-white/[0.08]"
+              className="w-full sm:w-auto h-12 rounded-xl border-white/15 bg-white/[0.04] px-6 text-base font-semibold text-white hover:bg-white/[0.09] hover:border-emerald-500/40"
             >
               <Sparkles className="mr-2 h-4 w-4 text-emerald-400" />
               {demoLoading ? "Chargement..." : "Tester la démo en 1 clic"}
@@ -301,7 +308,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
 
           <div className="mt-7 flex items-center justify-center gap-3 text-xs text-zinc-400">
             <div className="flex -space-x-2">
-              {["C", "Y", "L", "H", "S"].map((l, i) => (
+              {["T", "I", "K", "L", "M"].map((l, i) => (
                 <span
                   key={i}
                   className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#090b0f] bg-gradient-to-br from-emerald-500 to-teal-700 text-[11px] font-bold text-white"
@@ -316,44 +323,131 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
             </span>
           </div>
 
-          {/* Clean Dark Dashboard Preview Frame */}
-          <div className="mt-14 rounded-3xl border border-white/10 bg-[#10141c] p-4 sm:p-6 shadow-2xl text-left">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-4 mb-5">
+          {/* Interactive Clickable Dashboard Frame */}
+          <div className="mt-14 rounded-3xl border border-white/10 bg-[#10141c]/95 p-4 sm:p-6 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.75)] text-left backdrop-blur-md">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4 mb-5">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
                 <span className="h-2.5 w-2.5 rounded-full bg-amber-500/70" />
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/70" />
-                <span className="ml-2 font-mono text-xs text-zinc-500">
+                <span className="ml-2 font-mono text-xs text-zinc-500 hidden sm:inline">
                   app.vintflow.fr
                 </span>
               </div>
-              <Badge className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30 text-[11px]">
-                Synchronisation multi-comptes active
-              </Badge>
+
+              <div className="flex flex-wrap gap-1.5 rounded-xl bg-white/[0.04] p-1 border border-white/[0.08]">
+                {[
+                  { id: "kpi", label: "Marge & URSSAF" },
+                  { id: "crosslist", label: "Crosslist LBC" },
+                  { id: "studio", label: "Studio Photo IA" },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setHeroTab(t.id as typeof heroTab)}
+                    className={`vf-click-press rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all ${
+                      heroTab === t.id
+                        ? "bg-emerald-500 text-emerald-950 shadow-sm"
+                        : "text-zinc-400 hover:text-white"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
-                <p className="text-xs text-zinc-400">CA du mois</p>
-                <p className="mt-1.5 text-2xl font-extrabold text-white">2 480 €</p>
-                <p className="mt-1 text-xs text-emerald-400">+18,4 % ce mois</p>
+            {heroTab === "kpi" && (
+              <div key="kpi" className="vf-tab-enter grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <div className="vf-card-interactive rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <p className="text-xs text-zinc-400">CA du mois</p>
+                  <p className="mt-1.5 text-2xl font-extrabold text-white">2 480 €</p>
+                  <p className="mt-1 text-xs text-emerald-400">+18,4 % vs mois dernier</p>
+                </div>
+                <div className="vf-card-interactive rounded-2xl border border-emerald-500/35 bg-emerald-500/[0.08] p-4">
+                  <p className="text-xs text-emerald-300">Marge nette réelle</p>
+                  <p className="mt-1.5 text-2xl font-extrabold text-emerald-400">1 241 €</p>
+                  <p className="mt-1 text-xs text-zinc-300">URSSAF 12,3 % déduite</p>
+                </div>
+                <div className="vf-card-interactive rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <p className="text-xs text-zinc-400">Stock suivi (SKU)</p>
+                  <p className="mt-1.5 text-2xl font-extrabold text-white">411 €</p>
+                  <p className="mt-1 text-xs text-zinc-400">Valeur revente : 1 085 €</p>
+                </div>
+                <div className="vf-card-interactive rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <p className="text-xs text-zinc-400">Colis à préparer</p>
+                  <p className="mt-1.5 text-2xl font-extrabold text-amber-300">2</p>
+                  <p className="mt-1 text-xs text-zinc-400">Bordereaux 10×15 prêts</p>
+                </div>
               </div>
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.07] p-4">
-                <p className="text-xs text-emerald-300">Marge nette réelle</p>
-                <p className="mt-1.5 text-2xl font-extrabold text-emerald-400">1 241 €</p>
-                <p className="mt-1 text-xs text-zinc-300">URSSAF 12,3 % déduite</p>
+            )}
+
+            {heroTab === "crosslist" && (
+              <div key="crosslist" className="vf-tab-enter grid gap-3 sm:grid-cols-3">
+                {[
+                  {
+                    title: "Veste Carhartt Detroit",
+                    price: "89 €",
+                    margin: "+47,55 € net",
+                    status: "Vinted + Leboncoin",
+                  },
+                  {
+                    title: "Pull Ralph Lauren Torsadé",
+                    price: "54 €",
+                    margin: "+29,86 € net",
+                    status: "Vinted + LBC + TikTok",
+                  },
+                  {
+                    title: "Doudoune TNF Nuptse 700",
+                    price: "145 €",
+                    margin: "+64,17 € net",
+                    status: "4 plateformes actives",
+                  },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="vf-card-interactive rounded-2xl border border-white/10 bg-white/[0.02] p-4 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white truncate">
+                        {item.title}
+                      </span>
+                      <span className="text-sm font-extrabold text-emerald-400">
+                        {item.price}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400">{item.margin}</p>
+                    <span className="inline-block rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300">
+                      {item.status}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
-                <p className="text-xs text-zinc-400">Stock suivi (SKU)</p>
-                <p className="mt-1.5 text-2xl font-extrabold text-white">411 €</p>
-                <p className="mt-1 text-xs text-zinc-400">Valeur revente : 1 085 €</p>
+            )}
+
+            {heroTab === "studio" && (
+              <div key="studio" className="vf-tab-enter grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+                  <p className="text-xs font-bold text-white">1. Détourage &amp; Fond Studio</p>
+                  <p className="mt-1 text-[11px] text-zinc-400">
+                    Isole le vêtement sur fond Blanc / Lin / Dark Luxe et change
+                    l&apos;empreinte photo anti-shadowban.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+                  <p className="text-xs font-bold text-white">2. Formats Auto 1080px</p>
+                  <p className="mt-1 text-[11px] text-zinc-400">
+                    Export exact Vinted 1080×1080, Leboncoin 1200×900 et TikTok Shop 1080×1350.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                  <p className="text-xs font-bold text-emerald-300">3. Scan IA → 3 fiches</p>
+                  <p className="mt-1 text-[11px] text-emerald-100/80">
+                    Génère titre SEO, descriptions Vinted &amp; LBC + script vidéo TikTok 15s.
+                  </p>
+                </div>
               </div>
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
-                <p className="text-xs text-zinc-400">Colis à préparer</p>
-                <p className="mt-1.5 text-2xl font-extrabold text-amber-300">2</p>
-                <p className="mt-1 text-xs text-zinc-400">Bordereaux 10×15 prêts</p>
-              </div>
-            </div>
+            )}
           </div>
         </section>
 
@@ -369,7 +463,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
 
           <div className="grid gap-5 md:grid-cols-6">
-            <div className="md:col-span-3 rounded-3xl border border-white/10 bg-[#10141c] p-6 overflow-hidden">
+            <div className="vf-card-interactive md:col-span-3 rounded-3xl border border-white/10 bg-[#10141c] p-6 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
                 <span className="inline-flex items-center gap-2 text-base font-bold text-white">
                   <TrendingUp className="h-4 w-4 text-emerald-400" />
@@ -400,7 +494,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            <div className="md:col-span-3 rounded-3xl border border-white/10 bg-[#10141c] p-6 overflow-hidden">
+            <div className="vf-card-interactive md:col-span-3 rounded-3xl border border-white/10 bg-[#10141c] p-6 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
                 <span className="inline-flex items-center gap-2 text-base font-bold text-white">
                   <MessageSquare className="h-4 w-4 text-cyan-400" />
@@ -429,7 +523,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            <div className="md:col-span-2 rounded-3xl border border-white/10 bg-[#10141c] p-6">
+            <div className="vf-card-interactive md:col-span-2 rounded-3xl border border-white/10 bg-[#10141c] p-6">
               <div className="flex items-center gap-2 text-base font-bold text-white mb-2">
                 <Package className="h-4 w-4 text-amber-400" />
                 Stock &amp; SKU
@@ -450,7 +544,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            <div className="md:col-span-2 rounded-3xl border border-white/10 bg-[#10141c] p-6">
+            <div className="vf-card-interactive md:col-span-2 rounded-3xl border border-white/10 bg-[#10141c] p-6">
               <div className="flex items-center gap-2 text-base font-bold text-white mb-2">
                 <FileText className="h-4 w-4 text-emerald-400" />
                 Factures PDF &amp; Compta
@@ -471,7 +565,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            <div className="md:col-span-2 rounded-3xl border border-white/10 bg-[#10141c] p-6 flex flex-col justify-between">
+            <div className="vf-card-interactive md:col-span-2 rounded-3xl border border-white/10 bg-[#10141c] p-6 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 text-base font-bold text-white mb-2">
                   <Printer className="h-4 w-4 text-purple-400" />
@@ -518,7 +612,8 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
             {ESSENTIAL_TOOLS.map((tool, i) => (
               <div
                 key={i}
-                className="rounded-2xl border border-white/10 bg-[#10141c] p-5 hover:border-emerald-500/35 transition"
+                onClick={() => openSignup("plus")}
+                className="vf-card-interactive vf-click-press cursor-pointer rounded-2xl border border-white/10 bg-[#10141c] p-5"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05] border border-white/10 mb-3.5">
                   {tool.icon}
@@ -532,7 +627,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
 
           {/* Live Simulator */}
-          <div className="rounded-3xl border border-white/10 bg-[#10141c] p-5 sm:p-8">
+          <div className="rounded-3xl border border-white/10 bg-[#10141c] p-5 sm:p-8 shadow-xl">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <div>
                 <h3 className="text-lg font-bold text-white">
@@ -544,10 +639,10 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
               <Button
                 size="sm"
-                onClick={launchDemo}
-                className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold rounded-xl"
+                onClick={() => openSignup("plus")}
+                className="vf-shimmer-btn bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold rounded-xl"
               >
-                Ouvrir le Studio complet
+                Débloquer le Studio IA complet
                 <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
               </Button>
             </div>
@@ -610,9 +705,9 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                         key={t.id}
                         type="button"
                         onClick={() => setSimTab(t.id as typeof simTab)}
-                        className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                        className={`vf-click-press rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                           simTab === t.id
-                            ? "bg-emerald-500 text-emerald-950"
+                            ? "bg-emerald-500 text-emerald-950 shadow-sm"
                             : "bg-white/5 text-zinc-400 hover:text-white"
                         }`}
                       >
@@ -624,7 +719,10 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                     {simCopy.seoTitle}
                   </span>
                 </div>
-                <div className="rounded-xl bg-white/[0.02] border border-white/10 p-3.5 text-xs text-zinc-200 whitespace-pre-wrap leading-relaxed min-h-[135px]">
+                <div
+                  key={simTab}
+                  className="vf-tab-enter rounded-xl bg-white/[0.02] border border-white/10 p-3.5 text-xs text-zinc-200 whitespace-pre-wrap leading-relaxed min-h-[135px]"
+                >
                   {simTab === "vinted"
                     ? simCopy.vinted
                     : simTab === "lbc"
@@ -690,7 +788,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-[#090b0f] p-5 space-y-4">
+              <div className="vf-card-interactive rounded-2xl border border-white/10 bg-[#090b0f] p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div>
                     <p className="text-xs text-zinc-400">Mode automatique Pro Scale (8h–23h)</p>
@@ -702,7 +800,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   />
                 </div>
 
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-all">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-white">
                       Veste Carhartt Detroit Canvas Noir
@@ -718,7 +816,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                     </span>
                     <ArrowRight className="h-3.5 w-3.5 text-zinc-500" />
                     <span
-                      className={`rounded-full border px-2.5 py-0.5 font-medium ${
+                      className={`rounded-full border px-2.5 py-0.5 font-medium transition-all ${
                         autoPublishDemo
                           ? "bg-orange-500/20 text-orange-300 border-orange-500/30"
                           : "bg-zinc-800 text-zinc-400 border-white/10"
@@ -730,10 +828,10 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 </div>
 
                 <Button
-                  onClick={launchDemo}
-                  className="w-full bg-white/10 hover:bg-white/15 text-white rounded-xl h-10 font-semibold"
+                  onClick={() => openSignup("pro")}
+                  className="vf-shimmer-btn w-full bg-emerald-500 text-emerald-950 hover:bg-emerald-400 rounded-xl h-10 font-bold"
                 >
-                  Tester le back-office complet (Démo Pro)
+                  Activer Pro Scale (14 jours d&apos;essai)
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -762,10 +860,10 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                     key={idx}
                     type="button"
                     onClick={() => setActiveAiIdx(idx)}
-                    className={`rounded-xl border px-3.5 py-2 text-xs text-left transition ${
+                    className={`vf-click-press rounded-xl border px-3.5 py-2 text-xs text-left transition-all ${
                       activeAiIdx === idx
-                        ? "border-emerald-500 bg-emerald-500/15 text-emerald-200 font-semibold"
-                        : "border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/20"
+                        ? "border-emerald-500 bg-emerald-500/15 text-emerald-200 font-semibold shadow-sm"
+                        : "border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25"
                     }`}
                   >
                     {preset.q}
@@ -774,7 +872,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[#10141c] p-5 space-y-4">
+            <div className="rounded-3xl border border-white/10 bg-[#10141c] p-5 space-y-4 shadow-xl">
               <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
                   <Bot className="h-4 w-4" />
@@ -787,7 +885,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div key={activeAiIdx} className="vf-tab-enter space-y-3">
                 <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 text-xs text-emerald-100 font-medium">
                   {AI_PRESETS[activeAiIdx].q}
                 </div>
@@ -799,31 +897,63 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
         </section>
 
-        {/* Time Lost + Reviews */}
+        {/* ROI Slider + Reviews */}
         <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 space-y-12">
-          <div className="rounded-3xl border border-white/10 bg-[#10141c] p-8 text-center">
-            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 text-amber-300 mb-3">
-              <Clock className="h-5 w-5" />
-            </div>
-            <h2 className="text-2xl font-extrabold text-white sm:text-3xl">
-              Récupère 20 heures par mois sur ta gestion
-            </h2>
-            <p className="mx-auto mt-2 max-w-xl text-sm text-zinc-400">
-              Finies les soirées du dimanche à saisir tes ventes dans Excel.
-            </p>
+          <div className="rounded-3xl border border-emerald-500/25 bg-gradient-to-b from-[#101822] to-[#0c1017] p-6 sm:p-10 shadow-xl">
+            <div className="grid gap-8 lg:grid-cols-12 items-center">
+              <div className="lg:col-span-6 space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
+                  <Clock className="h-3.5 w-3.5" />
+                  Rentabilisé dès la 2e vente
+                </div>
+                <h2 className="text-2xl font-extrabold text-white sm:text-3xl">
+                  Combien te rapporte Vintflow chaque mois ?
+                </h2>
+                <p className="text-sm text-zinc-400">
+                  Glisse le curseur selon ton volume de ventes sur Vinted &amp; Leboncoin :
+                </p>
 
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6 border-t border-white/10 pt-8">
-              <div>
-                <p className="text-3xl font-extrabold text-emerald-400">42,5k</p>
-                <p className="mt-1 text-xs text-zinc-400">Ventes synchronisées</p>
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-300">Ton volume actuel</span>
+                    <span className="rounded-lg bg-emerald-500/15 px-3 py-1 font-extrabold text-emerald-400">
+                      {monthlySalesEst} ventes / mois
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={10}
+                    max={250}
+                    step={5}
+                    value={monthlySalesEst}
+                    onChange={(e) => setMonthlySalesEst(Number(e.target.value))}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
               </div>
-              <div>
-                <p className="text-3xl font-extrabold text-white">2,4 M€</p>
-                <p className="mt-1 text-xs text-zinc-400">Flux financiers gérés</p>
-              </div>
-              <div>
-                <p className="text-3xl font-extrabold text-white">1,6 M€</p>
-                <p className="mt-1 text-xs text-zinc-400">Ventes suivies</p>
+
+              <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="rounded-2xl border border-white/10 bg-[#090b0f] p-4 text-center">
+                  <p className="text-[11px] text-zinc-400">Temps récupéré</p>
+                  <p className="mt-1.5 text-2xl font-extrabold text-white">
+                    +{hoursSaved} h
+                  </p>
+                  <p className="mt-1 text-[10px] text-zinc-500">par mois</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-[#090b0f] p-4 text-center">
+                  <p className="text-[11px] text-zinc-400">Ventes en + (LBC)</p>
+                  <p className="mt-1.5 text-2xl font-extrabold text-cyan-300">
+                    +{extraSalesEst}
+                  </p>
+                  <p className="mt-1 text-[10px] text-zinc-500">pièces écoulées</p>
+                </div>
+                <div className="rounded-2xl border border-emerald-500/35 bg-emerald-500/10 p-4 text-center">
+                  <p className="text-[11px] text-emerald-300">Gain net estimé</p>
+                  <p className="mt-1.5 text-2xl font-extrabold text-emerald-400">
+                    +{extraProfitEst} €
+                  </p>
+                  <p className="mt-1 text-[10px] text-emerald-200/70">vs 29–49 € d&apos;abo</p>
+                </div>
               </div>
             </div>
           </div>
@@ -836,7 +966,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               {REVIEWS.map((r) => (
                 <div
                   key={r.name}
-                  className="rounded-2xl border border-white/10 bg-[#10141c] p-6 flex flex-col justify-between"
+                  className="vf-card-interactive rounded-2xl border border-white/10 bg-[#10141c] p-6 flex flex-col justify-between"
                 >
                   <p className="text-sm text-zinc-300 leading-relaxed">&ldquo;{r.text}&rdquo;</p>
                   <div className="mt-5 border-t border-white/10 pt-3">
@@ -849,27 +979,27 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
         </section>
 
-        {/* Pricing Section: 3-tier business model */}
+        {/* Pricing Section: High-conversion 3-tier business model */}
         <section id="tarifs" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
             <Badge className="mb-3 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-              Essai gratuit 14 jours sur tous les plans
+              Essai gratuit 14 jours · 0 € aujourd&apos;hui
             </Badge>
             <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
               Un plan pour chaque étape de ton business
             </h2>
             <p className="mt-3 text-sm text-zinc-400">
-              Commence petit ou débloque toute la puissance de l&apos;IA et du crosslisting
-              illimité. Sans engagement.
+              Commence dès 9 €/mois ou débloque la suite IA &amp; l&apos;automatisation.
+              Annulation en 1 clic à tout moment.
             </p>
 
             <div className="mt-6 inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#10141c] p-1 text-xs">
               <button
                 type="button"
                 onClick={() => setBillingCycle("monthly")}
-                className={`rounded-full px-4 py-2 font-semibold transition ${
+                className={`vf-click-press rounded-full px-4 py-2 font-semibold transition-all ${
                   billingCycle === "monthly"
-                    ? "bg-white text-zinc-950"
+                    ? "bg-white text-zinc-950 shadow-sm"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
@@ -878,9 +1008,9 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               <button
                 type="button"
                 onClick={() => setBillingCycle("annual")}
-                className={`rounded-full px-4 py-2 font-semibold transition flex items-center gap-1.5 ${
+                className={`vf-click-press rounded-full px-4 py-2 font-semibold transition-all flex items-center gap-1.5 ${
                   billingCycle === "annual"
-                    ? "bg-emerald-500 text-emerald-950"
+                    ? "bg-emerald-500 text-emerald-950 shadow-sm"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
@@ -902,12 +1032,12 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
 
               return (
                 <div
-                  key={planId}
-                  className={`rounded-3xl border p-7 flex flex-col justify-between ${
+                  key={`${planId}-${billingCycle}`}
+                  className={`vf-card-interactive vf-tab-enter rounded-3xl border p-7 flex flex-col justify-between ${
                     isPro
-                      ? "border-emerald-500/70 bg-gradient-to-b from-emerald-500/[0.12] to-[#10141c] shadow-[0_0_45px_rgba(16,185,129,0.16)]"
+                      ? "border-emerald-500/75 bg-gradient-to-b from-emerald-500/[0.14] to-[#10141c] shadow-[0_0_50px_rgba(16,185,129,0.18)]"
                       : isPlus
-                        ? "border-cyan-500/40 bg-[#10141c]"
+                        ? "border-cyan-500/45 bg-[#10141c]"
                         : "border-white/10 bg-[#0d1118]"
                   }`}
                 >
@@ -965,22 +1095,33 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                     onClick={() => openSignup(planId)}
                     className={`mt-8 w-full h-11 rounded-xl font-bold ${
                       isPro
-                        ? "bg-emerald-500 text-emerald-950 hover:bg-emerald-400"
+                        ? "vf-shimmer-btn bg-emerald-500 text-emerald-950 hover:bg-emerald-400 shadow-[0_0_25px_rgba(16,185,129,0.28)]"
                         : isPlus
                           ? "bg-white text-zinc-950 hover:bg-zinc-200"
                           : "bg-white/10 text-white hover:bg-white/15"
                     }`}
                   >
-                    Essai 14 jours ({p.name})
+                    Démarrer 14j gratuits ({p.name})
                   </Button>
                 </div>
               );
             })}
           </div>
 
-          <p className="mt-6 text-center text-xs text-zinc-500">
-            Prix en euros TTC (TVA 20 % incluse). Facturation HT pour les sociétés UE avec TVA valide.
-          </p>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-5 text-xs text-zinc-400">
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4 text-emerald-400" />
+              Paiement chiffré Stripe
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Check className="h-4 w-4 text-emerald-400" />
+              14 jours gratuits · 0 € débité aujourd&apos;hui
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Zap className="h-4 w-4 text-emerald-400" />
+              Résiliable en 1 clic
+            </span>
+          </div>
         </section>
 
         {/* FAQ */}
@@ -994,22 +1135,22 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               return (
                 <div
                   key={idx}
-                  className="rounded-2xl border border-white/10 bg-[#10141c] overflow-hidden"
+                  className="rounded-2xl border border-white/10 bg-[#10141c] overflow-hidden transition-colors hover:border-white/20"
                 >
                   <button
                     type="button"
                     onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-bold text-white"
+                    className="vf-click-press flex w-full items-center justify-between px-5 py-4 text-left text-sm font-bold text-white"
                   >
                     <span>{item.q}</span>
                     <ChevronDown
-                      className={`h-4 w-4 text-zinc-400 transition-transform ${
-                        isOpen ? "rotate-180" : ""
+                      className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${
+                        isOpen ? "rotate-180 text-emerald-400" : ""
                       }`}
                     />
                   </button>
                   {isOpen && (
-                    <div className="px-5 pb-4 text-xs text-zinc-400 leading-relaxed">
+                    <div className="vf-tab-enter px-5 pb-4 text-xs text-zinc-400 leading-relaxed">
                       {item.a}
                     </div>
                   )}

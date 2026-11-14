@@ -80,6 +80,10 @@
   html {
     @apply font-sans;
   }
+  button:not(:disabled),
+  a[href] {
+    cursor: pointer;
+  }
 }
 
 @keyframes marquee-x {
@@ -100,12 +104,136 @@
   }
 }
 
+@keyframes vf-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes vf-tab-switch {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vf-shimmer-sweep {
+  0% {
+    transform: translateX(-140%) skewX(-20deg);
+  }
+  55%,
+  100% {
+    transform: translateX(240%) skewX(-20deg);
+  }
+}
+
+@keyframes vf-pulse-ring {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.65);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.65);
+    opacity: 0;
+  }
+}
+
 .animate-marquee {
   animation: marquee-x 28s linear infinite;
 }
 
 .animate-marquee-reverse {
   animation: marquee-x-reverse 32s linear infinite;
+}
+
+.vf-fade-up {
+  animation: vf-fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.vf-fade-up-delay-1 {
+  animation: vf-fade-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
+}
+
+.vf-fade-up-delay-2 {
+  animation: vf-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both;
+}
+
+.vf-tab-enter {
+  animation: vf-tab-switch 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.vf-shimmer-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.vf-shimmer-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.38),
+    transparent
+  );
+  animation: vf-shimmer-sweep 3.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.vf-card-interactive {
+  transition:
+    transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.24s ease,
+    box-shadow 0.24s ease,
+    background-color 0.24s ease;
+}
+
+.vf-card-interactive:hover {
+  transform: translateY(-3px);
+  border-color: rgba(16, 185, 129, 0.42);
+  box-shadow: 0 14px 36px -12px rgba(16, 185, 129, 0.2);
+}
+
+.vf-click-press {
+  transition:
+    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.vf-click-press:active {
+  transform: scale(0.96);
+}
+
+.vf-live-dot {
+  position: relative;
+}
+
+.vf-live-dot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: #34d399;
+  animation: vf-pulse-ring 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
 }
 
 @media print {

@@ -120,16 +120,16 @@ export function AuthModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#10141c] border-white/10 text-zinc-100 sm:max-w-md shadow-2xl">
+      <DialogContent className="vf-tab-enter bg-[#10141c] border-white/15 text-zinc-100 sm:max-w-md shadow-[0_25px_70px_-10px_rgba(0,0,0,0.85)]">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold tracking-tight text-white">
             {mode === "register"
-              ? "Essai gratuit 14 jours"
+              ? "Active ton essai gratuit 14 jours"
               : "Connexion à Vintflow"}
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
             {mode === "register"
-              ? "Sans engagement. Teste tout le cockpit Vinted, Leboncoin & TikTok."
+              ? "Accès immédiat à ton cockpit. Annulation en 1 clic à tout moment."
               : "Retrouve tes ventes, ton stock SKU et tes marges en temps réel."}
           </DialogDescription>
         </DialogHeader>
@@ -141,9 +141,9 @@ export function AuthModal({
               setMode("register");
               setError(null);
             }}
-            className={`rounded-md py-2 transition ${
+            className={`vf-click-press rounded-md py-2 transition-all ${
               mode === "register"
-                ? "bg-emerald-500 text-emerald-950 font-semibold"
+                ? "bg-emerald-500 text-emerald-950 font-semibold shadow-sm"
                 : "text-zinc-400 hover:text-white"
             }`}
           >
@@ -155,9 +155,9 @@ export function AuthModal({
               setMode("login");
               setError(null);
             }}
-            className={`rounded-md py-2 transition ${
+            className={`vf-click-press rounded-md py-2 transition-all ${
               mode === "login"
-                ? "bg-emerald-500 text-emerald-950 font-semibold"
+                ? "bg-emerald-500 text-emerald-950 font-semibold shadow-sm"
                 : "text-zinc-400 hover:text-white"
             }`}
           >
@@ -178,10 +178,10 @@ export function AuthModal({
                       key={pid}
                       type="button"
                       onClick={() => setPlan(pid)}
-                      className={`rounded-lg border p-2.5 text-left transition ${
+                      className={`vf-click-press rounded-lg border p-2.5 text-left transition-all ${
                         plan === pid
-                          ? "border-emerald-500 bg-emerald-500/15"
-                          : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                          ? "border-emerald-500 bg-emerald-500/15 shadow-[0_0_20px_rgba(16,185,129,0.18)]"
+                          : "border-white/10 bg-white/[0.02] hover:border-white/25"
                       }`}
                     >
                       <p className="text-[11px] font-bold text-white truncate">
@@ -291,7 +291,7 @@ export function AuthModal({
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold h-10"
+            className="vf-shimmer-btn w-full bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold h-11 shadow-[0_0_25px_rgba(16,185,129,0.25)]"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />

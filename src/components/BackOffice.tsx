@@ -693,9 +693,9 @@ export function BackOffice({
                 key={item.id}
                 type="button"
                 onClick={() => setTab(item.id)}
-                className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium transition ${
+                className={`vf-click-press flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
                   tab === item.id
-                    ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold"
+                    ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/35 font-bold shadow-[0_0_16px_rgba(16,185,129,0.12)]"
                     : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-100"
                 }`}
               >
@@ -810,7 +810,10 @@ export function BackOffice({
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 space-y-6 max-w-7xl w-full mx-auto">
+        <main
+          key={tab}
+          className="vf-tab-enter flex-1 p-4 sm:p-6 space-y-6 max-w-7xl w-full mx-auto"
+        >
           {/* TAB 1: OVERVIEW */}
           {tab === "overview" && (
             <>

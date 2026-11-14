@@ -717,10 +717,10 @@ export function ResellerToolsStudio({
             key={item.id}
             type="button"
             onClick={() => setSubTab(item.id)}
-            className={`rounded-2xl border p-3.5 text-left transition ${
+            className={`vf-click-press rounded-2xl border p-3.5 text-left transition-all ${
               subTab === item.id
-                ? "border-emerald-500/60 bg-emerald-500/10"
-                : "border-white/10 bg-[#10141c] hover:border-white/20"
+                ? "border-emerald-500/60 bg-emerald-500/12 shadow-[0_0_24px_rgba(16,185,129,0.15)]"
+                : "border-white/10 bg-[#10141c] hover:border-white/25"
             }`}
           >
             <div className="flex items-center gap-2 font-bold text-xs text-white">
@@ -734,7 +734,7 @@ export function ResellerToolsStudio({
 
       {/* TOOL 1: STUDIO PHOTO */}
       {subTab === "photo" && (
-        <div className="grid gap-6 lg:grid-cols-12 rounded-2xl border border-white/10 bg-[#10141c] p-5">
+        <div key="photo" className="vf-tab-enter grid gap-6 lg:grid-cols-12 rounded-2xl border border-white/10 bg-[#10141c] p-5">
           <div className="lg:col-span-5 space-y-4">
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -954,7 +954,7 @@ export function ResellerToolsStudio({
 
       {/* TOOL 2: AI LISTING + TIKTOK SCRIPT GENERATOR */}
       {subTab === "listing" && (
-        <div className="grid gap-6 lg:grid-cols-12">
+        <div key="listing" className="vf-tab-enter grid gap-6 lg:grid-cols-12">
           <form
             onSubmit={handleGenerateListing}
             className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-3 text-xs"
@@ -1160,7 +1160,7 @@ export function ResellerToolsStudio({
 
       {/* TOOL 3: ANTI-SHADOWBAN */}
       {subTab === "antishadowban" && (
-        <div className="grid gap-6 lg:grid-cols-12">
+        <div key="antishadowban" className="vf-tab-enter grid gap-6 lg:grid-cols-12">
           <form
             onSubmit={handleAntiShadowban}
             className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-3 text-xs"
@@ -1286,7 +1286,7 @@ export function ResellerToolsStudio({
 
       {/* TOOL 4: BUNDLE CALCULATOR & NEGOTIATION SNIPER */}
       {subTab === "negotiation" && (
-        <div className="grid gap-6 lg:grid-cols-12">
+        <div key="negotiation" className="vf-tab-enter grid gap-6 lg:grid-cols-12">
           <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4 text-xs">
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
               <Calculator className="h-4 w-4 text-emerald-400" />
