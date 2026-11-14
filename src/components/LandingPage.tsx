@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Bot,
+  Camera,
   Check,
   ChevronDown,
   Clock,
@@ -15,15 +17,21 @@ import {
   Package,
   Printer,
   RefreshCw,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
+  Swords,
   TrendingUp,
+  Video,
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import { AuthModal } from "@/components/AuthModal";
+import { VintflowLogo } from "@/components/VintflowLogo";
+import { computeNetMargin, formatEuro, generateListingCopy } from "@/lib/format";
 import { PLANS, type BillingCycle, type PlanId } from "@/lib/plans";
 
 const PROFIT_TICKER = [
@@ -56,7 +64,39 @@ const INVOICE_TICKER = [
   { num: "FAC-2026-040", price: "42 €" },
   { num: "FAC-2026-039", price: "58 €" },
   { num: "FAC-2026-038", price: "34 €" },
-  { num: "FAC-2026-037", price: "46 €" },
+];
+
+const FORUM_PAIN_POINTS = [
+  {
+    icon: <Camera className="h-4 w-4 text-emerald-400" />,
+    pain: "« Retoucher et recadrer les photos me prend un temps fou »",
+    fix: "Studio Photo Vintflow : éclairage auto, fond studio propre et export exact Vinted (1080×1080), Leboncoin (1200×900) et TikTok (1080×1350).",
+  },
+  {
+    icon: <ShieldAlert className="h-4 w-4 text-amber-400" />,
+    pain: "« Mes republications passent en vérif 24h ou prennent 0 vue »",
+    fix: "Bouclier Anti-Shadowban : change l'empreinte photo, reformule titre/texte sans spam de hashtags et publie aux pics d'audience FR.",
+  },
+  {
+    icon: <Swords className="h-4 w-4 text-rose-400" />,
+    pain: "« Les acheteurs qui envoient -40 % ou 'dernier prix ?' sans bonjour »",
+    fix: "Sniper Négociation : calcule ton prix plancher après URSSAF et génère une contre-offre ferme ou un pivot vers un lot en 1 clic.",
+  },
+  {
+    icon: <Sparkles className="h-4 w-4 text-cyan-400" />,
+    pain: "« Je perds 10 min par fiche à adapter entre Vinted, LBC et TikTok »",
+    fix: "Générateur IA 3-en-1 : 1 fiche produit -> titre SEO, annonce Vinted + mesures, texte Leboncoin propre et script vidéo TikTok Shop 15s.",
+  },
+  {
+    icon: <Video className="h-4 w-4 text-pink-400" />,
+    pain: "« L'app TikTok Shop n'envoie pas les notifs & la messagerie LBC bug »",
+    fix: "Cockpit unifié : commandes, alertes colis à expédier et messagerie centralisée de tous tes comptes sur un seul écran.",
+  },
+  {
+    icon: <FileSpreadsheet className="h-4 w-4 text-purple-400" />,
+    pain: "« Tous les dimanches je galère sur Excel avec l'URSSAF et mes factures »",
+    fix: "Compta & Factures auto : marge nette déduite à la vente, alerte seuil TVA, factures PDF et export CSV livre des recettes.",
+  },
 ];
 
 const AI_PRESETS = [
@@ -65,12 +105,12 @@ const AI_PRESETS = [
     a: "Tu as encaissé 2 480 € sur 44 ventes ce mois-ci. Après déduction de tes achats (920 €), boosts (14 €) et cotisations URSSAF estimées (305 €), ta marge nette réelle est de 1 241 € (50,0 %).",
   },
   {
-    q: "J'ai combien en attente de finalisation ?",
-    a: "Tu as 4 colis à expédier aujourd'hui (189 €) et 7 colis en transit Mondial Relay / Vinted Go (364 €). Total en attente de versement dans ton wallet : 553 €.",
+    q: "Quels articles dorment depuis +14 jours ?",
+    a: "Tu as 2 articles dormants (Nike Air Max 90 à 78 € et Jean Levi's 501 à 45 €). Je peux appliquer -10 % et régénérer une variante anti-shadowban avant le pic de dimanche 19h.",
   },
   {
     q: "Comment fonctionne le retrait auto Leboncoin ?",
-    a: "Dès qu'un article est vendu sur Vinted, VintFlow masque l'annonce correspondante sur Leboncoin automatiquement (ou en 1 clic selon ton réglage), évitant les doubles ventes.",
+    a: "Dès qu'un article est vendu sur Vinted, Vintflow masque l'annonce correspondante sur Leboncoin automatiquement (ou en 1 clic selon ton réglage), évitant les doubles ventes.",
   },
 ];
 
@@ -82,28 +122,28 @@ const REVIEWS = [
   },
   {
     name: "Inès B.",
-    role: "Boutique fripe multi-comptes",
-    text: "Le crosslisting Vinted vers Leboncoin avec retrait automatique quand ça se vend m'a fait gagner au moins 25 % de ventes supplémentaires sans double commande.",
+    role: "Boutique fripe multi-comptes & TikTok Shop",
+    text: "Le studio photo + le bouclier anti-shadowban m'ont redonné des vues sur des pièces qui dormaient depuis 3 semaines. Et le crosslisting LBC fait +25 % de CA.",
   },
   {
     name: "Kévin R.",
     role: "Micro-entrepreneur seconde main",
-    text: "L'alerte seuil TVA et les bordereaux 10×15 avec le SKU imprimé dessus m'ont évité plein d'erreurs de colis quand j'expédie 15 paquets d'un coup.",
+    text: "Le sniper de négociation m'empêche de brader sous ma marge quand je reçois 10 offres à -40 % par jour, et les bordereaux 10×15 avec SKU sont parfaits.",
   },
 ];
 
 const FAQS = [
   {
-    q: "Est-ce que VintFlow republie automatiquement mes annonces sur Vinted ?",
-    a: "Non, par sécurité pour tes comptes : VintFlow ne fait pas de spam ou de republication agressive interdite. En revanche, tu prépares tes fiches optimisées et tu crosslistes entre Vinted et Leboncoin avec retrait automatique dès qu'une pièce est vendue.",
+    q: "Est-ce que Vintflow republie de façon risquée sur Vinted ?",
+    a: "Non, par sécurité pour tes comptes : Vintflow évite les bots de spam interdits. Son Bouclier Anti-Shadowban modifie légèrement l'empreinte photo et reformule le texte pour éviter les blocages de vérification 24h quand tu remets un article en ligne.",
   },
   {
     q: "Comment fonctionne l'essai gratuit de 14 jours ?",
-    a: "Tu crées ton espace en 30 secondes (ou tu testes le bac à sable démo en 1 clic). Tu profites de toutes les fonctionnalités Starter ou Pro pendant 14 jours sans engagement.",
+    a: "Tu crées ton espace en 30 secondes (ou tu testes le bac à sable démo en 1 clic). Tu profites de tous les outils IA, du studio photo, du crosslisting et des factures PDF pendant 14 jours sans engagement.",
   },
   {
     q: "Puis-je exporter ma comptabilité pour ma micro-entreprise ou mon comptable ?",
-    a: "Oui. VintFlow calcule tes cotisations URSSAF estimées à chaque vente, suit tes seuils micro et TVA, génère des factures PDF conformes France/Belgique et exporte ton livre des recettes au format CSV/Excel.",
+    a: "Oui. Vintflow calcule tes cotisations URSSAF estimées à chaque vente, suit tes seuils micro et TVA, génère des factures PDF conformes France/Belgique et exporte ton livre des recettes au format CSV/Excel.",
   },
   {
     q: "Quelle différence entre Starter (29 €) et Pro (49 €) ?",
@@ -121,6 +161,30 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [activeAiIdx, setActiveAiIdx] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [demoLoading, setDemoLoading] = useState(false);
+
+  // Live Interactive Sandbox on Landing Page
+  const [simTitle, setSimTitle] = useState("Veste Carhartt Detroit Canvas");
+  const [simBrand, setSimBrand] = useState("Carhartt");
+  const [simBuy, setSimBuy] = useState("28");
+  const [simSell, setSimSell] = useState("89");
+  const [simPlatformTab, setSimPlatformTab] = useState<"vinted" | "lbc" | "tiktok">("vinted");
+
+  const simCopy = generateListingCopy({
+    title: simTitle || "Veste Vintage",
+    brand: simBrand || "Carhartt",
+    category: "Vestes",
+    size: "L",
+    condition: "Très bon état",
+    listingPrice: Number(simSell) || 50,
+  });
+  const simMargin = computeNetMargin({
+    grossAmount: Number(simSell) || 0,
+    purchaseCost: Number(simBuy) || 0,
+    platformFees: 0,
+    boostCost: 0,
+    shippingCost: 0,
+    urssafRate: 12.3,
+  });
 
   function openSignup(plan: PlanId = "starter") {
     setSelectedPlan(plan);
@@ -152,30 +216,24 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   return (
     <div className="min-h-screen bg-[#090b0f] text-zinc-100 selection:bg-emerald-500/30">
-      {/* Subtle radial glow background */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 h-[520px] bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.16),transparent_68%)]" />
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-[560px] bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.18),transparent_68%)]" />
 
       {/* Sticky Header */}
-      <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-[#090b0f]/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-[#090b0f]/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <a href="#" className="flex items-center gap-2.5 font-extrabold tracking-tight text-lg">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-emerald-950 font-black">
-              V
-            </span>
-            <span>
-              Vint<span className="text-emerald-400">Flow</span>
-            </span>
+          <a href="#">
+            <VintflowLogo />
           </a>
 
           <nav className="hidden md:flex items-center gap-7 text-sm text-zinc-400">
+            <a href="#outils-ia" className="hover:text-white transition">
+              Outils IA
+            </a>
             <a href="#fonctionnalites" className="hover:text-white transition">
-              Fonctionnalités
+              Back-office
             </a>
             <a href="#crosslisting" className="hover:text-white transition">
               Crosslisting
-            </a>
-            <a href="#assistant-ia" className="hover:text-white transition">
-              Assistant IA
             </a>
             <a href="#tarifs" className="hover:text-white transition">
               Tarifs
@@ -214,33 +272,41 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
 
       <main className="relative">
         {/* Hero Section */}
-        <section className="mx-auto max-w-6xl px-4 pt-14 pb-16 sm:px-6 md:pt-22">
+        <section className="mx-auto max-w-6xl px-4 pt-14 pb-16 sm:px-6 md:pt-20">
           <div className="mx-auto max-w-3xl text-center">
-            <Badge className="mb-5 border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-3 py-1 text-[11px] font-semibold tracking-wide uppercase">
-              Conçu pour les vendeurs Vinted, TikTok Shop, Leboncoin, eBay &amp; Whatnot
-            </Badge>
+            <div className="mb-5 flex flex-wrap items-center justify-center gap-2">
+              {["Vinted", "Leboncoin", "TikTok Shop", "eBay", "Whatnot"].map((plat) => (
+                <span
+                  key={plat}
+                  className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-300"
+                >
+                  {plat}
+                </span>
+              ))}
+            </div>
 
             <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl leading-[1.06]">
               Domine la revente.
               <br />
               <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
-                Maximise tes profits.
+                Vends 3× plus vite avec l&apos;IA.
               </span>
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-base text-zinc-400 sm:text-lg leading-relaxed">
-              Excel te fait perdre des heures et sous-déclarer ton CA. VintFlow centralise
-              tout ton business Vinted, Leboncoin, TikTok Shop, eBay et Whatnot : ventes,
-              stock SKU, marges réelles après URSSAF, bordereaux 10×15 et factures PDF.
+              Arrête de perdre 20 h par mois entre photos, descriptions, négociateurs à
+              -40 % et tableaux Excel. <strong className="text-zinc-200">Vintflow</strong>{" "}
+              réunit studio photo, générateur d&apos;annonces IA, bouclier anti-shadowban,
+              crosslisting Vinted ↔ Leboncoin, marges URSSAF et factures PDF.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button
                 size="lg"
                 onClick={() => (isLoggedIn ? router.push("/app") : openSignup("starter"))}
-                className="w-full sm:w-auto bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold h-12 px-7 text-base shadow-[0_0_30px_rgba(16,185,129,0.28)]"
+                className="w-full sm:w-auto bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold h-12 px-7 text-base shadow-[0_0_32px_rgba(16,185,129,0.3)]"
               >
-                Essaie gratuitement (14 jours)
+                Démarrer gratuitement (14 jours)
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Button
@@ -251,7 +317,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 className="w-full sm:w-auto border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-white h-12 px-6 text-base"
               >
                 <Sparkles className="mr-2 h-4 w-4 text-emerald-400" />
-                {demoLoading ? "Chargement du back-office..." : "Tester la démo en 1 clic"}
+                {demoLoading ? "Ouverture du cockpit..." : "Tester la démo complète en 1 clic"}
               </Button>
             </div>
 
@@ -267,65 +333,176 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 ))}
               </div>
               <span>
-                <strong className="text-white">+4 200 vendeurs</strong> · 4,7/5 · Sans engagement
+                <strong className="text-white">+4 200 revendeurs</strong> · Note 4,8/5 ·
+                Prêt à l&apos;emploi en 30 secondes
               </span>
             </div>
           </div>
 
-          {/* Interactive Dashboard Preview Frame */}
-          <div className="mt-12 rounded-2xl border border-white/10 bg-[#10141c] p-3 sm:p-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-500/70" />
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/70" />
-                <span className="ml-2 text-xs text-zinc-500 font-mono">
-                  app.vintflow.fr/dashboard
-                </span>
+          {/* Interactive Live Preview Simulator right on the landing page */}
+          <div id="outils-ia" className="mt-12 rounded-3xl border border-white/10 bg-[#10141c] p-4 sm:p-6 shadow-2xl">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-4 mb-5">
+              <div>
+                <Badge className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30 text-[10px] mb-1">
+                  TESTE EN DIRECT
+                </Badge>
+                <h2 className="text-base sm:text-lg font-bold text-white">
+                  Simulateur IA Multi-Plateformes &amp; Calcul de Marge URSSAF
+                </h2>
               </div>
-              <Badge className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30 text-[11px]">
-                Synchro multi-comptes active
-              </Badge>
+              <Button
+                size="sm"
+                onClick={launchDemo}
+                className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs"
+              >
+                Ouvrir Studio Photo &amp; Back-Office
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </Button>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                <p className="text-xs text-zinc-400">Chiffre d&apos;affaires (30j)</p>
-                <p className="mt-1 text-2xl font-bold text-white">2 480 €</p>
-                <p className="mt-1 text-[11px] text-emerald-400">+18,4 % vs mois dernier</p>
+            <div className="grid gap-5 lg:grid-cols-12 items-start">
+              <div className="lg:col-span-5 space-y-3 text-xs">
+                <div className="space-y-1">
+                  <span className="text-zinc-400">Article à vendre</span>
+                  <Input
+                    value={simTitle}
+                    onChange={(e) => setSimTitle(e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <span className="text-zinc-400">Marque</span>
+                    <Input
+                      value={simBrand}
+                      onChange={(e) => setSimBrand(e.target.value)}
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-zinc-400">Achat (€)</span>
+                    <Input
+                      type="number"
+                      value={simBuy}
+                      onChange={(e) => setSimBuy(e.target.value)}
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-emerald-400 font-semibold">Revente (€)</span>
+                    <Input
+                      type="number"
+                      value={simSell}
+                      onChange={(e) => setSimSell(e.target.value)}
+                      className="bg-emerald-500/10 border-emerald-500/30 text-white font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5 pt-1">
+                  <div className="rounded-xl border border-white/10 bg-[#090b0f] p-3">
+                    <p className="text-[11px] text-zinc-400">URSSAF estimée (12,3 %)</p>
+                    <p className="text-lg font-extrabold text-white">
+                      {formatEuro(simMargin.urssafAmount)}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
+                    <p className="text-[11px] text-emerald-300">Marge nette réelle</p>
+                    <p className="text-lg font-extrabold text-emerald-400">
+                      {formatEuro(simMargin.netMargin)}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                <p className="text-xs text-zinc-400">Marge nette après URSSAF</p>
-                <p className="mt-1 text-2xl font-bold text-emerald-400">1 241 €</p>
-                <p className="mt-1 text-[11px] text-zinc-400">URSSAF 12,3 % : 305 € déduits</p>
-              </div>
-              <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                <p className="text-xs text-zinc-400">Stock actif (SKU liés)</p>
-                <p className="mt-1 text-2xl font-bold text-white">411 €</p>
-                <p className="mt-1 text-[11px] text-zinc-400">Valeur revente est. : 1 085 €</p>
-              </div>
-              <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                <p className="text-xs text-zinc-400">Colis à expédier</p>
-                <p className="mt-1 text-2xl font-bold text-amber-300">2</p>
-                <p className="mt-1 text-[11px] text-zinc-400">Bordereaux 10×15 prêts</p>
+
+              <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#090b0f] p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex gap-1.5">
+                    {[
+                      { id: "vinted", label: "Annonce Vinted" },
+                      { id: "lbc", label: "Annonce Leboncoin" },
+                      { id: "tiktok", label: "Script TikTok Shop" },
+                    ].map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() =>
+                          setSimPlatformTab(t.id as typeof simPlatformTab)
+                        }
+                        className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                          simPlatformTab === t.id
+                            ? "bg-emerald-500 text-emerald-950"
+                            : "bg-white/5 text-zinc-400 hover:text-white"
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="font-mono text-[11px] text-zinc-500">
+                    Titre SEO : {simCopy.seoTitle}
+                  </span>
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5 text-xs text-zinc-200 whitespace-pre-wrap leading-relaxed min-h-[135px]">
+                  {simPlatformTab === "vinted"
+                    ? simCopy.vinted
+                    : simPlatformTab === "lbc"
+                      ? simCopy.leboncoin
+                      : `[0-3s HOOK] "Regarde cette ${simTitle} (${simBrand}) prête à partir — zéro défaut."\n[3-10s PREUVE] "Je te montre la coupe, la matière et les finitions en gros plan."\n[10-15s CTA] "Dispo à ${simSell} € maintenant · Envoi rapide en 24h !"`}
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Bento Grid: L'arsenal ultime */}
-        <section id="fonctionnalites" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-          <div className="mb-10 text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
-              L&apos;arsenal ultime
+        {/* Forum Pain Points Solved Section */}
+        <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+          <div className="mb-10 text-center max-w-2xl mx-auto">
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-400">
+              Conçu d&apos;après les vrais retours de vendeurs
             </p>
             <h2 className="mt-2 text-3xl font-extrabold text-white sm:text-4xl">
-              Tout ce qu&apos;il te faut pour piloter ton business de seconde main
+              Les 6 galères qui te bloquent sur Vinted, Leboncoin &amp; TikTok Shop
+            </h2>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {FORUM_PAIN_POINTS.map((item, idx) => (
+              <div
+                key={idx}
+                className="rounded-2xl border border-white/10 bg-[#10141c] p-5 flex flex-col justify-between gap-3 hover:border-emerald-500/30 transition"
+              >
+                <div className="space-y-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.05] border border-white/10">
+                    {item.icon}
+                  </div>
+                  <p className="text-sm font-bold text-white leading-snug">
+                    {item.pain}
+                  </p>
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed border-t border-white/10 pt-3">
+                  <strong className="text-emerald-400">Solution Vintflow : </strong>
+                  {item.fix}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Bento Grid: L'arsenal ultime */}
+        <section id="fonctionnalites" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+          <div className="mb-10 text-center">
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
+              L&apos;arsenal complet
+            </p>
+            <h2 className="mt-2 text-3xl font-extrabold text-white sm:text-4xl">
+              Un seul cockpit pour gérer tout ton business de revente
             </h2>
           </div>
 
           <div className="grid gap-4 md:grid-cols-6">
-            {/* Card 1: Profit & URSSAF */}
+            {/* Card 1 */}
             <div className="md:col-span-3 rounded-2xl border border-white/10 bg-[#10141c] p-6 overflow-hidden">
               <div className="flex items-center justify-between mb-4">
                 <span className="inline-flex items-center gap-2 text-sm font-semibold text-white">
@@ -337,8 +514,8 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 </Badge>
               </div>
               <p className="text-sm text-zinc-400 mb-5">
-                Pas une marge théorique : prix d&apos;achat, boosts, frais plateforme, port et
-                cotisations URSSAF déduits à chaque commande.
+                Prix d&apos;achat, boosts, frais plateforme, port et cotisations URSSAF
+                déduits à chaque commande.
               </p>
               <div className="relative overflow-hidden py-1">
                 <div className="flex w-max gap-3 animate-marquee">
@@ -357,20 +534,20 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            {/* Card 2: Messagerie unifiée */}
+            {/* Card 2 */}
             <div className="md:col-span-3 rounded-2xl border border-white/10 bg-[#10141c] p-6 overflow-hidden">
               <div className="flex items-center justify-between mb-4">
                 <span className="inline-flex items-center gap-2 text-sm font-semibold text-white">
                   <MessageSquare className="h-4 w-4 text-cyan-400" />
-                  Messagerie multi-comptes unifiée
+                  Messagerie multi-comptes + Sniper Négo
                 </span>
                 <Badge variant="outline" className="border-white/10 text-zinc-400 text-[11px]">
                   +30 h gagnées / mois
                 </Badge>
               </div>
               <p className="text-sm text-zinc-400 mb-5">
-                Réponds à tous tes acheteurs Vinted, Leboncoin et TikTok Shop depuis un seul
-                écran avec réponses rapides prêtes à l&apos;emploi.
+                Centralise tes messages Vinted, Leboncoin &amp; TikTok Shop avec réponses
+                stratégiques prêtes en 1 clic.
               </p>
               <div className="relative overflow-hidden py-1">
                 <div className="flex w-max gap-3 animate-marquee-reverse">
@@ -387,14 +564,14 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            {/* Card 3: Gestion de Stock & SKU */}
-            <div className="md:col-span-2 rounded-2xl border border-white/10 bg-[#10141c] p-6 overflow-hidden">
+            {/* Card 3 */}
+            <div className="md:col-span-2 rounded-2xl border border-white/10 bg-[#10141c] p-6">
               <div className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
                 <Package className="h-4 w-4 text-amber-400" />
                 Gestion de Stock &amp; SKU
               </div>
               <p className="text-xs text-zinc-400 mb-4">
-                SKU, emplacements étagères, lots et détection des articles dormants (+14 jours).
+                SKU, emplacements étagères, calculateur de lots et alertes dormants (+14j).
               </p>
               <div className="space-y-2">
                 {STOCK_TICKER.map((s) => (
@@ -409,8 +586,8 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            {/* Card 4: Factures PDF & Compta */}
-            <div className="md:col-span-2 rounded-2xl border border-white/10 bg-[#10141c] p-6 overflow-hidden">
+            {/* Card 4 */}
+            <div className="md:col-span-2 rounded-2xl border border-white/10 bg-[#10141c] p-6">
               <div className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
                 <FileText className="h-4 w-4 text-emerald-400" />
                 Factures PDF &amp; Compta
@@ -419,7 +596,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 Numérotées, conformes France &amp; Belgique, exports CSV/Excel et seuils TVA.
               </p>
               <div className="space-y-2">
-                {INVOICE_TICKER.slice(0, 4).map((f) => (
+                {INVOICE_TICKER.map((f) => (
                   <div
                     key={f.num}
                     className="flex items-center justify-between rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-xs"
@@ -431,7 +608,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            {/* Card 5: Bordereaux & Multi-comptes */}
+            {/* Card 5 */}
             <div className="md:col-span-2 rounded-2xl border border-white/10 bg-[#10141c] p-6 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
@@ -439,8 +616,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   Bordereaux 10×15 &amp; Multi-comptes
                 </div>
                 <p className="text-xs text-zinc-400">
-                  Étiquettes recadrées pour imprimante thermique avec SKU affiché + 3 à 10
-                  comptes Vinted centralisés.
+                  Étiquettes recadrées imprimante thermique avec SKU + 3 à 10 comptes Vinted.
                 </p>
               </div>
               <div className="mt-4 rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-3.5 text-xs space-y-1.5">
@@ -462,15 +638,15 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
         </section>
 
         {/* Crosslisting Showcase */}
-        <section id="crosslisting" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+        <section id="crosslisting" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
           <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-[#111722] to-[#0c1017] p-6 sm:p-10">
             <div className="grid gap-10 lg:grid-cols-2 items-center">
               <div>
                 <Badge className="mb-3 bg-emerald-500/15 text-emerald-300 border-emerald-500/30">
-                  Crosslisting Vinted ↔ Leboncoin
+                  Crosslisting Vinted ↔ Leboncoin ↔ TikTok Shop
                 </Badge>
                 <h2 className="text-3xl font-extrabold text-white sm:text-4xl leading-tight">
-                  Mets en vente une fois, VintFlow publie de l&apos;autre côté
+                  Mets en vente une fois, Vintflow publie de l&apos;autre côté
                 </h2>
                 <p className="mt-4 text-zinc-400 text-sm sm:text-base leading-relaxed">
                   Tes annonces passent de Vinted à Leboncoin et de Leboncoin à Vinted, fiche
@@ -498,8 +674,8 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                     <div>
                       <h3 className="text-sm font-bold text-white">Retirée quand ça se vend</h3>
                       <p className="text-xs text-zinc-400">
-                        L&apos;annonce restée en ligne est masquée sur Vinted ou mise en pause sur
-                        Leboncoin dès que la commande tombe.
+                        L&apos;annonce restée en ligne est masquée automatiquement pour éviter
+                        toute double commande.
                       </p>
                     </div>
                   </div>
@@ -518,7 +694,6 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 </div>
               </div>
 
-              {/* Interactive Crosslisting Preview Card */}
               <div className="rounded-2xl border border-white/10 bg-[#090b0f] p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div>
@@ -562,7 +737,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   onClick={launchDemo}
                   className="w-full bg-white/10 hover:bg-white/15 text-white"
                 >
-                  Essayer le studio Crosslisting dans le back-office
+                  Ouvrir le back-office &amp; tester tous les outils
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -571,18 +746,18 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
         </section>
 
         {/* AI Assistant Section */}
-        <section id="assistant-ia" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+        <section id="assistant-ia" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
           <div className="grid gap-8 lg:grid-cols-2 items-center">
             <div>
               <Badge className="mb-3 bg-cyan-500/15 text-cyan-300 border-cyan-500/30">
                 Assistant IA Nova
               </Badge>
               <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-                Un copilote IA qui lit tes vrais chiffres avant de te répondre
+                Un copilote IA qui lit tes vrais chiffres avant d&apos;agir
               </h2>
               <p className="mt-4 text-zinc-400 text-sm sm:text-base leading-relaxed">
-                Pose-lui une question sur ton CA, ton URSSAF ou ton stock dormant. Tu veux
-                modifier des prix ou lier un SKU ? Nova prépare une carte Avant / Après, et
+                Pose-lui une question sur ton CA, ton URSSAF ou ton stock dormant. Nova
+                prépare une carte Avant / Après pour baisser les prix ou crosslister, et
                 rien ne bouge sans ton clic.
               </p>
 
@@ -610,7 +785,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   <Bot className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-white">Nova · Assistant VintFlow</p>
+                  <p className="text-sm font-bold text-white">Nova · Assistant Vintflow</p>
                   <p className="text-[11px] text-zinc-400">
                     Connecté à tes ventes, achats, stock &amp; wallet
                   </p>
@@ -629,8 +804,8 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
         </section>
 
-        {/* Time Lost & Stats Banner */}
-        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+        {/* Time Lost Banner */}
+        <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
           <div className="rounded-3xl border border-white/10 bg-[#10141c] p-8 text-center">
             <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 text-amber-300 mb-3">
               <Clock className="h-5 w-5" />
@@ -681,7 +856,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
         </section>
 
-        {/* Pricing Section (Exact Starter 29€ / Pro 49€ structure) */}
+        {/* Pricing Section */}
         <section id="tarifs" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
             <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
@@ -694,7 +869,6 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               Essai gratuit de 14 jours sur le plan de ton choix, sans engagement.
             </p>
 
-            {/* Billing Cycle Switch */}
             <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#10141c] p-1 text-xs">
               <button
                 type="button"
@@ -831,22 +1005,25 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
         </section>
       </main>
 
-      {/* Footer */}
+      {/* Footer with Legal Pages */}
       <footer className="border-t border-white/10 bg-[#07090c] py-10">
         <div className="mx-auto flex max-w-6xl flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 text-xs text-zinc-500">
-          <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded bg-emerald-500 text-emerald-950 font-black text-xs">
-              V
-            </span>
-            <span className="font-semibold text-zinc-300">VintFlow</span>
-            <span>· Back-office multi-plateformes pour revendeurs</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <VintflowLogo size="sm" />
+            <span>· La boîte à outils IA &amp; gestion des revendeurs</span>
           </div>
-          <div className="flex items-center gap-5">
-            <span className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-5">
+            <Link href="/legal/mentions-legales" className="hover:text-white transition">
+              Mentions légales
+            </Link>
+            <Link href="/legal/cgv" className="hover:text-white transition">
+              CGV
+            </Link>
+            <Link href="/legal/confidentialite" className="hover:text-white transition">
+              Confidentialité
+            </Link>
+            <span className="hidden md:flex items-center gap-1 text-zinc-400">
               <RefreshCw className="h-3.5 w-3.5" /> Synchro horaire
-            </span>
-            <span className="flex items-center gap-1">
-              <FileSpreadsheet className="h-3.5 w-3.5" /> Exports France &amp; Belgique
             </span>
           </div>
         </div>

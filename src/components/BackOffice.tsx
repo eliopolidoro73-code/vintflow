@@ -26,6 +26,7 @@ import {
   Sparkles,
   Trash2,
   TrendingUp,
+  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +47,8 @@ import {
   type SaleRecord,
 } from "@/components/DocumentPrintModal";
 import { NewListingDialog } from "@/components/NewListingDialog";
+import { ResellerToolsStudio } from "@/components/ResellerToolsStudio";
+import { VintflowLogo } from "@/components/VintflowLogo";
 
 interface ConnectedAccount {
   id: string;
@@ -122,6 +125,7 @@ interface WorkspacePayload {
 type TabId =
   | "overview"
   | "dressing"
+  | "tools"
   | "sales"
   | "messages"
   | "assistant"
@@ -542,6 +546,11 @@ export function BackOffice() {
       badge: kpis.dormantCount > 0 ? kpis.dormantCount : undefined,
     },
     {
+      id: "tools",
+      label: "Boîte à outils IA",
+      icon: <Wand2 className="h-4 w-4" />,
+    },
+    {
       id: "sales",
       label: "Ventes & Factures",
       icon: <ShoppingBag className="h-4 w-4" />,
@@ -583,13 +592,8 @@ export function BackOffice() {
       <aside className="hidden lg:flex lg:w-64 lg:flex-col border-r border-white/10 bg-[#0c1017] p-4 justify-between shrink-0">
         <div>
           <div className="flex items-center justify-between px-2 pb-5 border-b border-white/10">
-            <Link href="/" className="flex items-center gap-2 font-extrabold text-base">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 text-emerald-950 font-black text-sm">
-                V
-              </span>
-              <span>
-                Vint<span className="text-emerald-400">Flow</span>
-              </span>
+            <Link href="/">
+              <VintflowLogo size="sm" />
             </Link>
             <Badge className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30 text-[10px] uppercase">
               {activePlan.name}
@@ -639,6 +643,17 @@ export function BackOffice() {
             <LogOut className="h-3.5 w-3.5 mr-2" />
             Déconnexion
           </Button>
+          <div className="flex items-center gap-3 px-2 text-[10px] text-zinc-500">
+            <Link href="/legal/cgv" className="hover:text-zinc-300">
+              CGV
+            </Link>
+            <Link href="/legal/mentions-legales" className="hover:text-zinc-300">
+              Mentions
+            </Link>
+            <Link href="/legal/confidentialite" className="hover:text-zinc-300">
+              RGPD
+            </Link>
+          </div>
         </div>
       </aside>
 
@@ -648,11 +663,8 @@ export function BackOffice() {
         <header className="sticky top-0 z-30 border-b border-white/10 bg-[#090b0f]/90 backdrop-blur-lg px-4 py-3 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <Link
-                href="/"
-                className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-emerald-950 font-black"
-              >
-                V
+              <Link href="/" className="lg:hidden">
+                <VintflowLogo size="sm" showText={false} />
               </Link>
               <div>
                 <h1 className="text-base sm:text-lg font-bold text-white">
@@ -1091,6 +1103,15 @@ export function BackOffice() {
                 </div>
               )}
             </div>
+          )}
+
+          {/* TAB 2B: BOÎTE À OUTILS IA & ANTI-GALÈRES */}
+          {tab === "tools" && (
+            <ResellerToolsStudio
+              urssafRate={user.urssaf_rate}
+              onItemCreated={fetchWorkspace}
+              onToast={showToast}
+            />
           )}
 
           {/* TAB 3: SALES, LABELS & INVOICES */}
