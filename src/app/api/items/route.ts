@@ -1,0 +1,123 @@
+import crypto from "node:crypto";
+import { NextResponse } from "next/server";
+import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
+import { sql } from "@/lib/db";
+import { generateListingCopy } from "@/lib/format";
+
+const COLOR_PALETTE = [
+  "#0f766e",
+  "#1e3a8a",
+  "#be123c",
+  "#047857",
+  "#4338ca",
+  "#0f172a",
+];
+
+export async function POST(request: Request) {
+  const originError = assertSameOrigin(request);
+  if (originError) return originError;
+
+  const auth = await requireAuthenticatedUser();
+  if ("response" in auth) return auth.response;
+
+  let body: {
+    sku?: string;
+    title?: string;
+    brand?: string;
+    category?: string;
+    size?: string;
+    condition?: string;
+    location?: string;
+    purchase_price?: number;
+    extra_costs?: number;
+    listing_price?: number;
+    vinted_account?: string;
+    crosslist_lbc?: boolean;
+    crosslist_tiktok?: boolean;
+    crosslist_ebay?: boolean;
+    description_vinted?: string;
+    description_lbc?: string;
+  };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Corps JSON invalide" }, { status: 400 });
+  }
+
+  const title = (body.title ?? "").trim().slice(0, 120);
+  if (!title) {
+    return NextResponse.json({ error: "Titre requis" }, { status: 400 });
+  }
+
+  const brand = (body.brand ?? "").trim().slice(0, 60);
+  const category = (body.category ?? "Vêtements").trim().slice(0, 50);
+  const size = (body.size ?? "M").trim().slice(0, 30);
+  const condition = (body.condition ?? "Très bon état").trim().slice(0, 40);
+  const location = (body.location ?? "Rack A1").trim().slice(0, 40);
+  const purchasePrice = Math.max(0, Number(body.purchase_price ?? 0));
+  const extraCosts = Math.max(0, Number(body.extra_costs ?? 0));
+  const listingPrice = Math.max(1, Number(body.listing_price ?? 25));
+  const vintedAccount = (body.vinted_account ?? "@charles_resell")
+    .trim()
+    .slice(0, 60);
+
+  const generated = generateListingCopy({
+    title,
+    brand,
+    category,
+    size,
+    condition,
+    listingPrice,
+  });
+
+  const id = crypto.randomUUID();
+  const sku =
+    (body.sku ?? "").trim().slice(0, 32) ||
+    `SKU-${(brand || "ART").slice(0, 3).toUpperCase()}-${Math.floor(
+      100 + Math.random() * 900,
+    )}`;
+
+  const leboncoinStatus =
+    body.crosslist_lbc || auth.user.auto_crosslist ? "listed" : "not_listed";
+  const tiktokStatus = body.crosslist_tiktok ? "listed" : "not_listed";
+  const ebayStatus = body.crosslist_ebay ? "listed" : "not_listed";
+  const color =
+    COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
+
+  await sql(
+    `insert into inventory_items (
+      id, user_id, sku, title, brand, category, size, condition, location,
+      purchase_price, extra_costs, listing_price, status,
+      vinted_status, leboncoin_status, tiktok_status, ebay_status,
+      vinted_account, description_vinted, description_lbc, image_color
+    ) values (
+      $1, $2, $3, $4, $5, $6, $7, $8, $9,
+      $10, $11, $12, 'active',
+      'listed', $13, $14, $15,
+      $16, $17, $18, $19
+    )`,
+    [
+      id,
+      auth.user.id,
+      sku,
+      title,
+      brand,
+      category,
+      size,
+      condition,
+      location,
+      purchasePrice,
+      extraCosts,
+      listingPrice,
+      leboncoinStatus,
+      tiktokStatus,
+      ebayStatus,
+      vintedAccount,
+      (body.description_vinted ?? generated.vinted).slice(0, 1200),
+      (body.description_lbc ?? generated.leboncoin).slice(0, 1200),
+      color,
+    ],
+  );
+
+  return NextResponse.json({ ok: true, id, sku, generated });
+}
