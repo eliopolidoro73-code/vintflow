@@ -90,16 +90,57 @@ export async function POST(request: Request) {
   }
 
   if (body.executeAction === "crosslist_all_lbc") {
-    const res = await sql<{ id: string }>(
-      `update inventory_items
-       set leboncoin_status = 'listed'
+    if (plan.crosslistMonthlyLimit === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Le crosslisting Vinted ↔ Leboncoin nécessite un plan Vendeur Plus ou Pro Scale.",
+        },
+        { status: 403 },
+      );
+    }
+    const remaining = Math.max(0, plan.crosslistMonthlyLimit - user.crosslist_used);
+    if (remaining <= 0) {
+      return NextResponse.json(
+        {
+          error: `Quota mensuel de ${plan.crosslistMonthlyLimit} crosslistings atteint sur ton plan ${plan.name}.`,
+        },
+        { status: 403 },
+      );
+    }
+
+    const candidates = await sql<{ id: string }>(
+      `select id from inventory_items
        where user_id = $1 and status = 'active' and leboncoin_status != 'listed'
-       returning id`,
-      [user.id],
+       order by created_at desc
+       limit $2`,
+      [user.id, remaining],
     );
+
+    if (candidates.length === 0) {
+      return NextResponse.json({
+        ok: true,
+        answer:
+          "Toutes tes annonces actives sont déjà synchronisées sur Leboncoin.",
+      });
+    }
+
+    for (const row of candidates) {
+      await sql(
+        `update inventory_items
+         set leboncoin_status = 'listed'
+         where id = $1 and user_id = $2`,
+        [row.id, user.id],
+      );
+    }
+    await sql(
+      "update users set crosslist_used = crosslist_used + $1 where id = $2",
+      [candidates.length, user.id],
+    );
+
     return NextResponse.json({
       ok: true,
-      answer: `Crosslisting effectué : ${res.length} annonce(s) supplémentaire(s) ont été préremplies et publiées sur Leboncoin.`,
+      answer: `Crosslisting effectué : ${candidates.length} annonce(s) supplémentaire(s) ont été préremplies et publiées sur Leboncoin (${user.crosslist_used + candidates.length} / ${plan.crosslistMonthlyLimit} ce mois-ci).`,
     });
   }
 

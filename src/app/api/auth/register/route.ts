@@ -67,15 +67,18 @@ export async function POST(request: Request) {
     "select id from users where email = $1",
     [email],
   );
+  const passwordHash = hashPassword(password);
   if (existing.length > 0) {
     return NextResponse.json(
-      { error: "Un compte existe déjà avec cet email" },
-      { status: 409 },
+      {
+        error:
+          "Impossible de finaliser l'inscription avec ces informations. Essaie de te connecter ou utilise une autre adresse.",
+      },
+      { status: 400 },
     );
   }
 
   const userId = crypto.randomUUID();
-  const passwordHash = hashPassword(password);
 
   // Paid tiers (plus / pro) are only granted after verified Stripe Checkout payment.
   const initialPlan = "essentiel";

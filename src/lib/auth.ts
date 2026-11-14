@@ -60,6 +60,7 @@ export function verifyPassword(password: string, storedHash: string): boolean {
 
 interface SessionPayload {
   uid: string;
+  jti: string;
   exp: number;
 }
 
@@ -67,6 +68,7 @@ export async function createSessionToken(userId: string): Promise<string> {
   const secret = await getSessionSecret();
   const payload: SessionPayload = {
     uid: userId,
+    jti: crypto.randomUUID(),
     exp: Date.now() + 1000 * 60 * 60 * 24 * 14,
   };
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
@@ -77,9 +79,9 @@ export async function createSessionToken(userId: string): Promise<string> {
   return `${encoded}.${sig}`;
 }
 
-export async function verifySessionToken(
+async function decodeAndCheckSignature(
   token: string | undefined,
-): Promise<string | null> {
+): Promise<SessionPayload | null> {
   if (!token) return null;
   const parts = token.split(".");
   if (parts.length !== 2) return null;
@@ -101,12 +103,44 @@ export async function verifySessionToken(
     const parsed = JSON.parse(
       Buffer.from(encoded, "base64url").toString("utf8"),
     ) as SessionPayload;
-    if (!parsed.uid || typeof parsed.exp !== "number") return null;
+    if (!parsed.uid || !parsed.jti || typeof parsed.exp !== "number") {
+      return null;
+    }
     if (Date.now() > parsed.exp) return null;
-    return parsed.uid;
+    return parsed;
   } catch {
     return null;
   }
+}
+
+export async function verifySessionToken(
+  token: string | undefined,
+): Promise<string | null> {
+  const parsed = await decodeAndCheckSignature(token);
+  if (!parsed) return null;
+
+  const revoked = await sql<{ jti: string }>(
+    "select jti from revoked_tokens where jti = $1",
+    [parsed.jti],
+  );
+  if (revoked.length > 0) return null;
+
+  return parsed.uid;
+}
+
+export async function revokeSessionToken(
+  token: string | undefined,
+): Promise<void> {
+  const parsed = await decodeAndCheckSignature(token);
+  if (!parsed) return;
+
+  await sql("delete from revoked_tokens where expires_at < now()", []);
+  await sql(
+    `insert into revoked_tokens (jti, expires_at)
+     values ($1, $2)
+     on conflict (jti) do nothing`,
+    [parsed.jti, new Date(parsed.exp).toISOString()],
+  );
 }
 
 export interface AuthUser {

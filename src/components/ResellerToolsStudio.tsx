@@ -234,6 +234,7 @@ export function ResellerToolsStudio({
   const [lotTotalCost, setLotTotalCost] = useState("140");
   const [lotShipping, setLotShipping] = useState("12");
   const [lotCount, setLotCount] = useState("10");
+  const [boostCost, setBoostCost] = useState("1.95");
   const [negTarget, setNegTarget] = useState("65");
   const [negBuy, setNegBuy] = useState("18");
   const [negOffer, setNegOffer] = useState("40");
@@ -1341,6 +1342,43 @@ export function ResellerToolsStudio({
                   {formatEuro(Math.round(unitLotCost * 2.8))}
                 </strong>
               </div>
+            </div>
+
+            {/* Vinted Boost ROI Calculator */}
+            <div className="rounded-xl border border-white/10 bg-[#090b0f] p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-white">Simulateur ROI Boost Vinted</span>
+                <select
+                  value={boostCost}
+                  onChange={(e) => setBoostCost(e.target.value)}
+                  className="h-7 rounded border border-white/10 bg-[#161b24] px-2 text-[11px] text-white"
+                >
+                  <option value="1.15">Boost 3j (1,15 €)</option>
+                  <option value="1.95">Boost 7j (1,95 €)</option>
+                  <option value="6.95">Vitrine 7j (6,95 €)</option>
+                </select>
+              </div>
+              {(() => {
+                const sell = Math.max(1, Number(negTarget) || 65);
+                const buy = Math.max(0, Number(negBuy) || 18);
+                const bCost = Number(boostCost) || 1.95;
+                const urssaf = (sell * urssafRate) / 100;
+                const netWithBoost = sell - buy - urssaf - bCost;
+                const boostSharePct = netWithBoost > 0 ? Math.round((bCost / (netWithBoost + bCost)) * 100) : 100;
+                return (
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-zinc-400">
+                      Marge nette après Boost :{" "}
+                      <strong className={netWithBoost > 10 ? "text-emerald-400" : "text-amber-300"}>
+                        {formatEuro(netWithBoost)}
+                      </strong>
+                    </span>
+                    <span className={boostSharePct <= 15 ? "text-emerald-400 font-semibold" : "text-amber-300 font-semibold"}>
+                      {boostSharePct <= 15 ? "Boost rentable" : "Boost coûteux (" + boostSharePct + "% marge)"}
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
 
             <form

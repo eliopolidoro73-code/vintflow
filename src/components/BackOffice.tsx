@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Bot,
   Check,
+  Copy,
   CreditCard,
   Download,
   FileText,
@@ -211,6 +212,9 @@ export function BackOffice({
     sale: SaleRecord | null;
   }>({ open: false, mode: "invoice", sale: null });
   const [sellModalItem, setSellModalItem] = useState<InventoryItem | null>(
+    null,
+  );
+  const [copySheetItem, setCopySheetItem] = useState<InventoryItem | null>(
     null,
   );
   const [sellPlatform, setSellPlatform] = useState("vinted");
@@ -1182,6 +1186,15 @@ export function BackOffice({
 
                           {item.status === "active" && (
                             <div className="flex flex-wrap items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setCopySheetItem(item)}
+                                className="border-white/15 bg-white/5 text-zinc-200 hover:bg-white/10 text-xs h-8"
+                              >
+                                <Copy className="h-3.5 w-3.5 mr-1" />
+                                Fiches
+                              </Button>
                               {item.leboncoin_status !== "listed" && (
                                 <Button
                                   size="sm"
@@ -1977,6 +1990,70 @@ export function BackOffice({
         sale={printModal.sale}
         user={user}
       />
+
+      <Dialog
+        open={Boolean(copySheetItem)}
+        onOpenChange={(open) => !open && setCopySheetItem(null)}
+      >
+        <DialogContent className="bg-[#10141c] border-white/10 text-zinc-100 sm:max-w-xl shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-white">
+              Fiches préremplies · {copySheetItem?.title}
+            </DialogTitle>
+          </DialogHeader>
+          {copySheetItem && (
+            <div className="space-y-4 text-xs">
+              <div className="rounded-xl border border-white/10 bg-[#090b0f] p-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-teal-500/15 text-teal-300 border-teal-500/30">
+                    Vinted · {formatEuro(copySheetItem.listing_price)}
+                  </Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `${copySheetItem.title}\n\n${copySheetItem.description_vinted}`,
+                      );
+                      showToast("Annonce Vinted copiée !");
+                    }}
+                    className="h-7 text-[11px] border-white/15 bg-white/5 text-zinc-200"
+                  >
+                    <Copy className="h-3 w-3 mr-1" /> Copier Vinted
+                  </Button>
+                </div>
+                <p className="whitespace-pre-wrap text-zinc-300 leading-relaxed">
+                  {copySheetItem.description_vinted}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-[#090b0f] p-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-orange-500/15 text-orange-300 border-orange-500/30">
+                    Leboncoin · {formatEuro(copySheetItem.listing_price)}
+                  </Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `${copySheetItem.title}\n\n${copySheetItem.description_lbc}`,
+                      );
+                      showToast("Annonce Leboncoin copiée !");
+                    }}
+                    className="h-7 text-[11px] border-white/15 bg-white/5 text-zinc-200"
+                  >
+                    <Copy className="h-3 w-3 mr-1" /> Copier Leboncoin
+                  </Button>
+                </div>
+                <p className="whitespace-pre-wrap text-zinc-300 leading-relaxed">
+                  {copySheetItem.description_lbc}
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={Boolean(sellModalItem)}

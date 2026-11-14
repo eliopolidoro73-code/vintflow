@@ -2,14 +2,31 @@ import crypto from "node:crypto";
 import { sql } from "./db";
 
 export function getClientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) return first.slice(0, 64);
-  }
+  // Prefer edge/proxy-injected headers that clients cannot forge over raw X-Forwarded-For[0]
+  const vercelIp = request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim();
+  if (vercelIp) return vercelIp.slice(0, 64);
+
+  const cfIp = request.headers.get("cf-connecting-ip")?.trim();
+  if (cfIp) return cfIp.slice(0, 64);
+
+  const flyIp = request.headers.get("fly-client-ip")?.trim();
+  if (flyIp) return flyIp.slice(0, 64);
+
   const realIp = request.headers.get("x-real-ip")?.trim();
   if (realIp) return realIp.slice(0, 64);
-  return "local";
+
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    // Use the rightmost entry appended by the reverse proxy rather than client-controlled leftmost entries
+    const parts = forwarded
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const proxyAppended = parts[parts.length - 1];
+    if (proxyAppended) return proxyAppended.slice(0, 64);
+  }
+
+  return "unknown-ip";
 }
 
 export function hashRateKey(raw: string): string {
@@ -26,7 +43,6 @@ export async function checkRateLimit(params: {
   const windowMs = params.windowSeconds * 1000;
   const nextReset = new Date(Date.now() + windowMs).toISOString();
 
-  // Periodically prune expired buckets
   await sql("delete from rate_limits where reset_at < now()", []);
 
   const rows = await sql<{ count: number }>(
