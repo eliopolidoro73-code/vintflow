@@ -93,8 +93,9 @@ export async function POST(request: Request) {
     }
   }
 
-  // Paid tiers (plus / pro) are only granted after verified Stripe Checkout payment.
-  const initialPlan = "essentiel";
+  // The requested plan only runs for the 14-day trial window; past trial_ends_at,
+  // getAuthenticatedUser downgrades it unless Stripe verified a subscription.
+  const initialPlan = requestedPlan;
 
   await sql(
     `insert into users (id, email, name, password_hash, plan, billing_cycle, subscription_status, company_name, siret, referral_code, referred_by, is_demo)

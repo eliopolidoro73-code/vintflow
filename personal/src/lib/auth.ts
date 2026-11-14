@@ -69,7 +69,7 @@ export async function createSessionToken(userId: string): Promise<string> {
   const payload: SessionPayload = {
     uid: userId,
     jti: crypto.randomUUID(),
-    exp: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days on personal iPhone
+    exp: Date.now() + 1000 * 60 * 60 * 24 * 30,
   };
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
   const sig = crypto
@@ -163,12 +163,25 @@ export interface AuthUser {
   is_demo: boolean;
 }
 
+// Owners created by the earlier Cursor-identity edition hold a random placeholder
+// instead of a salt:hash pair, so they cannot log in until setup claims them.
+const HAS_PASSWORD_SQL = "position(':' in password_hash) > 0";
+
 export async function hasOwnerAccount(): Promise<boolean> {
   const rows = await sql<{ cnt: string | number }>(
-    "select count(*) as cnt from users where is_demo = false",
+    `select count(*) as cnt from users where is_demo = false and ${HAS_PASSWORD_SQL}`,
     [],
   );
   return Number(rows[0]?.cnt ?? 0) > 0;
+}
+
+export async function findUnclaimedOwnerId(): Promise<string | null> {
+  const rows = await sql<{ id: string }>(
+    `select id from users where is_demo = false and not (${HAS_PASSWORD_SQL})
+     order by created_at asc limit 1`,
+    [],
+  );
+  return rows[0]?.id ?? null;
 }
 
 export async function getAuthenticatedUser(): Promise<AuthUser | null> {
@@ -243,14 +256,21 @@ export async function requireAuthenticatedUser(): Promise<
 }
 
 export function assertSameOrigin(request: Request): Response | null {
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite) {
+    if (fetchSite === "same-origin" || fetchSite === "none") return null;
+    return Response.json({ error: "Origine invalide" }, { status: 403 });
+  }
   const origin = request.headers.get("origin");
   if (!origin) return null;
-  const host =
-    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-  if (!host) return null;
+  const candidates = [
+    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim(),
+    request.headers.get("host")?.trim(),
+  ].filter((h): h is string => Boolean(h));
+  if (candidates.length === 0) return null;
   try {
     const parsedOrigin = new URL(origin);
-    if (parsedOrigin.host !== host) {
+    if (!candidates.includes(parsedOrigin.host)) {
       return Response.json({ error: "Origine invalide" }, { status: 403 });
     }
   } catch {

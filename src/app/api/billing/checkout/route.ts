@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
+import { sql } from "@/lib/db";
 import {
   normalizePlanId,
   PLANS,
@@ -45,13 +46,27 @@ export async function POST(request: Request) {
 
   const stripeKey = process.env.STRIPE_SECRET_KEY?.trim();
   if (!stripeKey) {
-    return NextResponse.json(
-      {
-        error:
-          "Paiement Stripe non configuré. L'administrateur doit ajouter STRIPE_SECRET_KEY pour activer les abonnements payants.",
-      },
-      { status: 503 },
+    const inTrial =
+      auth.user.subscription_status === "trialing" && !auth.user.is_demo;
+    if (!inTrial) {
+      return NextResponse.json(
+        {
+          error:
+            "Le paiement en ligne arrive très bientôt. Ton essai gratuit est terminé : écris-nous pour activer ton abonnement.",
+        },
+        { status: 503 },
+      );
+    }
+    await sql(
+      "update users set plan = $1, billing_cycle = $2 where id = $3 and subscription_status = 'trialing'",
+      [planId, billingCycle, auth.user.id],
     );
+    return NextResponse.json({
+      mode: "trial",
+      message: `Essai gratuit ${plan.name} activé jusqu'au ${new Date(
+        auth.user.trial_ends_at,
+      ).toLocaleDateString("fr-FR")} · 0,00 € débité.`,
+    });
   }
 
   const baseUrl = resolveSafeBaseUrl(request);

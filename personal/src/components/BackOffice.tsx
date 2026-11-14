@@ -871,7 +871,7 @@ export function BackOffice({
             <p className="font-bold text-white truncate">{user.name}</p>
             <p className="text-[11px] text-zinc-400 truncate">{user.company_name}</p>
             <p className="mt-1 text-[10px] font-medium text-violet-300">
-              Édition Privée · Pro Scale Gratuit
+              Édition Perso · Pro Scale Gratuit
             </p>
           </div>
           <div className="flex items-center gap-3 px-2 text-[10px] text-zinc-500">
@@ -927,6 +927,16 @@ export function BackOffice({
               >
                 <Plus className="h-3.5 w-3.5 mr-1" />
                 Nouvel article
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleLogout}
+                aria-label="Se déconnecter"
+                className="text-zinc-400 hover:text-white hover:bg-white/10 text-xs"
+              >
+                <LogOut className="h-3.5 w-3.5 sm:mr-1.5" />
+                <span className="hidden sm:inline">Déconnexion</span>
               </Button>
             </div>
           </div>
@@ -2352,7 +2362,7 @@ export function BackOffice({
                   Accès Pro Scale illimité activé pour toi
                 </h2>
                 <p className="mt-2 text-xs sm:text-sm text-zinc-300 max-w-2xl">
-                  Cette version privée de Vintflow est protégée par ton compte Cursor (seul toi peux l&apos;ouvrir sur ton iPhone ou ton ordinateur) avec toutes les fonctionnalités Pro Scale débloquées gratuitement.
+                  Ton édition personnelle de Vintflow est protégée par ton email et ton mot de passe. Ouvre-la depuis n&apos;importe quel navigateur, sur ordinateur ou téléphone, avec toutes les fonctionnalités Pro Scale débloquées gratuitement.
                 </p>
                 <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
                   {activePlan.features.map((f, i) => (
@@ -2584,7 +2594,7 @@ export function BackOffice({
         </DialogContent>
       </Dialog>
 
-      {/* Native iPhone Bottom Tab Bar */}
+      {/* Mobile bottom tab bar */}
       <nav
         aria-label="Navigation mobile"
         className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-[#07080d]/95 backdrop-blur-xl px-1.5 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]"

@@ -16,23 +16,13 @@ const jetbrainsMono = JetBrains_Mono({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  viewportFit: "cover",
   themeColor: "#07080d",
 };
 
 export const metadata: Metadata = {
   title: "Vintflow Perso — Cockpit Vinted & Leboncoin",
   description:
-    "Édition privée complète pour piloter tes ventes, marge commerciale, studio photo IA, crosslisting et factures depuis ton iPhone.",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Vintflow",
-  },
-  icons: {
-    apple: "/icon.svg",
-  },
+    "Édition personnelle complète pour piloter tes ventes, marge commerciale, studio photo IA, crosslisting et factures depuis n'importe quel navigateur.",
 };
 
 export default function RootLayout({

@@ -4,6 +4,7 @@ import {
   assertSameOrigin,
   buildSessionCookieHeader,
   createSessionToken,
+  findUnclaimedOwnerId,
   hashPassword,
   hasOwnerAccount,
 } from "@/lib/auth";
@@ -58,19 +59,37 @@ export async function POST(request: Request) {
     );
   }
 
-  const userId = crypto.randomUUID();
   const passwordHash = hashPassword(password);
-  const referralCode = `VF-${userId.slice(0, 6).toUpperCase()}`;
+  const unclaimedId = await findUnclaimedOwnerId();
+  let userId: string;
 
-  await sql(
-    `insert into users (
-      id, email, name, password_hash, plan, billing_cycle, subscription_status,
-      company_name, siret, referral_code, is_demo
-    ) values ($1, $2, $3, $4, 'pro', 'monthly', 'personal_free', $5, '000 000 000 00000', $6, false)`,
-    [userId, email, name, passwordHash, `${name} · Perso`, referralCode],
-  );
-
-  await seedUserWorkspace(userId);
+  try {
+    if (unclaimedId) {
+      userId = unclaimedId;
+      await sql(
+        `update users set email = $1, name = $2, password_hash = $3,
+           plan = 'pro', subscription_status = 'personal_free'
+         where id = $4 and not (position(':' in password_hash) > 0)`,
+        [email, name, passwordHash, userId],
+      );
+    } else {
+      userId = crypto.randomUUID();
+      const referralCode = `VF-${userId.slice(0, 6).toUpperCase()}`;
+      await sql(
+        `insert into users (
+          id, email, name, password_hash, plan, billing_cycle, subscription_status,
+          company_name, siret, referral_code, is_demo
+        ) values ($1, $2, $3, $4, 'pro', 'monthly', 'personal_free', $5, '000 000 000 00000', $6, false)`,
+        [userId, email, name, passwordHash, `${name} · Perso`, referralCode],
+      );
+      await seedUserWorkspace(userId);
+    }
+  } catch {
+    return NextResponse.json(
+      { error: "Impossible de créer l'accès avec cet email. Essaie une autre adresse." },
+      { status: 400 },
+    );
+  }
 
   const token = await createSessionToken(userId);
   const cookie = buildSessionCookieHeader(token, request);

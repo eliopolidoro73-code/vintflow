@@ -19,3 +19,15 @@ Le projet fonctionne sans configuration externe grâce à `@electric-sql/pglite`
 npm install
 npm run dev
 ```
+
+Sans `STRIPE_SECRET_KEY`, le choix d'un forfait lance un essai gratuit de 14 jours sans carte ; à la fin de l'essai, le compte repasse sur Essentiel tant qu'aucun abonnement Stripe n'est vérifié.
+
+## Vintflow Perso (`personal/`)
+
+Édition personnelle avec toutes les fonctionnalités Pro Scale, sans abonnement. À la première visite, tu crées ton email et ton mot de passe ; ensuite tu te connectes depuis n'importe quel navigateur (ordinateur ou téléphone).
+
+```bash
+cd personal
+npm install
+npm run dev
+```

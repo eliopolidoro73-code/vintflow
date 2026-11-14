@@ -207,13 +207,19 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     ]);
   }
 
+  // A card-less trial grants the chosen plan only until trial_ends_at; after that,
+  // anything other than a Stripe-verified subscription falls back to Essentiel.
+  const trialExpired =
+    row.subscription_status === "trialing" &&
+    new Date(row.trial_ends_at).getTime() < Date.now();
+
   return {
     id: row.id,
     email: row.email,
     name: row.name,
-    plan: normalizePlanId(row.plan),
+    plan: trialExpired ? "essentiel" : normalizePlanId(row.plan),
     billing_cycle: row.billing_cycle === "annual" ? "annual" : "monthly",
-    subscription_status: row.subscription_status,
+    subscription_status: trialExpired ? "trial_expired" : row.subscription_status,
     trial_ends_at: String(row.trial_ends_at),
     company_name: row.company_name,
     siret: row.siret,
@@ -244,14 +250,21 @@ export async function requireAuthenticatedUser(): Promise<
 }
 
 export function assertSameOrigin(request: Request): Response | null {
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite) {
+    if (fetchSite === "same-origin" || fetchSite === "none") return null;
+    return Response.json({ error: "Origine invalide" }, { status: 403 });
+  }
   const origin = request.headers.get("origin");
   if (!origin) return null;
-  const host =
-    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-  if (!host) return null;
+  const candidates = [
+    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim(),
+    request.headers.get("host")?.trim(),
+  ].filter((h): h is string => Boolean(h));
+  if (candidates.length === 0) return null;
   try {
     const parsedOrigin = new URL(origin);
-    if (parsedOrigin.host !== host) {
+    if (!candidates.includes(parsedOrigin.host)) {
       return Response.json({ error: "Origine invalide" }, { status: 403 });
     }
   } catch {
