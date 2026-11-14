@@ -71,6 +71,21 @@ export function AuthModal({
         setLoading(false);
         return;
       }
+      if (mode === "register" && (plan === "plus" || plan === "pro")) {
+        const checkoutRes = await fetch("/api/billing/checkout", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ plan, billing_cycle: cycle }),
+        });
+        if (checkoutRes.ok) {
+          const out = (await checkoutRes.json()) as { checkoutUrl?: string };
+          if (out.checkoutUrl) {
+            onOpenChange(false);
+            window.location.assign(out.checkoutUrl);
+            return;
+          }
+        }
+      }
       onOpenChange(false);
       router.push("/app");
       router.refresh();
@@ -217,7 +232,7 @@ export function AuthModal({
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex: Charles"
+                  placeholder="Ex: Atelier Fripe"
                   className="bg-white/5 border-white/10 text-white"
                 />
               </div>
@@ -234,7 +249,7 @@ export function AuthModal({
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="charles@exemple.fr"
+              placeholder="contact@exemple.fr"
               className="bg-white/5 border-white/10 text-white"
             />
           </div>

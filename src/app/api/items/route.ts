@@ -4,6 +4,7 @@ import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { generateListingCopy } from "@/lib/format";
 import { PLANS } from "@/lib/plans";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const COLOR_PALETTE = [
   "#0f766e",
@@ -20,22 +21,34 @@ export async function POST(request: Request) {
 
   const auth = await requireAuthenticatedUser();
   if ("response" in auth) return auth.response;
+
+  const rl = await checkRateLimit({
+    scope: "items_create",
+    key: auth.user.id,
+    limit: 40,
+    windowSeconds: 3600,
+  });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Trop d'articles créés cette heure-ci. Patiente un instant." },
+      { status: 429 },
+    );
+  }
+
   const plan = PLANS[auth.user.plan];
 
-  if (plan.activeItemsLimit !== null) {
-    const countRows = await sql<{ cnt: string | number }>(
-      "select count(*) as cnt from inventory_items where user_id = $1 and status = 'active'",
-      [auth.user.id],
+  const countRows = await sql<{ cnt: string | number }>(
+    "select count(*) as cnt from inventory_items where user_id = $1 and status = 'active'",
+    [auth.user.id],
+  );
+  const currentActive = Number(countRows[0]?.cnt ?? 0);
+  if (currentActive >= plan.activeItemsLimit) {
+    return NextResponse.json(
+      {
+        error: `Limite de ${plan.activeItemsLimit} articles actifs atteinte sur le plan ${plan.name}. Passe au palier supérieur.`,
+      },
+      { status: 403 },
     );
-    const currentActive = Number(countRows[0]?.cnt ?? 0);
-    if (currentActive >= plan.activeItemsLimit) {
-      return NextResponse.json(
-        {
-          error: `Limite de ${plan.activeItemsLimit} articles actifs atteinte sur le plan ${plan.name}. Passe au palier supérieur.`,
-        },
-        { status: 403 },
-      );
-    }
   }
 
   let body: {
@@ -75,7 +88,7 @@ export async function POST(request: Request) {
   const purchasePrice = Math.max(0, Number(body.purchase_price ?? 0));
   const extraCosts = Math.max(0, Number(body.extra_costs ?? 0));
   const listingPrice = Math.max(1, Number(body.listing_price ?? 25));
-  const vintedAccount = (body.vinted_account ?? "@charles_resell")
+  const vintedAccount = (body.vinted_account ?? "@atelier_demo")
     .trim()
     .slice(0, 60);
 

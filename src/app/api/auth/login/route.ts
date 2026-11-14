@@ -6,10 +6,25 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
   if (originError) return originError;
+
+  const ip = getClientIp(request);
+  const limit = await checkRateLimit({
+    scope: "login",
+    key: ip,
+    limit: 15,
+    windowSeconds: 900,
+  });
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Trop de tentatives de connexion. Réessaie dans 15 minutes." },
+      { status: 429 },
+    );
+  }
 
   let body: { email?: string; password?: string };
   try {

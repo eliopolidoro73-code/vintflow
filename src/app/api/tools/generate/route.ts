@@ -3,6 +3,7 @@ import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { computeNetMargin, generateListingCopy } from "@/lib/format";
 import { PLANS } from "@/lib/plans";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const BRAND_CATALOG = [
   { key: "carhartt", brand: "Carhartt", cat: "Vestes & Manteaux", avgPrice: 85 },
@@ -26,6 +27,19 @@ export async function POST(request: Request) {
   const auth = await requireAuthenticatedUser();
   if ("response" in auth) return auth.response;
 
+  const rl = await checkRateLimit({
+    scope: "ai_tools",
+    key: auth.user.id,
+    limit: 20,
+    windowSeconds: 600,
+  });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Trop de requêtes IA en peu de temps. Patiente quelques minutes." },
+      { status: 429 },
+    );
+  }
+
   const plan = PLANS[auth.user.plan];
   if (plan.aiCreditsMonthlyLimit === 0) {
     return NextResponse.json(
@@ -36,13 +50,10 @@ export async function POST(request: Request) {
       { status: 403 },
     );
   }
-  if (
-    plan.aiCreditsMonthlyLimit > 0 &&
-    auth.user.ai_credits_used >= plan.aiCreditsMonthlyLimit
-  ) {
+  if (auth.user.ai_credits_used >= plan.aiCreditsMonthlyLimit) {
     return NextResponse.json(
       {
-        error: `Quota de ${plan.aiCreditsMonthlyLimit} crédits IA/mois atteint sur ${plan.name}. Passe au plan Pro Scale (49 €) pour l'IA illimitée.`,
+        error: `Quota de ${plan.aiCreditsMonthlyLimit} crédits IA/mois atteint sur ${plan.name}.`,
       },
       { status: 403 },
     );
@@ -75,7 +86,7 @@ export async function POST(request: Request) {
   }
 
   const mode = body.mode ?? "listing";
-  const openaiKey = process.env.OPENAI_API_KEY?.trim();
+  const openaiKey = !auth.user.is_demo ? process.env.OPENAI_API_KEY?.trim() : undefined;
 
   // MODE 0: AI VISION PHOTO -> STRUCTURED LISTING EXTRACTION
   if (mode === "vision_analyze") {

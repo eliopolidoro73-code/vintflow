@@ -8,11 +8,26 @@ import {
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { normalizePlanId } from "@/lib/plans";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { seedUserWorkspace } from "@/lib/seed";
 
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
   if (originError) return originError;
+
+  const ip = getClientIp(request);
+  const limit = await checkRateLimit({
+    scope: "register",
+    key: ip,
+    limit: 5,
+    windowSeconds: 3600,
+  });
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Trop de créations de comptes depuis cette adresse. Réessaie plus tard." },
+      { status: 429 },
+    );
+  }
 
   let body: {
     email?: string;
@@ -31,7 +46,7 @@ export async function POST(request: Request) {
   const email = (body.email ?? "").trim().toLowerCase();
   const password = body.password ?? "";
   const name = (body.name ?? "").trim();
-  const plan = normalizePlanId(body.plan);
+  const requestedPlan = normalizePlanId(body.plan);
   const billingCycle = body.billing_cycle === "annual" ? "annual" : "monthly";
   const withSampleData = body.withSampleData !== false;
 
@@ -62,10 +77,13 @@ export async function POST(request: Request) {
   const userId = crypto.randomUUID();
   const passwordHash = hashPassword(password);
 
+  // Paid tiers (plus / pro) are only granted after verified Stripe Checkout payment.
+  const initialPlan = "essentiel";
+
   await sql(
-    `insert into users (id, email, name, password_hash, plan, billing_cycle, subscription_status, company_name, is_demo)
-     values ($1, $2, $3, $4, $5, $6, 'trialing', $7, false)`,
-    [userId, email, name, passwordHash, plan, billingCycle, `${name} Resell`],
+    `insert into users (id, email, name, password_hash, plan, billing_cycle, subscription_status, company_name, siret, is_demo)
+     values ($1, $2, $3, $4, $5, $6, 'trialing', $7, '000 000 000 00000', false)`,
+    [userId, email, name, passwordHash, initialPlan, billingCycle, `${name} Studio`],
   );
 
   if (withSampleData) {
@@ -74,7 +92,12 @@ export async function POST(request: Request) {
 
   const token = await createSessionToken(userId);
   const cookie = buildSessionCookieHeader(token, request);
-  const res = NextResponse.json({ ok: true, plan, billing_cycle: billingCycle });
+  const res = NextResponse.json({
+    ok: true,
+    plan: initialPlan,
+    requestedPlan,
+    billing_cycle: billingCycle,
+  });
   res.cookies.set(cookie.name, cookie.value, cookie.options);
   return res;
 }

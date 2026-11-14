@@ -7,7 +7,11 @@ export const dynamic = "force-dynamic";
 export default async function AppPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; checkout?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    checkout?: string;
+    session_id?: string;
+  }>;
 }) {
   const user = await getAuthenticatedUser();
   if (!user) {
@@ -18,6 +22,7 @@ export default async function AppPage({
     <BackOffice
       initialTab={params.tab}
       initialCheckout={params.checkout}
+      initialStripeSessionId={params.session_id}
     />
   );
 }

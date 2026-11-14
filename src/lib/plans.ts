@@ -14,9 +14,9 @@ export interface PlanDefinition {
   tiktokAccountsLimit: number;
   ebayAccountsLimit: number;
   whatnotAccountsLimit: number;
-  activeItemsLimit: number | null;
-  crosslistMonthlyLimit: number; // 0 = disabled, -1 = unlimited
-  aiCreditsMonthlyLimit: number; // 0 = disabled, -1 = unlimited
+  activeItemsLimit: number;
+  crosslistMonthlyLimit: number;
+  aiCreditsMonthlyLimit: number;
   autoCrosslistAllowed: boolean;
   pdfInvoicesAllowed: boolean;
   unifiedMessagesAllowed: boolean;
@@ -104,8 +104,8 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
   pro: {
     id: "pro",
     name: "Pro Scale",
-    badge: "Tout illimité",
-    tagline: "La puissance maximale en illimité pour les gros vendeurs.",
+    badge: "Haute Capacité",
+    tagline: "La puissance maximale pour les gros vendeurs et pros.",
     monthlyPrice: 49,
     annualMonthlyPrice: 41,
     annualTotal: 490,
@@ -114,9 +114,9 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     tiktokAccountsLimit: 3,
     ebayAccountsLimit: 3,
     whatnotAccountsLimit: 3,
-    activeItemsLimit: null,
-    crosslistMonthlyLimit: -1,
-    aiCreditsMonthlyLimit: -1,
+    activeItemsLimit: 1500,
+    crosslistMonthlyLimit: 2000,
+    aiCreditsMonthlyLimit: 300,
     autoCrosslistAllowed: true,
     pdfInvoicesAllowed: true,
     unifiedMessagesAllowed: true,
@@ -127,10 +127,10 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     supportSla: "Prioritaire sous 2 h",
     features: [
       "10 comptes Vinted, 3 Leboncoin, 3 TikTok Shop, 3 eBay, 3 Whatnot",
-      "Crosslisting ILLIMITÉ + Publication auto 8h–23h + Retrait auto à la vente",
-      "Suite IA ILLIMITÉE : Vision IA, Détourage, 3-en-1, Anti-Shadowban & Sniper",
-      "Assistant IA Nova illimité connecté à tes vrais chiffres (actions 1 clic)",
-      "Factures PDF auto + Bordereaux 10×15 + jusqu'à 3 sociétés & accès comptable",
+      "1 500 articles + 2 000 crosslistings/mois + Publication auto 8h–23h",
+      "Suite IA Haute Capacité (300 crédits/mois) : Vision IA, 3-en-1, Anti-Shadowban & Sniper",
+      "Assistant IA Nova connecté à tes vrais chiffres (actions 1 clic)",
+      "Factures PDF + Bordereaux 10×15 + jusqu'à 3 sociétés & accès comptable",
       "3 collaborateurs + Support prioritaire sous 2 h",
     ],
     lockedFeatures: [],
@@ -139,7 +139,6 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
 
 export function normalizePlanId(raw: string | undefined | null): PlanId {
   if (raw === "pro") return "pro";
-  if (raw === "essentiel") return "essentiel";
-  // Map legacy "starter" to "plus"
-  return "plus";
+  if (raw === "plus") return "plus";
+  return "essentiel";
 }

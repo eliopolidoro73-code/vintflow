@@ -181,9 +181,11 @@ const VALID_TABS: TabId[] = [
 export function BackOffice({
   initialTab,
   initialCheckout,
+  initialStripeSessionId,
 }: {
   initialTab?: string;
   initialCheckout?: string;
+  initialStripeSessionId?: string;
 }) {
   const router = useRouter();
   const [data, setData] = useState<WorkspacePayload | null>(null);
@@ -273,8 +275,32 @@ export function BackOffice({
   }, [router]);
 
   useEffect(() => {
-    fetchWorkspace();
-  }, [fetchWorkspace]);
+    async function init() {
+      if (initialStripeSessionId) {
+        try {
+          const res = await fetch("/api/billing/verify", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ session_id: initialStripeSessionId }),
+          });
+          const out = (await res.json()) as {
+            ok?: boolean;
+            plan?: string;
+            error?: string;
+          };
+          if (res.ok && out.ok) {
+            showToast("Paiement Stripe vérifié ! Ton abonnement est actif.");
+          } else if (out.error) {
+            showToast(out.error);
+          }
+        } catch {
+          showToast("Erreur lors de la vérification du paiement Stripe.");
+        }
+      }
+      await fetchWorkspace();
+    }
+    init();
+  }, [fetchWorkspace, initialStripeSessionId, showToast]);
 
   const filteredItems = useMemo(() => {
     if (!data) return [];
@@ -1817,8 +1843,8 @@ export function BackOffice({
                   </p>
                   <p className="mt-1 text-xs text-zinc-400">
                     {integrations.stripeConfigured
-                      ? "Paiements Stripe en ligne activés."
-                      : "Mode essai 14j actif : bascule librement entre Essentiel (9 €), Vendeur Plus (29 €) et Pro Scale (49 €) pour tester chaque niveau d'accès."}
+                      ? "Paiements Stripe sécurisés activés (essai 14 jours géré par Stripe)."
+                      : "Les formules payantes nécessitent STRIPE_SECRET_KEY (ajoutable dans les Secrets de l'app)."}
                   </p>
                 </div>
 

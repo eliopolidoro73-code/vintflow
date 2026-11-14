@@ -3,6 +3,7 @@ import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { daysSince, formatEuro } from "@/lib/format";
 import { PLANS } from "@/lib/plans";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
@@ -12,7 +13,8 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
   const user = auth.user;
 
-  if (!PLANS[user.plan].novaAssistantAllowed) {
+  const plan = PLANS[user.plan];
+  if (!plan.novaAssistantAllowed) {
     return NextResponse.json(
       {
         error:
@@ -21,6 +23,32 @@ export async function POST(request: Request) {
       { status: 403 },
     );
   }
+
+  const rl = await checkRateLimit({
+    scope: "ai_assistant",
+    key: user.id,
+    limit: 20,
+    windowSeconds: 600,
+  });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Trop de requêtes vers Nova. Patiente quelques minutes." },
+      { status: 429 },
+    );
+  }
+
+  if (user.ai_credits_used >= plan.aiCreditsMonthlyLimit) {
+    return NextResponse.json(
+      {
+        error: `Quota de ${plan.aiCreditsMonthlyLimit} crédits IA/mois atteint.`,
+      },
+      { status: 403 },
+    );
+  }
+  await sql(
+    "update users set ai_credits_used = ai_credits_used + 1 where id = $1",
+    [user.id],
+  );
 
   let body: {
     question?: string;
@@ -134,7 +162,7 @@ export async function POST(request: Request) {
     null,
   );
 
-  const openaiKey = process.env.OPENAI_API_KEY?.trim();
+  const openaiKey = !user.is_demo ? process.env.OPENAI_API_KEY?.trim() : undefined;
   if (openaiKey) {
     try {
       const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
