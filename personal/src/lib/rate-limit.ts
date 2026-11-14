@@ -67,3 +67,16 @@ export async function checkRateLimit(params: {
     remaining: Math.max(0, params.limit - count),
   };
 }
+
+export async function isRateLimited(params: {
+  scope: string;
+  key: string;
+  limit: number;
+}): Promise<boolean> {
+  const bucket = `${params.scope}:${hashRateKey(params.key)}`;
+  const rows = await sql<{ count: number }>(
+    "select count from rate_limits where bucket = $1 and reset_at >= now()",
+    [bucket],
+  );
+  return Number(rows[0]?.count ?? 0) >= params.limit;
+}

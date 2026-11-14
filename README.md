@@ -24,10 +24,10 @@ Sans `STRIPE_SECRET_KEY`, le choix d'un forfait lance un essai gratuit de 14 jou
 
 ## Vintflow Perso (`personal/`)
 
-Édition personnelle avec toutes les fonctionnalités Pro Scale, sans abonnement. À la première visite, tu crées ton email et ton mot de passe ; ensuite tu te connectes depuis n'importe quel navigateur (ordinateur ou téléphone).
+Édition personnelle avec toutes les fonctionnalités Pro Scale, sans abonnement. L'accès est protégé par le secret `PERSO_PASSWORD` (8 caractères minimum) : tu te connectes avec ce mot de passe depuis n'importe quel navigateur (ordinateur ou téléphone).
 
 ```bash
 cd personal
 npm install
-npm run dev
+PERSO_PASSWORD='ton-mot-de-passe' npm run dev
 ```

@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { sql } from "./db";
 import type { BillingCycle, PlanId } from "./plans";
+import { seedUserWorkspace } from "./seed";
 
 export const SESSION_COOKIE_NAME = "vintflow_perso_session";
 
@@ -39,23 +40,6 @@ async function getSessionSecret(): Promise<string> {
   const resolved = stored[0]?.value ?? generated;
   globalForSecret.__vintflowPersoSecret = resolved;
   return resolved;
-}
-
-export function hashPassword(password: string): string {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const derived = crypto.scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${derived}`;
-}
-
-export function verifyPassword(password: string, storedHash: string): boolean {
-  const parts = storedHash.split(":");
-  if (parts.length !== 2) return false;
-  const [salt, keyHex] = parts;
-  if (!salt || !keyHex) return false;
-  const keyBuf = Buffer.from(keyHex, "hex");
-  const derivedBuf = crypto.scryptSync(password, salt, 64);
-  if (keyBuf.length !== derivedBuf.length) return false;
-  return crypto.timingSafeEqual(keyBuf, derivedBuf);
 }
 
 interface SessionPayload {
@@ -163,25 +147,50 @@ export interface AuthUser {
   is_demo: boolean;
 }
 
-// Owners created by the earlier Cursor-identity edition hold a random placeholder
-// instead of a salt:hash pair, so they cannot log in until setup claims them.
-const HAS_PASSWORD_SQL = "position(':' in password_hash) > 0";
+const MIN_OWNER_PASSWORD_LENGTH = 8;
 
-export async function hasOwnerAccount(): Promise<boolean> {
-  const rows = await sql<{ cnt: string | number }>(
-    `select count(*) as cnt from users where is_demo = false and ${HAS_PASSWORD_SQL}`,
-    [],
-  );
-  return Number(rows[0]?.cnt ?? 0) > 0;
+function getOwnerPassword(): string | null {
+  const value = process.env.PERSO_PASSWORD?.trim() ?? "";
+  return value.length >= MIN_OWNER_PASSWORD_LENGTH ? value : null;
 }
 
-export async function findUnclaimedOwnerId(): Promise<string | null> {
+export function isOwnerPasswordConfigured(): boolean {
+  return getOwnerPassword() !== null;
+}
+
+export function checkOwnerPassword(candidate: string): boolean {
+  const expected = getOwnerPassword();
+  if (!expected) return false;
+  const a = crypto.createHash("sha256").update(candidate).digest();
+  const b = crypto.createHash("sha256").update(expected).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
+// The edition has a single owner: the oldest non-demo row, which also covers the
+// account the earlier Cursor-identity edition created.
+export async function getOrCreateOwnerId(): Promise<string> {
   const rows = await sql<{ id: string }>(
-    `select id from users where is_demo = false and not (${HAS_PASSWORD_SQL})
-     order by created_at asc limit 1`,
+    "select id from users where is_demo = false order by created_at asc limit 1",
     [],
   );
-  return rows[0]?.id ?? null;
+  if (rows[0]?.id) return rows[0].id;
+
+  const userId = crypto.randomUUID();
+  await sql(
+    `insert into users (
+      id, email, name, password_hash, plan, billing_cycle, subscription_status,
+      company_name, siret, referral_code, is_demo
+    ) values ($1, $2, 'Mon Dressing', $3, 'pro', 'monthly', 'personal_free',
+      'Mon Dressing · Perso', '000 000 000 00000', $4, false)`,
+    [
+      userId,
+      `owner-${userId.slice(0, 8)}@vintflow.local`,
+      crypto.randomBytes(32).toString("hex"),
+      `VF-${userId.slice(0, 6).toUpperCase()}`,
+    ],
+  );
+  await seedUserWorkspace(userId);
+  return userId;
 }
 
 export async function getAuthenticatedUser(): Promise<AuthUser | null> {

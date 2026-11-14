@@ -28,6 +28,18 @@ export async function POST(request: Request) {
       { status: 429 },
     );
   }
+  const globalLimit = await checkRateLimit({
+    scope: "register_global",
+    key: "all",
+    limit: 200,
+    windowSeconds: 3600,
+  });
+  if (!globalLimit.allowed) {
+    return NextResponse.json(
+      { error: "Beaucoup d'inscriptions en ce moment. Réessaie dans quelques minutes." },
+      { status: 429 },
+    );
+  }
 
   let body: {
     email?: string;

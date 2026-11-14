@@ -68,18 +68,38 @@ export async function checkRateLimit(params: {
   };
 }
 
-// Card-less trial accounts are cheap to create, so their AI calls also share
-// a per-IP daily budget; Stripe-verified subscribers are not affected.
+// Card-less trial accounts are cheap to create, so their AI calls share a
+// per-IP and a site-wide daily budget; Stripe-verified subscribers are exempt.
 export async function checkTrialAiBudget(
   request: Request,
   subscriptionStatus: string,
 ): Promise<boolean> {
   if (subscriptionStatus === "active") return true;
-  const rl = await checkRateLimit({
+  const perIp = await checkRateLimit({
     scope: "ai_trial_ip",
     key: getClientIp(request),
     limit: 80,
     windowSeconds: 86400,
   });
-  return rl.allowed;
+  if (!perIp.allowed) return false;
+  const siteWide = await checkRateLimit({
+    scope: "ai_trial_global",
+    key: "all",
+    limit: 1500,
+    windowSeconds: 86400,
+  });
+  return siteWide.allowed;
+}
+
+export async function isRateLimited(params: {
+  scope: string;
+  key: string;
+  limit: number;
+}): Promise<boolean> {
+  const bucket = `${params.scope}:${hashRateKey(params.key)}`;
+  const rows = await sql<{ count: number }>(
+    "select count from rate_limits where bucket = $1 and reset_at >= now()",
+    [bucket],
+  );
+  return Number(rows[0]?.count ?? 0) >= params.limit;
 }

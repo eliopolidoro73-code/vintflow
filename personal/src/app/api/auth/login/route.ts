@@ -2,59 +2,66 @@ import { NextResponse } from "next/server";
 import {
   assertSameOrigin,
   buildSessionCookieHeader,
+  checkOwnerPassword,
   createSessionToken,
-  verifyPassword,
+  getOrCreateOwnerId,
+  isOwnerPasswordConfigured,
 } from "@/lib/auth";
-import { sql } from "@/lib/db";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimit, getClientIp, isRateLimited } from "@/lib/rate-limit";
+
+// Failed attempts are also counted site-wide, so rotating spoofed IP headers
+// cannot buy more password guesses.
+const GLOBAL_FAILURES = { scope: "perso_login_fail", key: "all", limit: 20 };
+const GLOBAL_FAILURE_WINDOW_SECONDS = 3600;
 
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
   if (originError) return originError;
 
-  const ip = getClientIp(request);
+  if (!isOwnerPasswordConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          "Le mot de passe du site n'est pas encore configuré (secret PERSO_PASSWORD).",
+      },
+      { status: 503 },
+    );
+  }
+
   const rl = await checkRateLimit({
     scope: "perso_login",
-    key: ip,
-    limit: 15,
+    key: getClientIp(request),
+    limit: 10,
     windowSeconds: 900,
   });
-  if (!rl.allowed) {
+  if (!rl.allowed || (await isRateLimited(GLOBAL_FAILURES))) {
     return NextResponse.json(
-      { error: "Trop de tentatives. Réessaie dans 15 minutes." },
+      { error: "Trop de tentatives. Réessaie plus tard." },
       { status: 429 },
     );
   }
 
-  let body: { email?: string; password?: string };
+  let body: { password?: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Corps JSON invalide" }, { status: 400 });
   }
 
-  const email = (body.email ?? "").trim().toLowerCase();
-  const password = body.password ?? "";
-  if (!email || !password) {
+  const password = typeof body.password === "string" ? body.password : "";
+  if (!password || password.length > 256 || !checkOwnerPassword(password)) {
+    await checkRateLimit({
+      ...GLOBAL_FAILURES,
+      windowSeconds: GLOBAL_FAILURE_WINDOW_SECONDS,
+    });
     return NextResponse.json(
-      { error: "Email et code d'accès requis" },
-      { status: 400 },
-    );
-  }
-
-  const rows = await sql<{ id: string; password_hash: string }>(
-    "select id, password_hash from users where email = $1 and is_demo = false",
-    [email],
-  );
-  const user = rows[0];
-  if (!user || !verifyPassword(password, user.password_hash)) {
-    return NextResponse.json(
-      { error: "Identifiants incorrects" },
+      { error: "Mot de passe incorrect" },
       { status: 401 },
     );
   }
 
-  const token = await createSessionToken(user.id);
+  const ownerId = await getOrCreateOwnerId();
+  const token = await createSessionToken(ownerId);
   const cookie = buildSessionCookieHeader(token, request);
   const res = NextResponse.json({ ok: true });
   res.cookies.set(cookie.name, cookie.value, cookie.options);

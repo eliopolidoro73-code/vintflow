@@ -2362,7 +2362,7 @@ export function BackOffice({
                   Accès Pro Scale illimité activé pour toi
                 </h2>
                 <p className="mt-2 text-xs sm:text-sm text-zinc-300 max-w-2xl">
-                  Ton édition personnelle de Vintflow est protégée par ton email et ton mot de passe. Ouvre-la depuis n&apos;importe quel navigateur, sur ordinateur ou téléphone, avec toutes les fonctionnalités Pro Scale débloquées gratuitement.
+                  Ton édition personnelle de Vintflow est protégée par ton mot de passe. Ouvre-la depuis n&apos;importe quel navigateur, sur ordinateur ou téléphone, avec toutes les fonctionnalités Pro Scale débloquées gratuitement.
                 </p>
                 <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
                   {activePlan.features.map((f, i) => (

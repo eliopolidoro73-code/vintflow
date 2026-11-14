@@ -52,10 +52,8 @@ const FEATURES = [
   },
 ];
 
-export function OwnerAccess({ needsSetup }: { needsSetup: boolean }) {
+export function OwnerAccess({ configured }: { configured: boolean }) {
   const router = useRouter();
-  const [name, setName] = useState("Mon Dressing");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,13 +63,10 @@ export function OwnerAccess({ needsSetup }: { needsSetup: boolean }) {
     setError(null);
     setLoading(true);
     try {
-      const endpoint = needsSetup ? "/api/auth/setup" : "/api/auth/login";
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(
-          needsSetup ? { name, email, password } : { email, password },
-        ),
+        body: JSON.stringify({ password }),
       });
       const out = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
@@ -136,47 +131,16 @@ export function OwnerAccess({ needsSetup }: { needsSetup: boolean }) {
           <div className="w-full rounded-3xl border border-white/10 bg-[#0e111a] p-6 shadow-[0_25px_70px_-10px_rgba(0,0,0,0.85)] sm:p-8 space-y-6">
             <div>
               <h2 className="text-xl font-extrabold text-white">
-                {needsSetup ? "Crée ton accès" : "Connexion à ton espace"}
+                Connexion à ton espace
               </h2>
               <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
-                {needsSetup
-                  ? "Première visite : choisis ton email et ton mot de passe. Tu les utiliseras pour te connecter depuis n'importe quel appareil."
-                  : "Entre ton email et ton mot de passe pour ouvrir ton cockpit."}
+                {configured
+                  ? "Entre ton mot de passe pour ouvrir ton cockpit."
+                  : "Le mot de passe du site n'est pas encore configuré. Ajoute le secret PERSO_PASSWORD (8 caractères minimum) à l'app dans Cursor, puis recharge cette page."}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              {needsSetup && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="owner-name" className="text-zinc-300">
-                    Nom de ton espace
-                  </Label>
-                  <Input
-                    id="owner-name"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="h-11 bg-white/5 border-white/10 text-white"
-                  />
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <Label htmlFor="owner-email" className="text-zinc-300">
-                  Email
-                </Label>
-                <Input
-                  id="owner-email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="toi@exemple.fr"
-                  className="h-11 bg-white/5 border-white/10 text-white"
-                />
-              </div>
-
               <div className="space-y-1.5">
                 <Label htmlFor="owner-pass" className="text-zinc-300">
                   Mot de passe
@@ -184,9 +148,8 @@ export function OwnerAccess({ needsSetup }: { needsSetup: boolean }) {
                 <Input
                   id="owner-pass"
                   type="password"
-                  autoComplete={needsSetup ? "new-password" : "current-password"}
+                  autoComplete="current-password"
                   required
-                  minLength={4}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -205,7 +168,7 @@ export function OwnerAccess({ needsSetup }: { needsSetup: boolean }) {
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !configured}
                 className="vf-shimmer-btn h-11 w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 font-bold text-white shadow-[0_0_25px_rgba(139,92,246,0.35)]"
               >
                 {loading ? (
@@ -213,7 +176,7 @@ export function OwnerAccess({ needsSetup }: { needsSetup: boolean }) {
                 ) : (
                   <Lock className="mr-2 h-4 w-4" />
                 )}
-                {needsSetup ? "Créer mon accès et ouvrir Vintflow" : "Se connecter"}
+                Se connecter
               </Button>
             </form>
 
