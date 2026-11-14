@@ -150,7 +150,6 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [autoPublishDemo, setAutoPublishDemo] = useState(true);
   const [activeAiIdx, setActiveAiIdx] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [demoLoading, setDemoLoading] = useState(false);
   const [monthlySalesEst, setMonthlySalesEst] = useState(60);
 
   const [simTitle, setSimTitle] = useState("Veste Carhartt Detroit Canvas");
@@ -187,23 +186,6 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
   function openLogin() {
     setAuthMode("login");
     setAuthOpen(true);
-  }
-
-  async function launchDemo() {
-    setDemoLoading(true);
-    try {
-      const res = await fetch("/api/auth/demo", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan: "essentiel" }),
-      });
-      if (res.ok) {
-        router.push("/app");
-        router.refresh();
-      }
-    } finally {
-      setDemoLoading(false);
-    }
   }
 
   return (
@@ -254,7 +236,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   onClick={() => openSignup("plus")}
                   className="vf-shimmer-btn bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 font-bold rounded-xl shadow-[0_0_20px_rgba(139,92,246,0.32)]"
                 >
-                  Essai gratuit 14j
+                  Active ton essai gratuit 14 jours
                 </Button>
               </>
             )}
@@ -290,19 +272,15 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               onClick={() => (isLoggedIn ? router.push("/app") : openSignup("plus"))}
               className="vf-shimmer-btn w-full sm:w-auto h-12 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-8 text-base font-bold text-white hover:from-violet-500 hover:to-indigo-500 shadow-[0_0_36px_rgba(139,92,246,0.4)]"
             >
-              Essai gratuit 14 jours
+              Active ton essai gratuit 14 jours
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              disabled={demoLoading}
-              onClick={launchDemo}
-              className="w-full sm:w-auto h-12 rounded-xl border-white/15 bg-white/[0.04] px-6 text-base font-semibold text-white hover:bg-white/[0.09] hover:border-violet-500/45"
+            <a
+              href="#tarifs"
+              className="vf-click-press w-full sm:w-auto h-12 inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-6 text-base font-semibold text-white hover:bg-white/[0.09] hover:border-violet-500/45 transition-all"
             >
-              <Sparkles className="mr-2 h-4 w-4 text-violet-400" />
-              {demoLoading ? "Chargement..." : "Tester la démo en 1 clic"}
-            </Button>
+              Comparer les formules
+            </a>
           </div>
 
           <div className="mt-7 flex items-center justify-center gap-3 text-xs text-zinc-400">

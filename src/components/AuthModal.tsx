@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Sparkles, Lock, CheckCircle2 } from "lucide-react";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Check,
+  CheckCircle2,
+  Loader2,
+  Lock,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +20,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PLANS, type BillingCycle, type PlanId } from "@/lib/plans";
+import {
+  comparePlans,
+  PLANS,
+  type BillingCycle,
+  type PlanId,
+} from "@/lib/plans";
 
 interface AuthModalProps {
   open: boolean;
@@ -33,6 +45,7 @@ export function AuthModal({
   const router = useRouter();
   const [mode, setMode] = useState<"register" | "login">(defaultMode);
   const [plan, setPlan] = useState<PlanId>(defaultPlan);
+  const [previousPlan, setPreviousPlan] = useState<PlanId | null>(null);
   const [cycle, setCycle] = useState<BillingCycle>(defaultCycle);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -40,8 +53,18 @@ export function AuthModal({
   const [referralCode, setReferralCode] = useState("");
   const [withSampleData, setWithSampleData] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const baselinePlan: PlanId = previousPlan ?? "essentiel";
+  const comparison =
+    plan !== baselinePlan ? comparePlans(baselinePlan, plan, cycle) : null;
+  const activePlanObj = PLANS[plan];
+
+  function handleSelectPlan(pid: PlanId) {
+    if (pid === plan) return;
+    setPreviousPlan(plan);
+    setPlan(pid);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -97,32 +120,9 @@ export function AuthModal({
     }
   }
 
-  async function handleDemo() {
-    setError(null);
-    setDemoLoading(true);
-    try {
-      const res = await fetch("/api/auth/demo", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan: "pro" }),
-      });
-      if (!res.ok) {
-        setError("Erreur lors du lancement de la démo");
-        setDemoLoading(false);
-        return;
-      }
-      onOpenChange(false);
-      router.push("/app");
-      router.refresh();
-    } catch {
-      setError("Impossible de lancer la démo");
-      setDemoLoading(false);
-    }
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="vf-tab-enter bg-[#0e111a] border-white/15 text-zinc-100 sm:max-w-md shadow-[0_25px_70px_-10px_rgba(0,0,0,0.85)]">
+      <DialogContent className="vf-tab-enter bg-[#0e111a] border-white/15 text-zinc-100 sm:max-w-lg max-h-[92vh] overflow-y-auto shadow-[0_25px_70px_-10px_rgba(0,0,0,0.85)]">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold tracking-tight text-white">
             {mode === "register"
@@ -131,8 +131,8 @@ export function AuthModal({
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
             {mode === "register"
-              ? "Accès immédiat à ton cockpit. Annulation en 1 clic à tout moment."
-              : "Retrouve tes ventes, ton stock SKU et tes marges en temps réel."}
+              ? "0,00 € débité aujourd'hui. Annulation en 1 clic à tout moment."
+              : "Retrouve tes ventes, ton stock SKU et ta marge commerciale."}
           </DialogDescription>
         </DialogHeader>
 
@@ -149,7 +149,7 @@ export function AuthModal({
                 : "text-zinc-400 hover:text-white"
             }`}
           >
-            Créer un compte
+            Créer un compte (14j offerts)
           </button>
           <button
             type="button"
@@ -179,10 +179,10 @@ export function AuthModal({
                     <button
                       key={pid}
                       type="button"
-                      onClick={() => setPlan(pid)}
+                      onClick={() => handleSelectPlan(pid)}
                       className={`vf-click-press rounded-lg border p-2.5 text-left transition-all ${
                         plan === pid
-                          ? "border-violet-500 bg-violet-500/15 shadow-[0_0_20px_rgba(139,92,246,0.2)]"
+                          ? "border-violet-500 bg-violet-500/15 shadow-[0_0_20px_rgba(139,92,246,0.25)]"
                           : "border-white/10 bg-white/[0.02] hover:border-white/25"
                       }`}
                     >
@@ -195,6 +195,86 @@ export function AuthModal({
                     </button>
                   );
                 })}
+              </div>
+
+              {/* Live Diff Card: Ce qui change (en mieux / en moins) */}
+              <div
+                key={`${plan}-${baselinePlan}`}
+                className="vf-tab-enter rounded-xl border border-white/10 bg-[#07080d] p-3 text-xs space-y-2"
+              >
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="font-bold text-white">
+                    {comparison
+                      ? `Changement : ${PLANS[baselinePlan].name} → ${activePlanObj.name}`
+                      : `Inclus dans ${activePlanObj.name}`}
+                  </span>
+                  {comparison && (
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        comparison.priceDiff > 0
+                          ? "bg-violet-500/20 text-violet-300"
+                          : "bg-amber-500/15 text-amber-300"
+                      }`}
+                    >
+                      {comparison.priceDiff > 0 ? (
+                        <ArrowUpRight className="h-3 w-3" />
+                      ) : (
+                        <ArrowDownRight className="h-3 w-3" />
+                      )}
+                      {comparison.priceDiff > 0
+                        ? `+${comparison.priceDiff} €/mois`
+                        : `${comparison.priceDiff} €/mois`}
+                    </span>
+                  )}
+                </div>
+
+                {comparison ? (
+                  <div className="space-y-1.5">
+                    {comparison.gains.map((g, i) => (
+                      <p
+                        key={`g-${i}`}
+                        className="flex items-start gap-1.5 text-[11px] text-emerald-400"
+                      >
+                        <Check className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                        <span>
+                          <strong>En mieux :</strong> {g}
+                        </span>
+                      </p>
+                    ))}
+                    {comparison.losses.map((l, i) => (
+                      <p
+                        key={`l-${i}`}
+                        className="flex items-start gap-1.5 text-[11px] text-amber-300"
+                      >
+                        <Lock className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                        <span>
+                          <strong>En moins :</strong> {l}
+                        </span>
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {activePlanObj.features.slice(0, 3).map((f, i) => (
+                      <p
+                        key={i}
+                        className="flex items-start gap-1.5 text-[11px] text-emerald-400"
+                      >
+                        <Check className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                        <span>{f}</span>
+                      </p>
+                    ))}
+                    {activePlanObj.lockedFeatures.map((lf, i) => (
+                      <p
+                        key={`lf-${i}`}
+                        className="flex items-start gap-1.5 text-[11px] text-zinc-500"
+                      >
+                        <Lock className="h-3 w-3 shrink-0 mt-0.5" />
+                        <span>{lf}</span>
+                      </p>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs">
@@ -216,7 +296,7 @@ export function AuthModal({
                     onClick={() => setCycle("annual")}
                     className={`rounded px-2 py-1 ${
                       cycle === "annual"
-                        ? "bg-emerald-500/20 text-emerald-300 font-medium"
+                        ? "bg-violet-500/25 text-violet-300 font-medium"
                         : "text-zinc-400"
                     }`}
                   >
@@ -292,7 +372,7 @@ export function AuthModal({
                   type="checkbox"
                   checked={withSampleData}
                   onChange={(e) => setWithSampleData(e.target.checked)}
-                  className="rounded border-white/20 bg-white/5 accent-emerald-500"
+                  className="rounded border-white/20 bg-white/5 accent-violet-500"
                 />
                 Pré-remplir avec des articles &amp; ventes d&apos;exemple
               </label>
@@ -316,43 +396,19 @@ export function AuthModal({
               <Lock className="h-4 w-4 mr-2" />
             )}
             {mode === "register"
-              ? "Démarrer l'essai gratuit (14 jours)"
+              ? `Active ton essai gratuit 14 jours (${activePlanObj.name})`
               : "Se connecter"}
           </Button>
         </form>
 
-        <div className="relative py-1">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-white/10" />
-          </div>
-          <div className="relative flex justify-center text-[11px] uppercase">
-            <span className="bg-[#10141c] px-2 text-zinc-500">ou</span>
-          </div>
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          disabled={demoLoading}
-          onClick={handleDemo}
-          className="w-full border-white/15 bg-white/5 text-zinc-100 hover:bg-white/10"
-        >
-          {demoLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          ) : (
-            <Sparkles className="h-4 w-4 mr-2 text-violet-400" />
-          )}
-          Tester le back-office en 1 clic (Démo)
-        </Button>
-
         <div className="flex items-center justify-center gap-4 text-[11px] text-zinc-500">
           <span className="flex items-center gap-1">
             <CheckCircle2 className="h-3.5 w-3.5 text-violet-400" />
-            Sans engagement
+            0 € aujourd&apos;hui
           </span>
           <span className="flex items-center gap-1">
             <CheckCircle2 className="h-3.5 w-3.5 text-violet-400" />
-            Essai 14 jours offert
+            Annulable en 1 clic
           </span>
         </div>
       </DialogContent>

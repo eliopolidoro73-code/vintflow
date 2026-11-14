@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
+  ArrowDownRight,
   ArrowRight,
+  ArrowUpRight,
   Bot,
   Boxes,
   Check,
@@ -49,7 +51,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { computeNetMargin, formatDateFr, formatEuro } from "@/lib/format";
-import { PLANS, type BillingCycle, type PlanId } from "@/lib/plans";
+import {
+  comparePlans,
+  PLANS,
+  type BillingCycle,
+  type PlanId,
+} from "@/lib/plans";
 import type { AuthUser } from "@/lib/auth";
 import {
   DocumentPrintModal,
@@ -298,6 +305,9 @@ export function BackOffice({
     amount: "12",
   });
   const [checkoutLoadingPlan, setCheckoutLoadingPlan] = useState<PlanId | null>(
+    null,
+  );
+  const [previewTargetPlan, setPreviewTargetPlan] = useState<PlanId | null>(
     null,
   );
 
@@ -2420,6 +2430,107 @@ export function BackOffice({
                   </div>
                 </div>
               </div>
+
+              {/* Live Plan Switch Comparison Simulator */}
+              {(() => {
+                const targetPlan: PlanId =
+                  previewTargetPlan ??
+                  (user.plan === "essentiel"
+                    ? "plus"
+                    : user.plan === "plus"
+                      ? "pro"
+                      : "plus");
+                const diff = comparePlans(user.plan, targetPlan, billingCycle);
+                const isSame = user.plan === targetPlan;
+
+                return (
+                  <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-violet-400">
+                          Simulateur de changement de forfait
+                        </p>
+                        <h3 className="text-sm font-bold text-white mt-0.5">
+                          {isSame
+                            ? `Tu es actuellement sur ${activePlan.name}`
+                            : `Ce qui change si tu passes de ${activePlan.name} → ${PLANS[targetPlan].name}`}
+                        </h3>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        {(["essentiel", "plus", "pro"] as PlanId[]).map((pid) => (
+                          <button
+                            key={pid}
+                            type="button"
+                            onClick={() => setPreviewTargetPlan(pid)}
+                            className={`vf-click-press rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                              targetPlan === pid
+                                ? "bg-violet-600 text-white shadow-sm"
+                                : "bg-white/5 text-zinc-400 hover:text-white"
+                            }`}
+                          >
+                            {PLANS[pid].name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {!isSame && (
+                      <div
+                        key={`${user.plan}-${targetPlan}-${billingCycle}`}
+                        className="vf-tab-enter grid gap-3 sm:grid-cols-2 text-xs"
+                      >
+                        <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] p-3.5 space-y-1.5">
+                          <p className="font-bold text-emerald-400 flex items-center gap-1.5">
+                            <ArrowUpRight className="h-4 w-4" />
+                            Ce que tu gagnes en mieux ({diff.gains.length})
+                          </p>
+                          {diff.gains.length === 0 ? (
+                            <p className="text-[11px] text-zinc-400">
+                              Aucune fonctionnalité supplémentaire sur ce palier.
+                            </p>
+                          ) : (
+                            diff.gains.map((g, i) => (
+                              <p
+                                key={i}
+                                className="flex items-start gap-1.5 text-[11px] text-emerald-200"
+                              >
+                                <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400 mt-0.5" />
+                                <span>{g}</span>
+                              </p>
+                            ))
+                          )}
+                        </div>
+
+                        <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3.5 space-y-1.5">
+                          <p className="font-bold text-amber-300 flex items-center gap-1.5">
+                            <ArrowDownRight className="h-4 w-4" />
+                            Ce qui est en moins ({diff.losses.length}) ·{" "}
+                            {diff.priceDiff > 0
+                              ? `+${diff.priceDiff} €/mois`
+                              : `${diff.priceDiff} €/mois`}
+                          </p>
+                          {diff.losses.length === 0 ? (
+                            <p className="text-[11px] text-zinc-400">
+                              Tu ne perds aucune fonctionnalité en passant à {PLANS[targetPlan].name}.
+                            </p>
+                          ) : (
+                            diff.losses.map((l, i) => (
+                              <p
+                                key={i}
+                                className="flex items-start gap-1.5 text-[11px] text-amber-200"
+                              >
+                                <Lock className="h-3.5 w-3.5 shrink-0 text-amber-400 mt-0.5" />
+                                <span>{l}</span>
+                              </p>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* 3 Premium Plan Cards */}
               <div className="grid gap-5 lg:grid-cols-3">
