@@ -18,7 +18,6 @@ import { computeNetMargin, formatEuro, generateListingCopy } from "@/lib/format"
 interface NewListingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  urssafRate: number;
   canCrosslist: boolean;
   accounts: Array<{ platform: string; handle: string }>;
   onCreated: () => void;
@@ -27,7 +26,6 @@ interface NewListingDialogProps {
 export function NewListingDialog({
   open,
   onOpenChange,
-  urssafRate,
   canCrosslist,
   accounts,
   onCreated,
@@ -59,7 +57,6 @@ export function NewListingDialog({
     platformFees: 0,
     boostCost: 0,
     shippingCost: 0,
-    urssafRate,
   });
 
   function handleGenerateCopy() {
@@ -131,7 +128,7 @@ export function NewListingDialog({
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
             Renseigne ton article, génère les fiches Vinted + Leboncoin et vérifie
-            ta marge nette après URSSAF.
+            ta marge commerciale.
           </DialogDescription>
         </DialogHeader>
 
@@ -214,7 +211,7 @@ export function NewListingDialog({
 
           <div className="grid grid-cols-3 gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
             <div className="space-y-1">
-              <Label className="text-[11px] text-zinc-400">Prix achat (€)</Label>
+              <Label className="text-[11px] text-zinc-400">Coût de revient (€)</Label>
               <Input
                 type="number"
                 step="0.5"
@@ -237,7 +234,7 @@ export function NewListingDialog({
             </div>
             <div className="space-y-1">
               <Label className="text-[11px] text-emerald-400 font-semibold">
-                Prix de vente (€)
+                Chiffre d&apos;affaire (€)
               </Label>
               <Input
                 type="number"
@@ -250,13 +247,13 @@ export function NewListingDialog({
             </div>
             <div className="col-span-3 flex flex-wrap items-center justify-between text-xs border-t border-white/10 pt-2.5">
               <span className="text-zinc-400">
-                URSSAF ({urssafRate}%) :{" "}
+                Coût total :{" "}
                 <strong className="text-zinc-200">
-                  {formatEuro(previewMargin.urssafAmount)}
+                  {formatEuro((Number(purchasePrice) || 0) + (Number(extraCosts) || 0))}
                 </strong>
               </span>
               <span className="text-zinc-300">
-                Marge nette estimée :{" "}
+                Marge commerciale estimée :{" "}
                 <strong
                   className={
                     previewMargin.netMargin >= 0

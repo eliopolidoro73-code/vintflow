@@ -84,14 +84,14 @@ const ESSENTIAL_TOOLS = [
   {
     icon: <Swords className="h-5 w-5 text-rose-400" />,
     title: "Sniper Négo & Calcul de Lot",
-    desc: "Calcule ton seuil zéro-perte (URSSAF incluse) et riposte aux offres à -40 % sans brader ta marge.",
+    desc: "Calcule ton seuil zéro-perte sur ton coût de revient et riposte aux offres à -40 % sans brader ta marge.",
   },
 ];
 
 const AI_PRESETS = [
   {
     q: "Combien j'ai vendu ce mois-ci ?",
-    a: "Tu as encaissé 2 480 € sur 44 ventes ce mois-ci. Après déduction de tes achats (920 €), boosts (14 €) et URSSAF estimée (305 €), ta marge nette réelle est de 1 241 €.",
+    a: "Tu as encaissé 2 480 € de chiffre d'affaire sur 44 ventes ce mois-ci. Après déduction de ton coût de revient (920 €) et boosts (14 €), ta marge commerciale est de 1 546 €.",
   },
   {
     q: "Quels articles dorment depuis +14 jours ?",
@@ -107,7 +107,7 @@ const REVIEWS = [
   {
     name: "Théo M.",
     role: "Revendeur Vinted & Leboncoin · 140 ventes/mois",
-    text: "Avant je passais mon dimanche soir sur Excel à calculer mon URSSAF et mes prix d'achat. Maintenant tout est calculé à la vente, avec mes factures PDF prêtes.",
+    text: "Avant je passais mon dimanche soir sur Excel à calculer ma marge commerciale et mon coût de revient. Maintenant tout est calculé à la vente, avec mes factures PDF prêtes.",
   },
   {
     name: "Inès B.",
@@ -116,7 +116,7 @@ const REVIEWS = [
   },
   {
     name: "Kévin R.",
-    role: "Micro-entrepreneur seconde main",
+    role: "Revendeur seconde main",
     text: "Simple, rapide, lisible. Les bordereaux 10×15 avec le SKU imprimé dessus m'ont évité plein d'erreurs quand je prépare 15 colis d'un coup.",
   },
 ];
@@ -128,15 +128,15 @@ const FAQS = [
   },
   {
     q: "Quelle différence entre Essentiel (9 €), Vendeur Plus (29 €) et Pro Scale (49 €) ?",
-    a: "Essentiel (9 €) couvre uniquement le suivi de stock (40 SKU), marge/URSSAF et export CSV sans IA ni crosslisting. Vendeur Plus (29 €) débloque les meilleurs outils (Studio Photo, Annonces IA, Crosslisting, Factures PDF, Messagerie) avec des quotas mensuels (30 crédits IA, 100 crosslistings). Pro Scale (49 €) passe à la haute capacité avec auto-crosslisting 8h–23h et l'Assistant IA Nova.",
+    a: "Essentiel (9 €) couvre uniquement le suivi de stock (40 SKU), marge commerciale et export CSV sans IA ni crosslisting. Vendeur Plus (29 €) débloque les meilleurs outils (Studio Photo, Annonces IA, Crosslisting, Factures PDF, Messagerie) avec des quotas mensuels (30 crédits IA, 100 crosslistings). Pro Scale (49 €) passe à la haute capacité avec auto-crosslisting 8h–23h et l'Assistant IA Nova.",
   },
   {
     q: "Est-ce risqué pour mon compte Vinted ou Leboncoin ?",
     a: "Non. Vintflow n'utilise pas de bot de spam ou de republication agressive interdite. Le Bouclier Anti-Shadowban t'aide au contraire à éviter les blocages.",
   },
   {
-    q: "Puis-je exporter mes chiffres pour ma micro-entreprise ?",
-    a: "Oui : calcul automatique de l'URSSAF à chaque vente, jauge de seuil TVA, factures PDF (dès Vendeur Plus) et export CSV du livre des recettes.",
+    q: "Puis-je exporter mes chiffres pour ma comptabilité ?",
+    a: "Oui : calcul automatique de ta marge commerciale à chaque vente, jauge de seuil TVA, factures PDF (dès Vendeur Plus) et export CSV du livre des recettes.",
   },
 ];
 
@@ -172,7 +172,6 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
     platformFees: 0,
     boostCost: 0,
     shippingCost: 0,
-    urssafRate: 12.3,
   });
 
   const hoursSaved = Math.max(2, Math.round((monthlySalesEst / 100) * 20));
@@ -280,8 +279,8 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
           </h1>
 
           <p className="vf-fade-up-delay-2 mx-auto mt-6 max-w-2xl text-base sm:text-lg text-zinc-400 leading-relaxed">
-            Excel te fait perdre des heures et sous-déclarer ton CA. Vintflow centralise
-            tout au même endroit : ventes, marge réelle après URSSAF, crosslisting Vinted ↔
+            Excel te fait perdre des heures et sous-estimer ton chiffre d&apos;affaire. Vintflow centralise
+            tout au même endroit : ventes, marge commerciale, crosslisting Vinted ↔
             Leboncoin, studio photo IA, factures PDF et bordereaux 10×15.
           </p>
 
@@ -337,7 +336,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
 
               <div className="flex flex-wrap gap-1.5 rounded-xl bg-white/[0.04] p-1 border border-white/[0.08]">
                 {[
-                  { id: "kpi", label: "Marge & URSSAF" },
+                  { id: "kpi", label: "Marge commerciale" },
                   { id: "crosslist", label: "Crosslist LBC" },
                   { id: "studio", label: "Studio Photo IA" },
                 ].map((t) => (
@@ -360,19 +359,19 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
             {heroTab === "kpi" && (
               <div key="kpi" className="vf-tab-enter grid grid-cols-2 lg:grid-cols-4 gap-3.5">
                 <div className="vf-card-interactive rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
-                  <p className="text-xs text-zinc-400">CA du mois</p>
+                  <p className="text-xs text-zinc-400">Chiffre d&apos;affaire du mois</p>
                   <p className="mt-1.5 text-2xl font-extrabold text-white">2 480 €</p>
                   <p className="mt-1 text-xs text-emerald-400">+18,4 % vs mois dernier</p>
                 </div>
                 <div className="vf-card-interactive rounded-2xl border border-emerald-500/35 bg-emerald-500/[0.08] p-4">
-                  <p className="text-xs text-emerald-300">Marge nette réelle</p>
-                  <p className="mt-1.5 text-2xl font-extrabold text-emerald-400">1 241 €</p>
-                  <p className="mt-1 text-xs text-zinc-300">URSSAF 12,3 % déduite</p>
+                  <p className="text-xs text-emerald-300">Marge commerciale</p>
+                  <p className="mt-1.5 text-2xl font-extrabold text-emerald-400">1 546 €</p>
+                  <p className="mt-1 text-xs text-zinc-300">Coût de revient déduit</p>
                 </div>
                 <div className="vf-card-interactive rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
                   <p className="text-xs text-zinc-400">Stock suivi (SKU)</p>
                   <p className="mt-1.5 text-2xl font-extrabold text-white">411 €</p>
-                  <p className="mt-1 text-xs text-zinc-400">Valeur revente : 1 085 €</p>
+                  <p className="mt-1 text-xs text-zinc-400">Chiffre d&apos;affaire est. : 1 085 €</p>
                 </div>
                 <div className="vf-card-interactive rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
                   <p className="text-xs text-zinc-400">Colis à préparer</p>
@@ -467,15 +466,14 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               <div className="flex items-center justify-between mb-3">
                 <span className="inline-flex items-center gap-2 text-base font-bold text-white">
                   <TrendingUp className="h-4 w-4 text-emerald-400" />
-                  Marge réelle &amp; URSSAF
+                  Marge commerciale en direct
                 </span>
                 <Badge variant="outline" className="border-white/10 text-zinc-400 text-[11px]">
                   Temps réel
                 </Badge>
               </div>
               <p className="text-sm text-zinc-400 mb-5">
-                Prix d&apos;achat, boosts, frais plateforme et cotisations URSSAF déduits à
-                chaque commande.
+                Coût de revient, boosts et frais plateforme déduits à chaque commande.
               </p>
               <div className="overflow-hidden py-1">
                 <div className="flex w-max gap-3 animate-marquee">
@@ -631,7 +629,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <div>
                 <h3 className="text-lg font-bold text-white">
-                  Teste le générateur d&apos;annonce &amp; calcul de marge URSSAF
+                  Teste le générateur d&apos;annonce &amp; calcul de marge commerciale
                 </h3>
                 <p className="text-xs text-zinc-400">
                   Modifie le titre ou les prix pour voir le résultat en direct.
@@ -659,7 +657,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <span className="font-medium text-zinc-300">Prix achat (€)</span>
+                    <span className="font-medium text-zinc-300">Coût de revient (€)</span>
                     <Input
                       type="number"
                       value={simBuy}
@@ -668,7 +666,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                     />
                   </div>
                   <div className="space-y-1">
-                    <span className="font-semibold text-emerald-400">Prix revente (€)</span>
+                    <span className="font-semibold text-emerald-400">Chiffre d&apos;affaire (€)</span>
                     <Input
                       type="number"
                       value={simSell}
@@ -679,13 +677,13 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 </div>
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <div className="rounded-xl border border-white/10 bg-[#090b0f] p-3.5">
-                    <p className="text-[11px] text-zinc-400">URSSAF (12,3 %)</p>
+                    <p className="text-[11px] text-zinc-400">Coût de revient</p>
                     <p className="text-lg font-extrabold text-white">
-                      {formatEuro(simMargin.urssafAmount)}
+                      {formatEuro(Number(simBuy) || 0)}
                     </p>
                   </div>
                   <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5">
-                    <p className="text-[11px] text-emerald-300 font-medium">Marge nette réelle</p>
+                    <p className="text-[11px] text-emerald-300 font-medium">Marge commerciale</p>
                     <p className="text-lg font-extrabold text-emerald-400">
                       {formatEuro(simMargin.netMargin)}
                     </p>
@@ -850,7 +848,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 Un assistant IA qui lit tes vrais chiffres
               </h2>
               <p className="mt-4 text-zinc-400 text-sm sm:text-base leading-relaxed">
-                Pose une question sur ton CA, ton URSSAF ou tes invendus. Nova prépare
+                Pose une question sur ton chiffre d&apos;affaire, ta marge ou tes invendus. Nova prépare
                 une carte Avant / Après et n&apos;applique rien sans ton clic.
               </p>
 
@@ -880,7 +878,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 <div>
                   <p className="text-sm font-bold text-white">Nova · Assistant Vintflow</p>
                   <p className="text-[11px] text-zinc-400">
-                    Connecté à tes ventes, stock &amp; URSSAF
+                    Connecté à tes ventes, ton stock &amp; ta marge commerciale
                   </p>
                 </div>
               </div>
@@ -1145,7 +1143,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 {[
                   ["Comptes Vinted + LBC + TikTok", "1 Vinted + 1 LBC", "3 Vinted + 1/plat.", "10 Vinted + 3/plat."],
                   ["Stock SKU, Lots & Dépenses", "40 articles", "300 articles", "1 500 articles"],
-                  ["Marge nette, URSSAF & Export CSV", "Inclus", "Inclus", "Inclus"],
+                  ["Marge commerciale & Export CSV", "Inclus", "Inclus", "Inclus"],
                   ["Studio Photo, Détourage & IA 3-en-1", "Non inclus", "30 crédits / mois", "300 crédits / mois"],
                   ["Crosslisting Vinted ↔ Leboncoin", "Non inclus", "100 / mois", "2 000 / mois + Auto 8h–23h"],
                   ["Factures PDF & Bordereaux 10×15", "Non inclus", "Inclus", "Inclus + Envoi auto"],

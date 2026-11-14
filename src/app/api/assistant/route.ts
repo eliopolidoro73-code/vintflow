@@ -155,11 +155,10 @@ export async function POST(request: Request) {
       gross_amount: string | number;
       purchase_cost: string | number;
       net_margin: string | number;
-      urssaf_amount: string | number;
       shipment_status: string;
       item_title: string;
     }>(
-      "select platform, gross_amount, purchase_cost, net_margin, urssaf_amount, shipment_status, item_title from sales where user_id = $1",
+      "select platform, gross_amount, purchase_cost, net_margin, shipment_status, item_title from sales where user_id = $1",
       [user.id],
     ),
     sql<{
@@ -183,7 +182,6 @@ export async function POST(request: Request) {
   const totalCa = sales.reduce((s, r) => s + Number(r.gross_amount), 0);
   const totalPurchase = sales.reduce((s, r) => s + Number(r.purchase_cost), 0);
   const totalNet = sales.reduce((s, r) => s + Number(r.net_margin), 0);
-  const totalUrssaf = sales.reduce((s, r) => s + Number(r.urssaf_amount), 0);
   const roiPct =
     totalPurchase > 0 ? Math.round((totalNet / totalPurchase) * 100) : 0;
   const pendingShip = sales.filter((s) => s.shipment_status === "to_ship");
@@ -217,7 +215,7 @@ export async function POST(request: Request) {
           messages: [
             {
               role: "system",
-              content: `Tu es Nova, l'assistant IA stratégique de Vintflow pour revendeurs Vinted, Leboncoin, TikTok Shop et eBay. Réponds en français de façon directe, chiffrée et actionnable avec ces vraies données : CA total=${formatEuro(totalCa)}, Marge nette=${formatEuro(totalNet)}, ROI sur achats=${roiPct}%, URSSAF=${formatEuro(totalUrssaf)} (${user.urssaf_rate}%), Seuil TVA=${formatEuro(user.vat_threshold)}, Meilleure vente=${bestSale ? `${bestSale.item_title} (+${formatEuro(Number(bestSale.net_margin))})` : "Aucune"}, Colis à expédier=${pendingShip.length}, En transit=${pendingTransit.length} (${formatEuro(pendingAmount)} en attente), Messages non lus=${unreadCount}, Articles actifs=${items.length}, Dormants +14j=${dormant.length}, Non crosslistés Leboncoin=${notCrosslisted.length}.`,
+              content: `Tu es Nova, l'assistant IA stratégique de Vintflow pour revendeurs Vinted, Leboncoin, TikTok Shop et eBay. Réponds en français de façon directe, chiffrée et actionnable avec ces vraies données : Chiffre d'affaires total=${formatEuro(totalCa)}, Marge commerciale=${formatEuro(totalNet)}, ROI sur coût de revient=${roiPct}%, Seuil TVA=${formatEuro(user.vat_threshold)}, Meilleure vente=${bestSale ? `${bestSale.item_title} (+${formatEuro(Number(bestSale.net_margin))})` : "Aucune"}, Colis à expédier=${pendingShip.length}, En transit=${pendingTransit.length} (${formatEuro(pendingAmount)} en attente), Messages non lus=${unreadCount}, Articles actifs=${items.length}, Dormants +14j=${dormant.length}, Non crosslistés Leboncoin=${notCrosslisted.length}.`,
             },
             { role: "user", content: question },
           ],
@@ -274,7 +272,7 @@ export async function POST(request: Request) {
     q.includes("marge") ||
     q.includes("roi")
   ) {
-    answer = `Sur ton compte, tu as généré **${formatEuro(totalCa)}** de CA sur ${sales.length} ventes, pour une marge nette réelle de **${formatEuro(totalNet)}** (ROI de **${roiPct}%** sur tes achats) après déduction de **${formatEuro(totalUrssaf)}** d'URSSAF (${user.urssaf_rate}%).${bestSale ? ` Ta meilleure pièce : ${bestSale.item_title} (+${formatEuro(Number(bestSale.net_margin))} net).` : ""}`;
+    answer = `Sur ton compte, tu as généré **${formatEuro(totalCa)}** de chiffre d'affaires sur ${sales.length} ventes, pour une marge commerciale de **${formatEuro(totalNet)}** (ROI de **${roiPct}%** sur ton coût de revient).${bestSale ? ` Ta meilleure pièce : ${bestSale.item_title} (+${formatEuro(Number(bestSale.net_margin))}).` : ""}`;
   } else if (
     q.includes("attente") ||
     q.includes("colis") ||
@@ -282,9 +280,9 @@ export async function POST(request: Request) {
     q.includes("exped")
   ) {
     answer = `Tu as **${pendingShip.length} colis à expédier** aujourd'hui et **${pendingTransit.length} en transit**, soit **${formatEuro(pendingAmount)}** en attente de finalisation. Il te reste aussi **${unreadCount} message(s) non lu(s)** dans la messagerie unifiée.`;
-  } else if (q.includes("urssaf") || q.includes("tva") || q.includes("impot") || q.includes("seuil")) {
+  } else if (q.includes("tva") || q.includes("seuil") || q.includes("regime")) {
     const pctTva = Math.round((totalCa / Math.max(1, user.vat_threshold)) * 100);
-    answer = `Ton taux URSSAF configuré est de **${user.urssaf_rate}%** (${user.fiscal_regime}). Cotisations estimées sur tes ventes : **${formatEuro(totalUrssaf)}**. Tu es actuellement à **${pctTva}%** de ton seuil TVA (${formatEuro(totalCa)} / ${formatEuro(user.vat_threshold)}).`;
+    answer = `Tu es actuellement à **${pctTva}%** de ton seuil TVA configuré (${formatEuro(totalCa)} / ${formatEuro(user.vat_threshold)}).`;
   } else if (
     q.includes("dorm") ||
     q.includes("stock") ||
@@ -326,7 +324,7 @@ export async function POST(request: Request) {
       };
     }
   } else {
-    answer = `Point complet de ton cockpit : **${formatEuro(totalCa)}** de CA, **${formatEuro(totalNet)}** de marge nette (ROI ${roiPct}%), **${formatEuro(totalUrssaf)}** d'URSSAF estimée, **${pendingShip.length} colis à expédier**, **${unreadCount} message(s) non lu(s)** et **${dormant.length} article(s) dormant(s)**. Demande-moi par exemple : "Quels articles dorment ?" ou "Quel est mon ROI et mon seuil TVA ?".`;
+    answer = `Point complet de ton cockpit : **${formatEuro(totalCa)}** de chiffre d'affaires, **${formatEuro(totalNet)}** de marge commerciale (ROI ${roiPct}%), **${pendingShip.length} colis à expédier**, **${unreadCount} message(s) non lu(s)** et **${dormant.length} article(s) dormant(s)**. Demande-moi par exemple : "Quels articles dorment ?" ou "Quel est mon ROI et mon seuil TVA ?".`;
   }
 
   return NextResponse.json({ answer, proposedAction });

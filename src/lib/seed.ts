@@ -5,7 +5,7 @@ function daysAgoIso(days: number): string {
   return new Date(Date.now() - days * 86400_000).toISOString();
 }
 
-export async function seedUserWorkspace(userId: string, urssafRate = 12.3) {
+export async function seedUserWorkspace(userId: string) {
   const accounts = [
     {
       id: crypto.randomUUID(),
@@ -346,15 +346,13 @@ export async function seedUserWorkspace(userId: string, urssafRate = 12.3) {
   ];
 
   for (const s of salesSeed) {
-    const urssaf = Number(((s.gross_amount * urssafRate) / 100).toFixed(2));
     const net = Number(
       (
         s.gross_amount -
         s.purchase_cost -
         s.platform_fees -
         s.boost_cost -
-        s.shipping_cost -
-        urssaf
+        s.shipping_cost
       ).toFixed(2),
     );
     await sql(
@@ -387,7 +385,7 @@ export async function seedUserWorkspace(userId: string, urssafRate = 12.3) {
         s.platform_fees,
         s.boost_cost,
         s.shipping_cost,
-        urssaf,
+        0,
         net,
         s.sold_at,
       ],

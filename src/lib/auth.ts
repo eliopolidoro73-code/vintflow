@@ -154,7 +154,6 @@ export interface AuthUser {
   company_name: string;
   siret: string;
   fiscal_regime: string;
-  urssaf_rate: number;
   vat_threshold: number;
   auto_crosslist: boolean;
   auto_delist: boolean;
@@ -181,7 +180,6 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     company_name: string;
     siret: string;
     fiscal_regime: string;
-    urssaf_rate: string | number;
     vat_threshold: number;
     auto_crosslist: boolean;
     auto_delist: boolean;
@@ -191,7 +189,7 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     is_demo: boolean;
   }>(
     `select id, email, name, plan, billing_cycle, subscription_status, trial_ends_at,
-            company_name, siret, fiscal_regime, urssaf_rate, vat_threshold,
+            company_name, siret, fiscal_regime, vat_threshold,
             auto_crosslist, auto_delist, ai_credits_used, crosslist_used, referral_code, is_demo
      from users where id = $1`,
     [userId],
@@ -220,7 +218,6 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     company_name: row.company_name,
     siret: row.siret,
     fiscal_regime: row.fiscal_regime,
-    urssaf_rate: Number(row.urssaf_rate),
     vat_threshold: Number(row.vat_threshold),
     auto_crosslist: Boolean(row.auto_crosslist),
     auto_delist: Boolean(row.auto_delist),

@@ -138,7 +138,6 @@ interface WorkspacePayload {
   kpis: {
     totalRevenue: number;
     totalNetMargin: number;
-    totalUrssaf: number;
     totalExpenses: number;
     trueProfitAfterExpenses: number;
     settledNet: number;
@@ -269,7 +268,7 @@ export function BackOffice({
   const [chatHistory, setChatHistory] = useState<ChatTurn[]>([
     {
       role: "assistant",
-      text: "Bonjour ! Je suis Nova, ton copilote Vintflow. Pose-moi une question sur ton CA, ton URSSAF ou tes articles dormants.",
+      text: "Bonjour ! Je suis Nova, ton copilote Vintflow. Pose-moi une question sur ton chiffre d'affaire, ta marge commerciale ou tes articles dormants.",
     },
   ]);
   const [chatInput, setChatInput] = useState("");
@@ -281,7 +280,6 @@ export function BackOffice({
     company_name: "",
     siret: "",
     fiscal_regime: "micro_bic",
-    urssaf_rate: "12.3",
     vat_threshold: "85000",
   });
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
@@ -317,7 +315,6 @@ export function BackOffice({
         company_name: payload.user.company_name,
         siret: payload.user.siret,
         fiscal_regime: payload.user.fiscal_regime,
-        urssaf_rate: String(payload.user.urssaf_rate),
         vat_threshold: String(payload.user.vat_threshold),
       });
       setSelectedMsgId((prev) => prev ?? payload.messages[0]?.id ?? null);
@@ -601,7 +598,6 @@ export function BackOffice({
         company_name: settingsForm.company_name,
         siret: settingsForm.siret,
         fiscal_regime: settingsForm.fiscal_regime,
-        urssaf_rate: Number(settingsForm.urssaf_rate) || 12.3,
         vat_threshold: Number(settingsForm.vat_threshold) || 85000,
       }),
     });
@@ -610,7 +606,7 @@ export function BackOffice({
       return;
     }
     await fetchWorkspace();
-    showToast("Paramètres fiscaux & URSSAF enregistrés.");
+    showToast("Paramètres de facturation enregistrés.");
   }
 
   async function handleSelectPlan(plan: PlanId) {
@@ -790,7 +786,7 @@ export function BackOffice({
     },
     {
       id: "accounts",
-      label: "Comptes & URSSAF",
+      label: "Comptes & Facturation",
       icon: <Settings className="h-4 w-4" />,
     },
     {
@@ -894,8 +890,8 @@ export function BackOffice({
                   {navItems.find((n) => n.id === tab)?.label}
                 </h1>
                 <p className="text-[11px] text-zinc-400">
-                  Plan {activePlan.name} · {accounts.length} compte(s) · URSSAF{" "}
-                  {user.urssaf_rate}%{user.is_demo ? " · Bac à sable" : ""}
+                  Plan {activePlan.name} · {accounts.length} compte(s) connecté(s)
+                  {user.is_demo ? " · Bac à sable" : ""}
                 </p>
               </div>
             </div>
@@ -952,7 +948,7 @@ export function BackOffice({
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <div className="rounded-2xl border border-white/10 bg-[#10141c] p-5">
-                  <p className="text-xs text-zinc-400">CA brut synchronisé</p>
+                  <p className="text-xs text-zinc-400">Chiffre d&apos;affaire total</p>
                   <p className="mt-2 text-2xl font-extrabold text-white">
                     {formatEuro(kpis.totalRevenue)}
                   </p>
@@ -962,23 +958,23 @@ export function BackOffice({
                 </div>
 
                 <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.06] p-5">
-                  <p className="text-xs text-emerald-300">Marge nette réelle</p>
+                  <p className="text-xs text-emerald-300">Marge commerciale</p>
                   <p className="mt-2 text-2xl font-extrabold text-emerald-400">
                     {formatEuro(kpis.totalNetMargin)}
                   </p>
                   <p className="mt-1 text-[11px] text-zinc-300">
-                    Taux net : {kpis.marginPercent} % · URSSAF : {formatEuro(kpis.totalUrssaf)}
+                    Taux de marge : {kpis.marginPercent} %
                   </p>
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-[#10141c] p-5">
-                  <p className="text-xs text-zinc-400">Stock actif (coût d&apos;achat)</p>
+                  <p className="text-xs text-zinc-400">Stock actif (coût de revient)</p>
                   <p className="mt-2 text-2xl font-extrabold text-white">
                     {formatEuro(kpis.stockCostValue)}
                   </p>
                   <p className="mt-1 text-[11px] text-zinc-400">
                     {kpis.activeListingsCount}
-                    {activePlan.activeItemsLimit ? ` / ${activePlan.activeItemsLimit}` : ""} annonces · Valeur {formatEuro(kpis.stockListingValue)}
+                    {activePlan.activeItemsLimit ? ` / ${activePlan.activeItemsLimit}` : ""} annonces · CA est. {formatEuro(kpis.stockListingValue)}
                   </p>
                 </div>
 
@@ -1024,10 +1020,10 @@ export function BackOffice({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <h2 className="text-sm font-bold text-white">
-                        Rentabilité par vente (CA Brut vs Marge Nette)
+                        Rentabilité par vente (Chiffre d&apos;affaire vs Marge commerciale)
                       </h2>
                       <p className="text-[11px] text-zinc-400">
-                        Bénéfice net final après dépenses ({formatEuro(kpis.totalExpenses)}) :{" "}
+                        Résultat après dépenses ({formatEuro(kpis.totalExpenses)}) :{" "}
                         <strong className="text-emerald-400">
                           {formatEuro(kpis.trueProfitAfterExpenses)}
                         </strong>
@@ -1090,10 +1086,10 @@ export function BackOffice({
                       <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-1">
                         <div className="flex items-center gap-4">
                           <span className="flex items-center gap-1.5">
-                            <span className="h-2.5 w-2.5 rounded-xs bg-white/20" /> CA Brut
+                            <span className="h-2.5 w-2.5 rounded-xs bg-white/20" /> Chiffre d&apos;affaire
                           </span>
                           <span className="flex items-center gap-1.5">
-                            <span className="h-2.5 w-2.5 rounded-xs bg-emerald-500" /> Marge Nette
+                            <span className="h-2.5 w-2.5 rounded-xs bg-emerald-500" /> Marge commerciale
                           </span>
                         </div>
                         <span>Dernières ventes ({Math.min(7, sales.length)})</span>
@@ -1106,7 +1102,7 @@ export function BackOffice({
                   <h2 className="text-sm font-bold text-white">Pilotage Trésorerie</h2>
                   <div className="space-y-2.5 text-xs">
                     <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
-                      <span className="text-zinc-400">Net déjà encaissé</span>
+                      <span className="text-zinc-400">Marge déjà encaissée</span>
                       <strong className="text-emerald-400">{formatEuro(kpis.settledNet)}</strong>
                     </div>
                     <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
@@ -1114,11 +1110,11 @@ export function BackOffice({
                       <strong className="text-amber-300">{formatEuro(kpis.pendingCashflow)}</strong>
                     </div>
                     <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
-                      <span className="text-zinc-400">Provision URSSAF à isoler</span>
-                      <strong className="text-white">{formatEuro(kpis.totalUrssaf)}</strong>
+                      <span className="text-zinc-400">Dépenses &amp; emballages</span>
+                      <strong className="text-rose-300">−{formatEuro(kpis.totalExpenses)}</strong>
                     </div>
                     <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5">
-                      <span className="text-emerald-200 font-medium">Bénéfice net réel</span>
+                      <span className="text-emerald-200 font-medium">Marge commerciale finale</span>
                       <strong className="text-emerald-400 font-extrabold">
                         {formatEuro(kpis.trueProfitAfterExpenses)}
                       </strong>
@@ -1342,7 +1338,6 @@ export function BackOffice({
                       platformFees: 0,
                       boostCost: 0,
                       shippingCost: 0,
-                      urssafRate: user.urssaf_rate,
                     });
                     const isDormant =
                       item.status === "active" && item.days_listed >= 14;
@@ -1421,7 +1416,7 @@ export function BackOffice({
                               {formatEuro(item.listing_price)}
                             </p>
                             <p className="text-[11px] text-zinc-400">
-                              Achat {formatEuro(item.purchase_price + item.extra_costs)} ·
+                              Coût de revient {formatEuro(item.purchase_price + item.extra_costs)} ·
                               Marge est.{" "}
                               <strong className="text-emerald-400">
                                 {formatEuro(est.netMargin)}
@@ -1493,7 +1488,6 @@ export function BackOffice({
           {/* TAB 2B: AI TOOLS STUDIO */}
           {tab === "tools" && (
             <ResellerToolsStudio
-              urssafRate={user.urssaf_rate}
               planId={user.plan}
               aiCreditsUsed={user.ai_credits_used}
               aiCreditsLimit={activePlan.aiCreditsMonthlyLimit}
@@ -1508,7 +1502,7 @@ export function BackOffice({
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-zinc-400">
-                  {sales.length} vente(s) · Marge nette cumulée :{" "}
+                  {sales.length} vente(s) · Marge commerciale cumulée :{" "}
                   <strong className="text-emerald-400">
                     {formatEuro(kpis.totalNetMargin)}
                   </strong>
@@ -1567,12 +1561,11 @@ export function BackOffice({
                           {formatDateFr(sale.sold_at)}
                         </p>
                         <p className="text-[11px] text-zinc-500">
-                          Brut {formatEuro(sale.gross_amount)} − Achat{" "}
+                          Chiffre d&apos;affaire {formatEuro(sale.gross_amount)} − Coût de revient{" "}
                           {formatEuro(sale.purchase_cost)} − Frais{" "}
-                          {formatEuro(sale.platform_fees + sale.boost_cost)} − URSSAF{" "}
-                          {formatEuro(sale.urssaf_amount)} ={" "}
+                          {formatEuro(sale.platform_fees + sale.boost_cost)} ={" "}
                           <strong className="text-emerald-400">
-                            Marge nette {formatEuro(sale.net_margin)}
+                            Marge commerciale {formatEuro(sale.net_margin)}
                           </strong>
                         </p>
                       </div>
@@ -1629,7 +1622,7 @@ export function BackOffice({
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <div className="rounded-2xl border border-white/10 bg-[#10141c] p-4">
-                  <p className="text-xs text-zinc-400">Marge nette des ventes</p>
+                  <p className="text-xs text-zinc-400">Marge commerciale des ventes</p>
                   <p className="mt-1.5 text-2xl font-extrabold text-white">
                     {formatEuro(kpis.totalNetMargin)}
                   </p>
@@ -1641,15 +1634,15 @@ export function BackOffice({
                   </p>
                 </div>
                 <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-4">
-                  <p className="text-xs text-emerald-300">Bénéfice net en poche</p>
+                  <p className="text-xs text-emerald-300">Marge commerciale finale</p>
                   <p className="mt-1.5 text-2xl font-extrabold text-emerald-400">
                     {formatEuro(kpis.trueProfitAfterExpenses)}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-[#10141c] p-4">
-                  <p className="text-xs text-zinc-400">Provision URSSAF à isoler</p>
+                  <p className="text-xs text-zinc-400">En transit / À expédier</p>
                   <p className="mt-1.5 text-2xl font-extrabold text-amber-300">
-                    {formatEuro(kpis.totalUrssaf)}
+                    {formatEuro(kpis.pendingCashflow)}
                   </p>
                 </div>
               </div>
@@ -2260,7 +2253,7 @@ export function BackOffice({
                 className="rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4"
               >
                 <h2 className="text-sm font-bold text-white">
-                  Paramètres Factures &amp; URSSAF
+                  Paramètres Factures &amp; Seuils
                 </h2>
                 <div className="space-y-3 text-xs">
                   <div className="space-y-1">
@@ -2290,7 +2283,7 @@ export function BackOffice({
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs text-zinc-400">Régime fiscal</Label>
+                      <Label className="text-xs text-zinc-400">Régime de facturation</Label>
                       <select
                         value={settingsForm.fiscal_regime}
                         onChange={(e) =>
@@ -2310,44 +2303,27 @@ export function BackOffice({
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-zinc-400">
-                        Taux URSSAF (%)
+                        Seuil d&apos;alerte TVA (€)
                       </Label>
                       <Input
                         type="number"
-                        step="0.1"
-                        value={settingsForm.urssaf_rate}
+                        value={settingsForm.vat_threshold}
                         onChange={(e) =>
                           setSettingsForm((s) => ({
                             ...s,
-                            urssaf_rate: e.target.value,
+                            vat_threshold: e.target.value,
                           }))
                         }
                         className="bg-white/5 border-white/10 text-white"
                       />
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-zinc-400">
-                      Seuil d&apos;alerte TVA (€)
-                    </Label>
-                    <Input
-                      type="number"
-                      value={settingsForm.vat_threshold}
-                      onChange={(e) =>
-                        setSettingsForm((s) => ({
-                          ...s,
-                          vat_threshold: e.target.value,
-                        }))
-                      }
-                      className="bg-white/5 border-white/10 text-white"
-                    />
-                  </div>
                 </div>
                 <Button
                   type="submit"
                   className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs"
                 >
-                  Enregistrer mes paramètres fiscaux
+                  Enregistrer mes paramètres
                 </Button>
               </form>
             </div>
@@ -2519,7 +2495,6 @@ export function BackOffice({
       <NewListingDialog
         open={newListingOpen}
         onOpenChange={setNewListingOpen}
-        urssafRate={user.urssaf_rate}
         canCrosslist={activePlan.crosslistMonthlyLimit !== 0}
         accounts={accounts}
         onCreated={fetchWorkspace}
@@ -2708,8 +2683,7 @@ export function BackOffice({
                 </div>
               </div>
               <p className="text-[11px] text-emerald-400">
-                Génère automatiquement la facture, calcule l&apos;URSSAF (
-                {user.urssaf_rate}%) et{" "}
+                Génère automatiquement la facture, calcule ta marge commerciale et{" "}
                 {user.auto_delist
                   ? "retire l'annonce des autres plateformes."
                   : "met à jour ton stock."}

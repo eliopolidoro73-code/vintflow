@@ -28,7 +28,6 @@ export interface SaleRecord {
   platform_fees: number;
   boost_cost: number;
   shipping_cost: number;
-  urssaf_amount: number;
   net_margin: number;
   sold_at: string;
 }

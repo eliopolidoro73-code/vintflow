@@ -56,7 +56,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     features: [
       "1 compte Vinted + 1 compte Leboncoin",
       "Stock SKU jusqu'à 40 articles actifs",
-      "Calcul automatique marge nette & URSSAF",
+      "Calcul automatique de la marge commerciale",
       "Export CSV du livre des recettes",
     ],
     lockedFeatures: [

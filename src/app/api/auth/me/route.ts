@@ -27,7 +27,6 @@ export async function PATCH(request: Request) {
     company_name?: string;
     siret?: string;
     fiscal_regime?: string;
-    urssaf_rate?: number;
     vat_threshold?: number;
     auto_crosslist?: boolean;
     auto_delist?: boolean;
@@ -48,12 +47,6 @@ export async function PATCH(request: Request) {
   )
     ? body.fiscal_regime!
     : auth.user.fiscal_regime;
-  const urssafRate =
-    typeof body.urssaf_rate === "number" &&
-    body.urssaf_rate >= 0 &&
-    body.urssaf_rate <= 50
-      ? Number(body.urssaf_rate.toFixed(2))
-      : auth.user.urssaf_rate;
   const vatThreshold =
     typeof body.vat_threshold === "number" &&
     body.vat_threshold >= 10000 &&
@@ -82,14 +75,13 @@ export async function PATCH(request: Request) {
   await sql(
     `update users
      set name = $1, company_name = $2, siret = $3, fiscal_regime = $4,
-         urssaf_rate = $5, vat_threshold = $6, auto_crosslist = $7, auto_delist = $8
-     where id = $9`,
+         vat_threshold = $5, auto_crosslist = $6, auto_delist = $7
+     where id = $8`,
     [
       name,
       companyName,
       siret,
       fiscalRegime,
-      urssafRate,
       vatThreshold,
       autoCrosslist,
       autoDelist,

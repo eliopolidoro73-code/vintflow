@@ -319,12 +319,9 @@ Tu peux demander les mesures exactes en message avant achat.`;
       platformFees: 0,
       boostCost: 0,
       shippingCost: 0,
-      urssafRate: auth.user.urssaf_rate,
     });
 
-    const minAcceptable = Math.ceil(
-      (purchasePrice + 5) / Math.max(0.1, 1 - auth.user.urssaf_rate / 100),
-    );
+    const minAcceptable = Math.ceil(purchasePrice + 5);
     const counterPrice = Math.max(
       minAcceptable,
       Math.round((targetPrice + offerPrice) / 2),
@@ -336,7 +333,6 @@ Tu peux demander les mesures exactes en message avant achat.`;
 
     return NextResponse.json({
       offerNetMargin: atOffer.netMargin,
-      offerUrssaf: atOffer.urssafAmount,
       minAcceptable,
       counterPrice,
       discountPct,
@@ -464,7 +460,6 @@ Disponible tant que l'annonce est en ligne.`;
         platformFees: 0,
         boostCost: 0,
         shippingCost: 0,
-        urssafRate: auth.user.urssaf_rate,
       }),
     },
     {
@@ -476,7 +471,6 @@ Disponible tant que l'annonce est en ligne.`;
         platformFees: 0,
         boostCost: 0,
         shippingCost: 0,
-        urssafRate: auth.user.urssaf_rate,
       }),
     },
     {
@@ -488,7 +482,6 @@ Disponible tant que l'annonce est en ligne.`;
         platformFees: 0,
         boostCost: 0,
         shippingCost: 0,
-        urssafRate: auth.user.urssaf_rate,
       }),
     },
   ];

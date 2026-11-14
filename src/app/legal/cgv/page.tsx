@@ -34,7 +34,7 @@ export default function CgvPage() {
             Vintflow propose 3 formules mensuelles ou annuelles (-2 mois offerts) :
           </p>
           <ul className="list-disc pl-5 text-xs text-zinc-400 space-y-1">
-            <li>Essentiel : 9 €/mois TTC (ou 84 €/an TTC) — suivi de stock, marge &amp; URSSAF.</li>
+            <li>Essentiel : 9 €/mois TTC (ou 84 €/an TTC) — suivi de stock, marge commerciale &amp; export CSV.</li>
             <li>Vendeur Plus : 29 €/mois TTC (ou 290 €/an TTC) — outils IA, crosslisting &amp; factures avec quotas.</li>
             <li>Pro Scale : 49 €/mois TTC (ou 490 €/an TTC) — tout illimité, auto-crosslisting 8h–23h &amp; Nova IA.</li>
           </ul>
@@ -49,10 +49,10 @@ export default function CgvPage() {
         </section>
 
         <section className="space-y-2 rounded-2xl border border-white/10 bg-[#10141c] p-6">
-          <h2 className="text-base font-bold text-white">3. Calculs fiscaux et responsabilité</h2>
+          <h2 className="text-base font-bold text-white">3. Suivi commercial et responsabilité</h2>
           <p>
-            Les estimations URSSAF, seuils TVA et factures PDF générées constituent des outils
-            d&apos;aide à la gestion. L&apos;utilisateur reste responsable de ses déclarations officielles.
+            Les indicateurs de marge commerciale, seuils TVA et factures PDF générées constituent des outils
+            d&apos;aide à la gestion. L&apos;utilisateur reste responsable de ses obligations comptables et déclaratives.
           </p>
         </section>
       </main>

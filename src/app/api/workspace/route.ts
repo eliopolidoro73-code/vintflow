@@ -70,14 +70,13 @@ export async function GET() {
         platform_fees: string | number;
         boost_cost: string | number;
         shipping_cost: string | number;
-        urssaf_amount: string | number;
         net_margin: string | number;
         sold_at: string;
       }>(
         `select id, item_id, invoice_number, platform, account_handle, item_title, sku,
                 buyer_name, buyer_city, carrier, tracking_code, shipment_status,
                 gross_amount, purchase_cost, platform_fees, boost_cost, shipping_cost,
-                urssaf_amount, net_margin, sold_at
+                net_margin, sold_at
          from sales where user_id = $1 order by sold_at desc`,
         [user.id],
       ),
@@ -146,7 +145,6 @@ export async function GET() {
     platform_fees: Number(s.platform_fees),
     boost_cost: Number(s.boost_cost),
     shipping_cost: Number(s.shipping_cost),
-    urssaf_amount: Number(s.urssaf_amount),
     net_margin: Number(s.net_margin),
   }));
 
@@ -181,10 +179,6 @@ export async function GET() {
   );
   const totalNetMargin = normalizedSales.reduce(
     (sum, s) => sum + s.net_margin,
-    0,
-  );
-  const totalUrssaf = normalizedSales.reduce(
-    (sum, s) => sum + s.urssaf_amount,
     0,
   );
   const totalExpenses = normalizedExpenses.reduce(
@@ -238,7 +232,6 @@ export async function GET() {
       kpis: {
         totalRevenue: Number(totalRevenue.toFixed(2)),
         totalNetMargin: Number(totalNetMargin.toFixed(2)),
-        totalUrssaf: Number(totalUrssaf.toFixed(2)),
         totalExpenses: Number(totalExpenses.toFixed(2)),
         trueProfitAfterExpenses,
         settledNet: Number(settledNet.toFixed(2)),

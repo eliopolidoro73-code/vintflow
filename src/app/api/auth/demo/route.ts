@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     [userId, email, "Atelier Démo", passwordHash, plan, "Atelier Démo"],
   );
 
-  await seedUserWorkspace(userId, 12.3);
+  await seedUserWorkspace(userId);
 
   const token = await createSessionToken(userId);
   const cookie = buildSessionCookieHeader(token, request);

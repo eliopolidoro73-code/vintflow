@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Vintflow — Logiciel de Gestion Vinted, Leboncoin, TikTok Shop & eBay",
   description:
-    "Centralise tout ton business de revente : ventes, marge réelle après URSSAF, crosslisting Vinted ↔ Leboncoin, studio photo IA, stock SKU, bordereaux 10×15 et factures PDF.",
+    "Centralise tout ton business de revente : ventes, marge commerciale, crosslisting Vinted ↔ Leboncoin, studio photo IA, stock SKU, bordereaux 10×15 et factures PDF.",
 };
 
 export default function RootLayout({

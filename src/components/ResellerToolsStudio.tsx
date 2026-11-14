@@ -31,7 +31,6 @@ import { formatEuro } from "@/lib/format";
 import type { PlanId } from "@/lib/plans";
 
 interface ResellerToolsStudioProps {
-  urssafRate: number;
   planId: PlanId;
   aiCreditsUsed: number;
   aiCreditsLimit: number; // 0 = disabled, -1 = unlimited
@@ -171,7 +170,6 @@ function removeBackgroundByEdgeFlood(
 }
 
 export function ResellerToolsStudio({
-  urssafRate,
   planId,
   aiCreditsUsed,
   aiCreditsLimit,
@@ -215,7 +213,6 @@ export function ResellerToolsStudio({
       label: string;
       price: number;
       netMargin: number;
-      urssafAmount: number;
     }>;
   } | null>(null);
 
@@ -241,7 +238,6 @@ export function ResellerToolsStudio({
   const [negLoading, setNegLoading] = useState(false);
   const [negResult, setNegResult] = useState<{
     offerNetMargin: number;
-    offerUrssaf: number;
     minAcceptable: number;
     counterPrice: number;
     discountPct: number;
@@ -644,7 +640,7 @@ export function ResellerToolsStudio({
         </h2>
         <p className="mx-auto max-w-lg text-xs sm:text-sm text-zinc-400">
           Le plan Essentiel (9 €/mois) couvre uniquement le suivi de stock et la marge
-          URSSAF. Passe à <strong>Vendeur Plus (29 €)</strong> pour 30 crédits IA/mois ou{" "}
+          commerciale. Passe à <strong>Vendeur Plus (29 €)</strong> pour 30 crédits IA/mois ou{" "}
           <strong>Pro Scale (49 €)</strong> pour tout débloquer en illimité.
         </p>
         <Button
@@ -1009,7 +1005,7 @@ export function ResellerToolsStudio({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-zinc-400">Prix achat (€)</Label>
+                <Label className="text-zinc-400">Coût de revient (€)</Label>
                 <Input
                   type="number"
                   value={genBuyPrice}
@@ -1018,7 +1014,7 @@ export function ResellerToolsStudio({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-zinc-400">Prix visé (€)</Label>
+                <Label className="text-zinc-400">Chiffre d&apos;affaire (€)</Label>
                 <Input
                   type="number"
                   value={genTargetPrice}
@@ -1059,8 +1055,7 @@ export function ResellerToolsStudio({
                 <Sparkles className="h-8 w-8 text-emerald-400/70 mb-2" />
                 Clique sur <strong>Générer mes 3 fiches + prix</strong> (ou scanne une
                 photo dans le Studio) pour obtenir ton titre SEO, tes descriptions Vinted
-                &amp; Leboncoin, ton script vidéo TikTok Shop et ta marge nette (
-                {urssafRate}% URSSAF).
+                &amp; Leboncoin, ton script vidéo TikTok Shop et ta marge commerciale.
               </div>
             ) : (
               <>
@@ -1075,7 +1070,7 @@ export function ResellerToolsStudio({
                         {formatEuro(tier.price)}
                       </p>
                       <p className="text-[11px] text-emerald-400">
-                        Net : {formatEuro(tier.netMargin)}
+                        Marge : {formatEuro(tier.netMargin)}
                       </p>
                     </div>
                   ))}
@@ -1330,14 +1325,14 @@ export function ResellerToolsStudio({
               </div>
               <div className="flex justify-between">
                 <span className="text-zinc-300">
-                  Seuil zéro perte (URSSAF {urssafRate}%) :
+                  Seuil zéro perte :
                 </span>
                 <strong className="text-amber-300">
-                  {formatEuro(unitLotCost / Math.max(0.1, 1 - urssafRate / 100))}
+                  {formatEuro(unitLotCost)}
                 </strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-300">Prix conseillé cible (×2,8) :</span>
+                <span className="text-zinc-300">Chiffre d&apos;affaire cible (×2,8) :</span>
                 <strong className="text-emerald-400">
                   {formatEuro(Math.round(unitLotCost * 2.8))}
                 </strong>
@@ -1362,13 +1357,12 @@ export function ResellerToolsStudio({
                 const sell = Math.max(1, Number(negTarget) || 65);
                 const buy = Math.max(0, Number(negBuy) || 18);
                 const bCost = Number(boostCost) || 1.95;
-                const urssaf = (sell * urssafRate) / 100;
-                const netWithBoost = sell - buy - urssaf - bCost;
+                const netWithBoost = sell - buy - bCost;
                 const boostSharePct = netWithBoost > 0 ? Math.round((bCost / (netWithBoost + bCost)) * 100) : 100;
                 return (
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="text-zinc-400">
-                      Marge nette après Boost :{" "}
+                      Marge commerciale après Boost :{" "}
                       <strong className={netWithBoost > 10 ? "text-emerald-400" : "text-amber-300"}>
                         {formatEuro(netWithBoost)}
                       </strong>
@@ -1391,7 +1385,7 @@ export function ResellerToolsStudio({
               </h3>
               <div className="grid grid-cols-3 gap-2.5">
                 <div className="space-y-1">
-                  <Label className="text-zinc-400">Affiché (€)</Label>
+                  <Label className="text-zinc-400">Chiffre d&apos;affaire (€)</Label>
                   <Input
                     type="number"
                     value={negTarget}
@@ -1400,7 +1394,7 @@ export function ResellerToolsStudio({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-zinc-400">Ton achat (€)</Label>
+                  <Label className="text-zinc-400">Coût de revient (€)</Label>
                   <Input
                     type="number"
                     value={negBuy}
@@ -1432,8 +1426,7 @@ export function ResellerToolsStudio({
             {!negResult ? (
               <div className="flex h-full min-h-[280px] flex-col items-center justify-center text-center text-zinc-400">
                 <Swords className="h-8 w-8 text-rose-400/70 mb-2" />
-                Entre une offre agressive à gauche pour voir ta marge réelle après
-                URSSAF et copier la meilleure contre-offre en 1 clic.
+                Entre une offre agressive à gauche pour voir ta marge commerciale et copier la meilleure contre-offre en 1 clic.
               </div>
             ) : (
               <>

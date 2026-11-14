@@ -113,7 +113,7 @@ export async function POST(request: Request) {
   );
 
   if (withSampleData) {
-    await seedUserWorkspace(userId, 12.3);
+    await seedUserWorkspace(userId);
   }
 
   const token = await createSessionToken(userId);

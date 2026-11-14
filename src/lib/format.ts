@@ -69,20 +69,15 @@ export function computeNetMargin(params: {
   platformFees: number;
   boostCost: number;
   shippingCost: number;
-  urssafRate: number;
 }) {
-  const urssafAmount = Number(
-    ((params.grossAmount * params.urssafRate) / 100).toFixed(2),
-  );
   const netMargin = Number(
     (
       params.grossAmount -
       params.purchaseCost -
       params.platformFees -
       params.boostCost -
-      params.shippingCost -
-      urssafAmount
+      params.shippingCost
     ).toFixed(2),
   );
-  return { urssafAmount, netMargin };
+  return { netMargin };
 }

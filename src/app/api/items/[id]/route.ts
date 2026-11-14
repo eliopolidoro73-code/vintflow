@@ -116,13 +116,12 @@ export async function PATCH(
         : platform === "tiktok_shop"
           ? Number((soldPrice * 0.05).toFixed(2))
           : 0;
-    const { urssafAmount, netMargin } = computeNetMargin({
+    const { netMargin } = computeNetMargin({
       grossAmount: soldPrice,
       purchaseCost,
       platformFees,
       boostCost: 0,
       shippingCost: 0,
-      urssafRate: auth.user.urssaf_rate,
     });
 
     const autoDelist = auth.user.auto_delist;
@@ -194,7 +193,7 @@ export async function PATCH(
         soldPrice,
         purchaseCost,
         platformFees,
-        urssafAmount,
+        0,
         netMargin,
       ],
     );

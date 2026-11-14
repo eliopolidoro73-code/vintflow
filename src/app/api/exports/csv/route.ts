@@ -23,12 +23,11 @@ export async function GET() {
     purchase_cost: string | number;
     platform_fees: string | number;
     boost_cost: string | number;
-    urssaf_amount: string | number;
     net_margin: string | number;
   }>(
     `select sold_at, invoice_number, platform, account_handle, item_title, sku,
             buyer_name, gross_amount, purchase_cost, platform_fees, boost_cost,
-            urssaf_amount, net_margin
+            net_margin
      from sales where user_id = $1 order by sold_at desc`,
     [auth.user.id],
   );
@@ -41,12 +40,11 @@ export async function GET() {
     "Article",
     "SKU",
     "Acheteur",
-    "CA Brut (€)",
-    "Coût Achat (€)",
+    "Chiffre d'affaire (€)",
+    "Coût de revient (€)",
     "Frais Plateforme (€)",
     "Boosts (€)",
-    "URSSAF Estimée (€)",
-    "Marge Nette (€)",
+    "Marge commerciale (€)",
   ]
     .map(csvCell)
     .join(";");
@@ -64,7 +62,6 @@ export async function GET() {
       Number(s.purchase_cost).toFixed(2),
       Number(s.platform_fees).toFixed(2),
       Number(s.boost_cost).toFixed(2),
-      Number(s.urssaf_amount).toFixed(2),
       Number(s.net_margin).toFixed(2),
     ]
       .map(csvCell)
