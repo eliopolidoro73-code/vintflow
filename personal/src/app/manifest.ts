@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
       "Ton cockpit privé Vinted, Leboncoin & TikTok Shop sur iPhone et ordinateur.",
     start_url: "/",
     display: "standalone",
-    background_color: "#07080d",
-    theme_color: "#8b5cf6",
+    background_color: "#060b18",
+    theme_color: "#3b82f6",
     orientation: "portrait",
     icons: [
       {

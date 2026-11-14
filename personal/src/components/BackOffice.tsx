@@ -731,7 +731,7 @@ export function BackOffice({
 
   if (loading || !data) {
     return (
-      <div className="min-h-screen bg-[#07080d] flex items-center justify-center text-zinc-400">
+      <div className="min-h-screen bg-[#060b18] flex items-center justify-center text-zinc-400">
         <Loader2 className="h-5 w-5 animate-spin text-emerald-400 mr-2" />
         Chargement de ton espace Vintflow...
       </div>
@@ -817,21 +817,21 @@ export function BackOffice({
   ];
 
   return (
-    <div className="min-h-screen bg-[#07080d] text-zinc-100 flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-[#060b18] text-zinc-100 flex flex-col lg:flex-row">
       {toast && (
-        <div className="fixed bottom-5 right-5 z-50 rounded-xl border border-emerald-500/40 bg-[#0e111a] px-4 py-3 text-xs font-semibold text-emerald-200 shadow-2xl">
+        <div className="fixed bottom-5 right-5 z-50 rounded-xl border border-emerald-500/40 bg-[#0c1426] px-4 py-3 text-xs font-semibold text-emerald-200 shadow-2xl">
           {toast}
         </div>
       )}
 
       {/* Dark Sidebar */}
-      <aside className="hidden lg:flex lg:w-64 lg:flex-col border-r border-white/10 bg-[#0a0c12] p-4 justify-between shrink-0">
+      <aside className="hidden lg:flex lg:w-64 lg:flex-col border-r border-white/10 bg-[#080e1d] p-4 justify-between shrink-0">
         <div>
           <div className="flex items-center justify-between px-2 pb-4 border-b border-white/10">
             <Link href="/">
               <VintflowLogo size="sm" />
             </Link>
-            <Badge className="bg-violet-500/15 text-violet-300 border-violet-500/30 text-[10px] uppercase font-bold">
+            <Badge className="bg-blue-500/15 text-blue-300 border-blue-500/30 text-[10px] uppercase font-bold">
               Perso · Pro
             </Badge>
           </div>
@@ -844,7 +844,7 @@ export function BackOffice({
                 onClick={() => setTab(item.id)}
                 className={`vf-click-press flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
                   tab === item.id
-                    ? "bg-violet-500/15 text-violet-300 border border-violet-500/40 font-bold shadow-[0_0_18px_rgba(139,92,246,0.16)]"
+                    ? "bg-blue-500/15 text-blue-300 border border-blue-500/40 font-bold shadow-[0_0_18px_rgba(59,130,246,0.16)]"
                     : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-100"
                 }`}
               >
@@ -870,7 +870,7 @@ export function BackOffice({
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs">
             <p className="font-bold text-white truncate">{user.name}</p>
             <p className="text-[11px] text-zinc-400 truncate">{user.company_name}</p>
-            <p className="mt-1 text-[10px] font-medium text-violet-300">
+            <p className="mt-1 text-[10px] font-medium text-blue-300">
               Édition Privée · Pro Scale Gratuit
             </p>
           </div>
@@ -890,7 +890,7 @@ export function BackOffice({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-30 border-b border-white/10 bg-[#07080d]/90 backdrop-blur-lg px-4 py-3 sm:px-6">
+        <header className="sticky top-0 z-30 border-b border-white/10 bg-[#060b18]/90 backdrop-blur-lg px-4 py-3 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Link href="/" className="lg:hidden">
@@ -923,7 +923,7 @@ export function BackOffice({
               <Button
                 size="sm"
                 onClick={() => setNewListingOpen(true)}
-                className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 font-bold text-xs"
+                className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:from-blue-500 hover:to-sky-500 font-bold text-xs"
               >
                 <Plus className="h-3.5 w-3.5 mr-1" />
                 Nouvel article
@@ -939,7 +939,7 @@ export function BackOffice({
                 onClick={() => setTab(item.id)}
                 className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium ${
                   tab === item.id
-                    ? "bg-violet-600 text-white font-bold"
+                    ? "bg-blue-600 text-white font-bold"
                     : "bg-white/5 text-zinc-400"
                 }`}
               >
@@ -958,7 +958,7 @@ export function BackOffice({
           {tab === "overview" && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-5">
+                <div className="rounded-2xl border border-white/10 bg-[#0c1426] p-5">
                   <p className="text-xs text-zinc-400">Chiffre d&apos;affaire total</p>
                   <p className="mt-2 text-2xl font-extrabold text-white">
                     {formatEuro(kpis.totalRevenue)}
@@ -978,7 +978,7 @@ export function BackOffice({
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-5">
+                <div className="rounded-2xl border border-white/10 bg-[#0c1426] p-5">
                   <p className="text-xs text-zinc-400">Stock actif (coût de revient)</p>
                   <p className="mt-2 text-2xl font-extrabold text-white">
                     {formatEuro(kpis.stockCostValue)}
@@ -989,7 +989,7 @@ export function BackOffice({
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-5">
+                <div className="rounded-2xl border border-white/10 bg-[#0c1426] p-5">
                   <p className="text-xs text-zinc-400">À traiter aujourd&apos;hui</p>
                   <p className="mt-2 text-2xl font-extrabold text-amber-300">
                     {kpis.toShipCount} colis · {kpis.unreadCount} msg
@@ -1000,9 +1000,9 @@ export function BackOffice({
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-violet-500/35 bg-gradient-to-r from-violet-500/[0.12] via-[#0e111a] to-indigo-500/[0.08] p-5 flex flex-wrap items-center justify-between gap-4">
+              <div className="rounded-2xl border border-blue-500/35 bg-gradient-to-r from-blue-500/[0.12] via-[#0c1426] to-sky-500/[0.08] p-5 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/20 text-violet-300">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 text-blue-300">
                     <Wand2 className="h-5 w-5" />
                   </div>
                   <div>
@@ -1018,7 +1018,7 @@ export function BackOffice({
                 <Button
                   size="sm"
                   onClick={() => setTab("tools")}
-                  className="vf-shimmer-btn bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 font-bold text-xs"
+                  className="vf-shimmer-btn bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:from-blue-500 hover:to-sky-500 font-bold text-xs"
                 >
                   Ouvrir la Boîte à outils
                   <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
@@ -1027,7 +1027,7 @@ export function BackOffice({
 
               {/* Financial Cashflow Strip + Visual Chart */}
               <div className="grid gap-4 lg:grid-cols-12">
-                <div className="lg:col-span-8 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4">
+                <div className="lg:col-span-8 rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <h2 className="text-sm font-bold text-white">
@@ -1109,7 +1109,7 @@ export function BackOffice({
                   )}
                 </div>
 
-                <div className="lg:col-span-4 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-3">
+                <div className="lg:col-span-4 rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-3">
                   <h2 className="text-sm font-bold text-white">Pilotage Trésorerie</h2>
                   <div className="space-y-2.5 text-xs">
                     <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
@@ -1135,7 +1135,7 @@ export function BackOffice({
               </div>
 
               <div className="grid gap-4 lg:grid-cols-3">
-                <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4">
+                <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold text-white flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-emerald-400" />
@@ -1188,7 +1188,7 @@ export function BackOffice({
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4">
+                <div className="rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-4">
                   <h2 className="text-sm font-bold text-white">
                     Seuil TVA &amp; Alertes stock
                   </h2>
@@ -1260,7 +1260,7 @@ export function BackOffice({
               )}
 
               <div className="grid gap-3 md:grid-cols-2">
-                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#0e111a] p-4">
+                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#0c1426] p-4">
                   <div>
                     <p className="text-sm font-bold text-white flex items-center gap-2">
                       Publier tout seul sur Leboncoin (8h–23h)
@@ -1281,7 +1281,7 @@ export function BackOffice({
                     }
                   />
                 </div>
-                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#0e111a] p-4">
+                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#0c1426] p-4">
                   <div>
                     <p className="text-sm font-bold text-white">
                       Retirer quand ça se vend
@@ -1331,7 +1331,7 @@ export function BackOffice({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Rechercher SKU, marque, titre..."
-                    className="pl-9 bg-[#0e111a] border-white/10 text-xs text-white"
+                    className="pl-9 bg-[#0c1426] border-white/10 text-xs text-white"
                   />
                 </div>
               </div>
@@ -1356,7 +1356,7 @@ export function BackOffice({
                     return (
                       <div
                         key={item.id}
-                        className="rounded-2xl border border-white/10 bg-[#0e111a] p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                        className="rounded-2xl border border-white/10 bg-[#0c1426] p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
                       >
                         <div className="flex items-start gap-3.5">
                           <div
@@ -1552,7 +1552,7 @@ export function BackOffice({
                   return (
                     <div
                       key={sale.id}
-                      className="rounded-2xl border border-white/10 bg-[#0e111a] p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                      className="rounded-2xl border border-white/10 bg-[#0c1426] p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
                     >
                       <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -1632,13 +1632,13 @@ export function BackOffice({
           {tab === "finance" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-4">
+                <div className="rounded-2xl border border-white/10 bg-[#0c1426] p-4">
                   <p className="text-xs text-zinc-400">Marge commerciale des ventes</p>
                   <p className="mt-1.5 text-2xl font-extrabold text-white">
                     {formatEuro(kpis.totalNetMargin)}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-4">
+                <div className="rounded-2xl border border-white/10 bg-[#0c1426] p-4">
                   <p className="text-xs text-zinc-400">Dépenses &amp; emballages</p>
                   <p className="mt-1.5 text-2xl font-extrabold text-rose-400">
                     −{formatEuro(kpis.totalExpenses)}
@@ -1650,7 +1650,7 @@ export function BackOffice({
                     {formatEuro(kpis.trueProfitAfterExpenses)}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-4">
+                <div className="rounded-2xl border border-white/10 bg-[#0c1426] p-4">
                   <p className="text-xs text-zinc-400">En transit / À expédier</p>
                   <p className="mt-1.5 text-2xl font-extrabold text-amber-300">
                     {formatEuro(kpis.pendingCashflow)}
@@ -1660,7 +1660,7 @@ export function BackOffice({
 
               <div className="grid gap-6 lg:grid-cols-12">
                 {/* Lots & Ballots Manager */}
-                <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4">
+                <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold text-white flex items-center gap-2">
                       <Boxes className="h-4 w-4 text-emerald-400" />
@@ -1680,7 +1680,7 @@ export function BackOffice({
                       return (
                         <div
                           key={lot.id}
-                          className="rounded-xl border border-white/10 bg-[#07080d] p-4 space-y-2.5 text-xs"
+                          className="rounded-xl border border-white/10 bg-[#060b18] p-4 space-y-2.5 text-xs"
                         >
                           <div className="flex flex-wrap items-start justify-between gap-2">
                             <div>
@@ -1809,7 +1809,7 @@ export function BackOffice({
                 </div>
 
                 {/* Expenses Tracker */}
-                <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4">
+                <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-4">
                   <h2 className="text-sm font-bold text-white flex items-center gap-2">
                     <Receipt className="h-4 w-4 text-rose-400" />
                     Dépenses &amp; Frais d&apos;activité
@@ -1819,7 +1819,7 @@ export function BackOffice({
                     {expenses.map((exp) => (
                       <div
                         key={exp.id}
-                        className="flex items-center justify-between rounded-xl border border-white/10 bg-[#07080d] px-3.5 py-2.5 text-xs"
+                        className="flex items-center justify-between rounded-xl border border-white/10 bg-[#060b18] px-3.5 py-2.5 text-xs"
                       >
                         <div>
                           <p className="font-semibold text-white">{exp.label}</p>
@@ -1897,7 +1897,7 @@ export function BackOffice({
           {/* TAB 4: UNIFIED MESSAGING */}
           {tab === "messages" &&
             (!activePlan.unifiedMessagesAllowed ? (
-              <div className="rounded-3xl border border-amber-500/30 bg-[#0e111a] p-8 text-center space-y-4">
+              <div className="rounded-3xl border border-amber-500/30 bg-[#0c1426] p-8 text-center space-y-4">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-300 border border-amber-500/30">
                   <Lock className="h-6 w-6" />
                 </div>
@@ -1917,7 +1917,7 @@ export function BackOffice({
               </div>
             ) : (
               <div className="grid gap-4 lg:grid-cols-12">
-                <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#0e111a] p-3 space-y-2">
+                <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#0c1426] p-3 space-y-2">
                   {messages.map((m) => {
                     const badge = PLATFORM_BADGE[m.platform] ?? {
                       label: m.platform,
@@ -1956,7 +1956,7 @@ export function BackOffice({
                   })}
                 </div>
 
-                <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#0e111a] p-5 flex flex-col justify-between min-h-[380px]">
+                <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#0c1426] p-5 flex flex-col justify-between min-h-[380px]">
                   {selectedMsg ? (
                     <>
                       <div className="space-y-4">
@@ -2042,7 +2042,7 @@ export function BackOffice({
           {/* TAB 5: AI ASSISTANT NOVA (PRO SCALE EXCLUSIVE) */}
           {tab === "assistant" &&
             (!activePlan.novaAssistantAllowed ? (
-              <div className="rounded-3xl border border-emerald-500/30 bg-[#0e111a] p-8 text-center space-y-4">
+              <div className="rounded-3xl border border-emerald-500/30 bg-[#0c1426] p-8 text-center space-y-4">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                   <Bot className="h-6 w-6" />
                 </div>
@@ -2061,7 +2061,7 @@ export function BackOffice({
                 </Button>
               </div>
             ) : (
-              <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4">
+              <div className="rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
@@ -2175,7 +2175,7 @@ export function BackOffice({
           {/* TAB 6: ACCOUNTS & FISCAL SETTINGS */}
           {tab === "accounts" && (
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4">
+              <div className="rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-bold text-white">
                     Comptes connectés ({activePlan.name})
@@ -2261,7 +2261,7 @@ export function BackOffice({
 
               <form
                 onSubmit={handleSaveSettings}
-                className="rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4"
+                className="rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-4"
               >
                 <h2 className="text-sm font-bold text-white">
                   Paramètres Factures &amp; Seuils
@@ -2343,9 +2343,9 @@ export function BackOffice({
           {/* TAB 7: PERSONAL EDITION STATUS */}
           {tab === "billing" && (
             <div className="space-y-6">
-              <div className="rounded-3xl border border-violet-500/40 bg-gradient-to-br from-violet-600/20 via-[#0e111a] to-indigo-600/15 p-6 sm:p-8 shadow-[0_0_50px_rgba(139,92,246,0.18)]">
-                <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/35 bg-violet-500/15 px-3.5 py-1 text-[11px] font-bold text-violet-200 mb-3">
-                  <ShieldCheck className="h-3.5 w-3.5 text-violet-300" />
+              <div className="rounded-3xl border border-blue-500/40 bg-gradient-to-br from-blue-600/20 via-[#0c1426] to-sky-600/15 p-6 sm:p-8 shadow-[0_0_50px_rgba(59,130,246,0.18)]">
+                <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/35 bg-blue-500/15 px-3.5 py-1 text-[11px] font-bold text-blue-200 mb-3">
+                  <ShieldCheck className="h-3.5 w-3.5 text-blue-300" />
                   Édition Privée Personnelle · 100 % Gratuit
                 </div>
                 <h2 className="text-2xl font-extrabold text-white">
@@ -2357,7 +2357,7 @@ export function BackOffice({
                 <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
                   {activePlan.features.map((f, i) => (
                     <div key={i} className="flex items-start gap-2 text-xs text-zinc-200">
-                      <Check className="h-4 w-4 shrink-0 text-violet-400 mt-0.5" />
+                      <Check className="h-4 w-4 shrink-0 text-blue-400 mt-0.5" />
                       <span>{f}</span>
                     </div>
                   ))}
@@ -2388,7 +2388,7 @@ export function BackOffice({
         open={Boolean(copySheetItem)}
         onOpenChange={(open) => !open && setCopySheetItem(null)}
       >
-        <DialogContent className="vf-tab-enter bg-[#0e111a] border-white/10 text-zinc-100 sm:max-w-2xl shadow-2xl">
+        <DialogContent className="vf-tab-enter bg-[#0c1426] border-white/10 text-zinc-100 sm:max-w-2xl shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-white">
               Crosslist Express · {copySheetItem?.title}
@@ -2396,7 +2396,7 @@ export function BackOffice({
           </DialogHeader>
           {copySheetItem && (
             <div className="space-y-4 text-xs">
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#07080d] p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#060b18] p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
                     size="sm"
@@ -2441,7 +2441,7 @@ export function BackOffice({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-[#07080d] p-3.5 space-y-2">
+              <div className="rounded-xl border border-white/10 bg-[#060b18] p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
                   <Badge className="bg-teal-500/15 text-teal-300 border-teal-500/30">
                     Vinted · {formatEuro(copySheetItem.listing_price)}
@@ -2465,7 +2465,7 @@ export function BackOffice({
                 </p>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-[#07080d] p-3.5 space-y-2">
+              <div className="rounded-xl border border-white/10 bg-[#060b18] p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
                   <Badge className="bg-orange-500/15 text-orange-300 border-orange-500/30">
                     Leboncoin · {formatEuro(copySheetItem.listing_price)}
@@ -2497,7 +2497,7 @@ export function BackOffice({
         open={Boolean(sellModalItem)}
         onOpenChange={(open) => !open && setSellModalItem(null)}
       >
-        <DialogContent className="bg-[#0e111a] border-white/10 text-zinc-100 sm:max-w-md shadow-2xl">
+        <DialogContent className="bg-[#0c1426] border-white/10 text-zinc-100 sm:max-w-md shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-white">
               Enregistrer la vente
@@ -2587,7 +2587,7 @@ export function BackOffice({
       {/* Native iPhone Bottom Tab Bar */}
       <nav
         aria-label="Navigation mobile"
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-[#07080d]/95 backdrop-blur-xl px-1.5 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-[#060b18]/95 backdrop-blur-xl px-1.5 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       >
         <div className="grid grid-cols-5 gap-1">
           {[
@@ -2605,7 +2605,7 @@ export function BackOffice({
                 onClick={() => setTab(item.id)}
                 className={`vf-click-press flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium transition-all ${
                   active
-                    ? "bg-violet-500/20 text-violet-300 font-bold"
+                    ? "bg-blue-500/20 text-blue-300 font-bold"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >

@@ -22,13 +22,13 @@ export function VintflowLogo({
         viewBox="0 0 40 40"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className={`${iconDims} shrink-0 drop-shadow-[0_0_14px_rgba(139,92,246,0.45)]`}
+        className={`${iconDims} shrink-0 drop-shadow-[0_0_14px_rgba(59,130,246,0.45)]`}
         aria-hidden="true"
       >
         <defs>
           <linearGradient id="vf-bg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#8b5cf6" />
-            <stop offset="55%" stopColor="#6366f1" />
+            <stop offset="0%" stopColor="#2563eb" />
+            <stop offset="55%" stopColor="#3b82f6" />
             <stop offset="100%" stopColor="#06b6d4" />
           </linearGradient>
         </defs>
@@ -47,12 +47,12 @@ export function VintflowLogo({
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <circle cx="10.5" cy="13" r="2.1" fill="#ddd6fe" />
+        <circle cx="10.5" cy="13" r="2.1" fill="#bae6fd" />
       </svg>
 
       {showText && (
         <span className={`font-extrabold tracking-tight text-white ${textSize}`}>
-          Vint<span className="text-violet-400">flow</span>
+          Vint<span className="text-sky-400">flow</span>
         </span>
       )}
     </span>

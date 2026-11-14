@@ -4,8 +4,8 @@ import { VintflowLogo } from "@/components/VintflowLogo";
 
 export default function MentionsLegalesPage() {
   return (
-    <div className="min-h-screen bg-[#07080d] text-zinc-200">
-      <header className="border-b border-white/10 bg-[#07080d]/90">
+    <div className="min-h-screen bg-[#060b18] text-zinc-200">
+      <header className="border-b border-white/10 bg-[#060b18]/90">
         <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6">
           <Link href="/">
             <VintflowLogo />
@@ -26,7 +26,7 @@ export default function MentionsLegalesPage() {
           <p className="mt-1.5 text-xs text-zinc-500">Dernière mise à jour : Novembre 2026</p>
         </div>
 
-        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0e111a] p-6">
+        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0c1426] p-6">
           <h2 className="text-base font-bold text-white">1. Éditeur du service</h2>
           <p>
             La plateforme <strong>Vintflow</strong> est éditée par Vintflow Studio (logiciel
@@ -37,7 +37,7 @@ export default function MentionsLegalesPage() {
           </p>
         </section>
 
-        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0e111a] p-6">
+        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0c1426] p-6">
           <h2 className="text-base font-bold text-white">2. Indépendance vis-à-vis des plateformes</h2>
           <p>
             Vintflow est un logiciel indépendant d&apos;aide à la gestion, à la création
@@ -46,7 +46,7 @@ export default function MentionsLegalesPage() {
           </p>
         </section>
 
-        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0e111a] p-6">
+        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0c1426] p-6">
           <h2 className="text-base font-bold text-white">3. Propriété intellectuelle</h2>
           <p>
             L&apos;interface, le logo Vintflow, les textes et les outils de la plateforme sont

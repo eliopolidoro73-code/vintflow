@@ -121,7 +121,7 @@ export function NewListingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#0e111a] border-white/10 text-zinc-100 sm:max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+      <DialogContent className="bg-[#0c1426] border-white/10 text-zinc-100 sm:max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold text-white">
             Ajouter un article au Stock &amp; Dressing
