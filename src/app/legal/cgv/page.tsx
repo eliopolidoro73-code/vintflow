@@ -4,8 +4,8 @@ import { VintflowLogo } from "@/components/VintflowLogo";
 
 export default function CgvPage() {
   return (
-    <div className="min-h-screen bg-[#060b18] text-zinc-200">
-      <header className="border-b border-white/10 bg-[#060b18]/90">
+    <div className="min-h-screen bg-[#07080d] text-zinc-200">
+      <header className="border-b border-white/10 bg-[#07080d]/90">
         <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6">
           <Link href="/">
             <VintflowLogo />
@@ -28,7 +28,7 @@ export default function CgvPage() {
           <p className="mt-1.5 text-xs text-zinc-500">Applicables à compter de Novembre 2026</p>
         </div>
 
-        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0c1426] p-6">
+        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0e111a] p-6">
           <h2 className="text-base font-bold text-white">1. Formules d&apos;abonnement</h2>
           <p>
             Vintflow propose 3 formules mensuelles ou annuelles (-2 mois offerts) :
@@ -40,7 +40,7 @@ export default function CgvPage() {
           </ul>
         </section>
 
-        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0c1426] p-6">
+        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0e111a] p-6">
           <h2 className="text-base font-bold text-white">2. Essai gratuit 14 jours</h2>
           <p>
             Tout nouvel utilisateur bénéficie d&apos;un essai gratuit de 14 jours, sans engagement.
@@ -48,7 +48,7 @@ export default function CgvPage() {
           </p>
         </section>
 
-        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0c1426] p-6">
+        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0e111a] p-6">
           <h2 className="text-base font-bold text-white">3. Suivi commercial et responsabilité</h2>
           <p>
             Les indicateurs de marge commerciale, seuils TVA et factures PDF générées constituent des outils

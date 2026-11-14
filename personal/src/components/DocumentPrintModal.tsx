@@ -53,7 +53,7 @@ export function DocumentPrintModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#0c1426] border-white/10 text-zinc-100 sm:max-w-xl shadow-2xl">
+      <DialogContent className="bg-[#0e111a] border-white/10 text-zinc-100 sm:max-w-xl shadow-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between pr-6 text-white">
             <span>

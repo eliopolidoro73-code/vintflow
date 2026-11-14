@@ -122,7 +122,7 @@ export function AuthModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="vf-tab-enter bg-[#0c1426] border-white/15 text-zinc-100 sm:max-w-lg max-h-[92vh] overflow-y-auto shadow-[0_25px_70px_-10px_rgba(0,0,0,0.85)]">
+      <DialogContent className="vf-tab-enter bg-[#0e111a] border-white/15 text-zinc-100 sm:max-w-lg max-h-[92vh] overflow-y-auto shadow-[0_25px_70px_-10px_rgba(0,0,0,0.85)]">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold tracking-tight text-white">
             {mode === "register"
@@ -145,7 +145,7 @@ export function AuthModal({
             }}
             className={`vf-click-press rounded-md py-2 transition-all ${
               mode === "register"
-                ? "bg-blue-600 text-white font-semibold shadow-sm"
+                ? "bg-violet-600 text-white font-semibold shadow-sm"
                 : "text-zinc-400 hover:text-white"
             }`}
           >
@@ -159,7 +159,7 @@ export function AuthModal({
             }}
             className={`vf-click-press rounded-md py-2 transition-all ${
               mode === "login"
-                ? "bg-blue-600 text-white font-semibold shadow-sm"
+                ? "bg-violet-600 text-white font-semibold shadow-sm"
                 : "text-zinc-400 hover:text-white"
             }`}
           >
@@ -182,14 +182,14 @@ export function AuthModal({
                       onClick={() => handleSelectPlan(pid)}
                       className={`vf-click-press rounded-lg border p-2.5 text-left transition-all ${
                         plan === pid
-                          ? "border-blue-500 bg-blue-500/15 shadow-[0_0_20px_rgba(59,130,246,0.25)]"
+                          ? "border-violet-500 bg-violet-500/15 shadow-[0_0_20px_rgba(139,92,246,0.25)]"
                           : "border-white/10 bg-white/[0.02] hover:border-white/25"
                       }`}
                     >
                       <p className="text-[11px] font-bold text-white truncate">
                         {p.name}
                       </p>
-                      <p className="mt-0.5 text-xs font-extrabold text-blue-400">
+                      <p className="mt-0.5 text-xs font-extrabold text-violet-400">
                         {price} €/m
                       </p>
                     </button>
@@ -200,7 +200,7 @@ export function AuthModal({
               {/* Live Diff Card: Ce qui change (en mieux / en moins) */}
               <div
                 key={`${plan}-${baselinePlan}`}
-                className="vf-tab-enter rounded-xl border border-white/10 bg-[#060b18] p-3 text-xs space-y-2"
+                className="vf-tab-enter rounded-xl border border-white/10 bg-[#07080d] p-3 text-xs space-y-2"
               >
                 <div className="flex items-center justify-between border-b border-white/10 pb-2">
                   <span className="font-bold text-white">
@@ -212,7 +212,7 @@ export function AuthModal({
                     <span
                       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                         comparison.priceDiff > 0
-                          ? "bg-blue-500/20 text-blue-300"
+                          ? "bg-violet-500/20 text-violet-300"
                           : "bg-amber-500/15 text-amber-300"
                       }`}
                     >
@@ -296,7 +296,7 @@ export function AuthModal({
                     onClick={() => setCycle("annual")}
                     className={`rounded px-2 py-1 ${
                       cycle === "annual"
-                        ? "bg-blue-500/25 text-blue-300 font-medium"
+                        ? "bg-violet-500/25 text-violet-300 font-medium"
                         : "text-zinc-400"
                     }`}
                   >
@@ -372,7 +372,7 @@ export function AuthModal({
                   type="checkbox"
                   checked={withSampleData}
                   onChange={(e) => setWithSampleData(e.target.checked)}
-                  className="rounded border-white/20 bg-white/5 accent-blue-500"
+                  className="rounded border-white/20 bg-white/5 accent-violet-500"
                 />
                 Pré-remplir avec des articles &amp; ventes d&apos;exemple
               </label>
@@ -388,7 +388,7 @@ export function AuthModal({
           <Button
             type="submit"
             disabled={loading}
-            className="vf-shimmer-btn w-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:from-blue-500 hover:to-sky-500 font-bold h-11 shadow-[0_0_25px_rgba(59,130,246,0.35)]"
+            className="vf-shimmer-btn w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 font-bold h-11 shadow-[0_0_25px_rgba(139,92,246,0.35)]"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -403,11 +403,11 @@ export function AuthModal({
 
         <div className="flex items-center justify-center gap-4 text-[11px] text-zinc-500">
           <span className="flex items-center gap-1">
-            <CheckCircle2 className="h-3.5 w-3.5 text-blue-400" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-violet-400" />
             0 € aujourd&apos;hui
           </span>
           <span className="flex items-center gap-1">
-            <CheckCircle2 className="h-3.5 w-3.5 text-blue-400" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-violet-400" />
             Annulable en 1 clic
           </span>
         </div>

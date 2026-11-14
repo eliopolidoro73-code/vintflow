@@ -18,7 +18,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#060b18",
+  themeColor: "#07080d",
 };
 
 export const metadata: Metadata = {
@@ -45,7 +45,7 @@ export default function RootLayout({
       lang="fr"
       className={`${plusJakarta.variable} ${jetbrainsMono.variable} h-full antialiased scroll-smooth`}
     >
-      <body className="min-h-full flex flex-col bg-[#060b18] text-zinc-100">
+      <body className="min-h-full flex flex-col bg-[#07080d] text-zinc-100">
         {children}
       </body>
     </html>

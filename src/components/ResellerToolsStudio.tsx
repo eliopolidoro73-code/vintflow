@@ -631,7 +631,7 @@ export function ResellerToolsStudio({
   // Gate whole AI tools suite on Essentiel (9€)
   if (planId === "essentiel" || aiCreditsLimit === 0) {
     return (
-      <div className="rounded-3xl border border-amber-500/30 bg-[#0c1426] p-8 text-center space-y-4">
+      <div className="rounded-3xl border border-amber-500/30 bg-[#0e111a] p-8 text-center space-y-4">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-300 border border-amber-500/30">
           <Lock className="h-6 w-6" />
         </div>
@@ -645,7 +645,7 @@ export function ResellerToolsStudio({
         </p>
         <Button
           onClick={onUpgradeClick}
-          className="bg-blue-600 text-white hover:bg-blue-500 font-bold"
+          className="bg-violet-600 text-white hover:bg-violet-500 font-bold"
         >
           Voir les plans &amp; débloquer l&apos;IA
         </Button>
@@ -660,7 +660,7 @@ export function ResellerToolsStudio({
   return (
     <div className="space-y-5">
       {/* Quota bar for Vendeur Plus / Unlimited badge for Pro Scale */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0c1426] px-4 py-3 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0e111a] px-4 py-3 text-xs">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-emerald-400" />
           <span className="font-semibold text-white">
@@ -715,8 +715,8 @@ export function ResellerToolsStudio({
             onClick={() => setSubTab(item.id)}
             className={`vf-click-press rounded-2xl border p-3.5 text-left transition-all ${
               subTab === item.id
-                ? "border-blue-500/60 bg-blue-500/12 shadow-[0_0_24px_rgba(59,130,246,0.18)]"
-                : "border-white/10 bg-[#0c1426] hover:border-white/25"
+                ? "border-violet-500/60 bg-violet-500/12 shadow-[0_0_24px_rgba(139,92,246,0.18)]"
+                : "border-white/10 bg-[#0e111a] hover:border-white/25"
             }`}
           >
             <div className="flex items-center gap-2 font-bold text-xs text-white">
@@ -730,7 +730,7 @@ export function ResellerToolsStudio({
 
       {/* TOOL 1: STUDIO PHOTO */}
       {subTab === "photo" && (
-        <div key="photo" className="vf-tab-enter grid gap-6 lg:grid-cols-12 rounded-2xl border border-white/10 bg-[#0c1426] p-5">
+        <div key="photo" className="vf-tab-enter grid gap-6 lg:grid-cols-12 rounded-2xl border border-white/10 bg-[#0e111a] p-5">
           <div className="lg:col-span-5 space-y-4">
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -906,7 +906,7 @@ export function ResellerToolsStudio({
                 type="button"
                 disabled={visionLoading}
                 onClick={handleAnalyzePhotoToListing}
-                className="bg-blue-600 text-white hover:bg-blue-500 font-bold text-xs h-10"
+                className="bg-violet-600 text-white hover:bg-violet-500 font-bold text-xs h-10"
               >
                 {visionLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
@@ -918,7 +918,7 @@ export function ResellerToolsStudio({
             </div>
           </div>
 
-          <div className="lg:col-span-7 flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#060b18] p-4 gap-3">
+          <div className="lg:col-span-7 flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#07080d] p-4 gap-3">
             {photoSrc && (
               <div className="flex w-full items-center justify-between px-2">
                 <span className="text-[11px] text-zinc-400 font-mono truncate max-w-[220px]">
@@ -953,7 +953,7 @@ export function ResellerToolsStudio({
         <div key="listing" className="vf-tab-enter grid gap-6 lg:grid-cols-12">
           <form
             onSubmit={handleGenerateListing}
-            className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-3 text-xs"
+            className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-3 text-xs"
           >
             <h2 className="text-sm font-bold text-white">
               Générateur d&apos;annonce SEO + Script TikTok Shop
@@ -1038,7 +1038,7 @@ export function ResellerToolsStudio({
             <Button
               type="submit"
               disabled={genLoading}
-              className="w-full bg-blue-600 text-white hover:bg-blue-500 font-bold h-10"
+              className="w-full bg-violet-600 text-white hover:bg-violet-500 font-bold h-10"
             >
               {genLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
@@ -1049,7 +1049,7 @@ export function ResellerToolsStudio({
             </Button>
           </form>
 
-          <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-4">
+          <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4">
             {!genResult ? (
               <div className="flex h-full min-h-[300px] flex-col items-center justify-center text-center text-xs text-zinc-400">
                 <Sparkles className="h-8 w-8 text-emerald-400/70 mb-2" />
@@ -1077,7 +1077,7 @@ export function ResellerToolsStudio({
                 </div>
 
                 <div className="space-y-3 text-xs">
-                  <div className="rounded-xl border border-white/10 bg-[#060b18] p-3">
+                  <div className="rounded-xl border border-white/10 bg-[#07080d] p-3">
                     <div className="flex items-center justify-between mb-1.5">
                       <Badge className="bg-teal-500/15 text-teal-300 border-teal-500/30">
                         Vinted (SEO + Mesures + Hashtags)
@@ -1100,7 +1100,7 @@ export function ResellerToolsStudio({
                     </pre>
                   </div>
 
-                  <div className="rounded-xl border border-white/10 bg-[#060b18] p-3">
+                  <div className="rounded-xl border border-white/10 bg-[#07080d] p-3">
                     <div className="flex items-center justify-between mb-1.5">
                       <Badge className="bg-orange-500/15 text-orange-300 border-orange-500/30">
                         Leboncoin (Propre &amp; Rassurant)
@@ -1119,7 +1119,7 @@ export function ResellerToolsStudio({
                     </pre>
                   </div>
 
-                  <div className="rounded-xl border border-white/10 bg-[#060b18] p-3">
+                  <div className="rounded-xl border border-white/10 bg-[#07080d] p-3">
                     <div className="flex items-center justify-between mb-1.5">
                       <Badge className="bg-pink-500/15 text-pink-300 border-pink-500/30">
                         <Video className="h-3 w-3 mr-1" />
@@ -1142,7 +1142,7 @@ export function ResellerToolsStudio({
 
                 <Button
                   onClick={handleSaveGeneratedToStock}
-                  className="w-full bg-blue-600 text-white hover:bg-blue-500 font-bold text-xs"
+                  className="w-full bg-violet-600 text-white hover:bg-violet-500 font-bold text-xs"
                 >
                   <Plus className="h-4 w-4 mr-1.5" />
                   Enregistrer cet article dans mon Dressing &amp; Crosslister
@@ -1158,7 +1158,7 @@ export function ResellerToolsStudio({
         <div key="antishadowban" className="vf-tab-enter grid gap-6 lg:grid-cols-12">
           <form
             onSubmit={handleAntiShadowban}
-            className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-3 text-xs"
+            className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-3 text-xs"
           >
             <h2 className="text-sm font-bold text-white">
               Bouclier Anti-Shadowban &amp; Vérification 24h
@@ -1198,7 +1198,7 @@ export function ResellerToolsStudio({
             </Button>
           </form>
 
-          <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-4 text-xs">
+          <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4 text-xs">
             {!shadowResult ? (
               <div className="space-y-4">
                 <p className="text-zinc-300 font-semibold">
@@ -1212,7 +1212,7 @@ export function ResellerToolsStudio({
                   ].map((slot) => (
                     <div
                       key={slot.day}
-                      className="rounded-xl border border-white/10 bg-[#060b18] p-3"
+                      className="rounded-xl border border-white/10 bg-[#07080d] p-3"
                     >
                       <p className="font-bold text-white flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5 text-emerald-400" />
@@ -1226,7 +1226,7 @@ export function ResellerToolsStudio({
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="rounded-xl border border-emerald-500/30 bg-[#060b18] p-3.5 space-y-2">
+                <div className="rounded-xl border border-emerald-500/30 bg-[#07080d] p-3.5 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-emerald-300">
                       Nouveau titre anti-duplication
@@ -1244,7 +1244,7 @@ export function ResellerToolsStudio({
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-white/10 bg-[#060b18] p-3.5 space-y-2">
+                <div className="rounded-xl border border-white/10 bg-[#07080d] p-3.5 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-white">
                       Description nettoyée (zéro spam)
@@ -1282,7 +1282,7 @@ export function ResellerToolsStudio({
       {/* TOOL 4: BUNDLE CALCULATOR & NEGOTIATION SNIPER */}
       {subTab === "negotiation" && (
         <div key="negotiation" className="vf-tab-enter grid gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-4 text-xs">
+          <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4 text-xs">
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
               <Calculator className="h-4 w-4 text-emerald-400" />
               Calculateur de Lot &amp; Seuil de Rentabilité
@@ -1340,7 +1340,7 @@ export function ResellerToolsStudio({
             </div>
 
             {/* Vinted Boost ROI Calculator */}
-            <div className="rounded-xl border border-white/10 bg-[#060b18] p-3.5 space-y-2.5">
+            <div className="rounded-xl border border-white/10 bg-[#07080d] p-3.5 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-white">Simulateur ROI Boost Vinted</span>
                 <select
@@ -1415,14 +1415,14 @@ export function ResellerToolsStudio({
               <Button
                 type="submit"
                 disabled={negLoading}
-                className="w-full bg-blue-600 text-white hover:bg-blue-500 font-bold"
+                className="w-full bg-violet-600 text-white hover:bg-violet-500 font-bold"
               >
                 Calculer ma riposte &amp; contre-offre
               </Button>
             </form>
           </div>
 
-          <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#0c1426] p-5 space-y-4 text-xs">
+          <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4 text-xs">
             {!negResult ? (
               <div className="flex h-full min-h-[280px] flex-col items-center justify-center text-center text-zinc-400">
                 <Swords className="h-8 w-8 text-rose-400/70 mb-2" />
@@ -1431,7 +1431,7 @@ export function ResellerToolsStudio({
             ) : (
               <>
                 <div className="grid grid-cols-3 gap-2.5">
-                  <div className="rounded-xl border border-white/10 bg-[#060b18] p-3">
+                  <div className="rounded-xl border border-white/10 bg-[#07080d] p-3">
                     <p className="text-zinc-400">Marge à l&apos;offre</p>
                     <p
                       className={`text-lg font-extrabold mt-0.5 ${
@@ -1443,7 +1443,7 @@ export function ResellerToolsStudio({
                       {formatEuro(negResult.offerNetMargin)}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-[#060b18] p-3">
+                  <div className="rounded-xl border border-white/10 bg-[#07080d] p-3">
                     <p className="text-zinc-400">Prix plancher sûr</p>
                     <p className="text-lg font-extrabold text-amber-300 mt-0.5">
                       {formatEuro(negResult.minAcceptable)}
@@ -1465,7 +1465,7 @@ export function ResellerToolsStudio({
                   {negResult.replies.map((rep, idx) => (
                     <div
                       key={idx}
-                      className="rounded-xl border border-white/10 bg-[#060b18] p-3.5 space-y-1.5"
+                      className="rounded-xl border border-white/10 bg-[#07080d] p-3.5 space-y-1.5"
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-emerald-400">

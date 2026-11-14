@@ -47,13 +47,13 @@ export function PersonalLockScreen({
   }
 
   return (
-    <div className="min-h-screen bg-[#060b18] text-slate-100 flex items-center justify-center p-4">
-      <div className="pointer-events-none fixed inset-x-0 top-0 h-[420px] bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.22),transparent_68%)]" />
+    <div className="min-h-screen bg-[#07080d] text-slate-100 flex items-center justify-center p-4">
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-[420px] bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.22),transparent_68%)]" />
 
-      <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-[#0c1426] p-6 sm:p-8 shadow-2xl space-y-6">
+      <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-[#0e111a] p-6 sm:p-8 shadow-2xl space-y-6">
         <div className="flex items-center justify-between">
           <VintflowLogo />
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/35 bg-blue-500/15 px-3 py-1 text-[11px] font-bold text-sky-300">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/35 bg-violet-500/15 px-3 py-1 text-[11px] font-bold text-indigo-300">
             <Smartphone className="h-3.5 w-3.5" />
             Édition iPhone
           </span>
@@ -132,7 +132,7 @@ export function PersonalLockScreen({
           <Button
             type="submit"
             disabled={loading}
-            className="vf-shimmer-btn w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold shadow-[0_0_25px_rgba(59,130,246,0.35)]"
+            className="vf-shimmer-btn w-full h-11 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold shadow-[0_0_25px_rgba(139,92,246,0.35)]"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -146,7 +146,7 @@ export function PersonalLockScreen({
         </form>
 
         <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500 border-t border-white/10 pt-4">
-          <ShieldCheck className="h-4 w-4 text-sky-400" />
+          <ShieldCheck className="h-4 w-4 text-indigo-400" />
           <span>Pro Scale 100 % gratuit · Session 30 jours</span>
         </div>
       </div>

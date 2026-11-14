@@ -4,8 +4,8 @@ import { VintflowLogo } from "@/components/VintflowLogo";
 
 export default function ConfidentialitePage() {
   return (
-    <div className="min-h-screen bg-[#060b18] text-zinc-200">
-      <header className="border-b border-white/10 bg-[#060b18]/90">
+    <div className="min-h-screen bg-[#07080d] text-zinc-200">
+      <header className="border-b border-white/10 bg-[#07080d]/90">
         <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6">
           <Link href="/">
             <VintflowLogo />
@@ -26,7 +26,7 @@ export default function ConfidentialitePage() {
           <p className="mt-1.5 text-xs text-zinc-500">Dernière mise à jour : Novembre 2026</p>
         </div>
 
-        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0c1426] p-6">
+        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0e111a] p-6">
           <h2 className="text-base font-bold text-white">1. Données collectées</h2>
           <p>
             Vintflow enregistre uniquement les données nécessaires à votre activité : email,
@@ -34,7 +34,7 @@ export default function ConfidentialitePage() {
           </p>
         </section>
 
-        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0c1426] p-6">
+        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0e111a] p-6">
           <h2 className="text-base font-bold text-white">2. Sécurité &amp; Traitement des photos</h2>
           <p>
             Le Studio Photo IA traite vos images localement dans le navigateur. Vos mots de passe
@@ -42,7 +42,7 @@ export default function ConfidentialitePage() {
           </p>
         </section>
 
-        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0c1426] p-6">
+        <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0e111a] p-6">
           <h2 className="text-base font-bold text-white">3. Vos droits</h2>
           <p>
             Vous pouvez exporter vos données au format CSV à tout moment ou demander la
