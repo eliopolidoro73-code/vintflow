@@ -1,9 +1,10 @@
-export type PlanId = "starter" | "pro";
+export type PlanId = "essentiel" | "plus" | "pro";
 export type BillingCycle = "monthly" | "annual";
 
 export interface PlanDefinition {
   id: PlanId;
   name: string;
+  badge?: string;
   tagline: string;
   monthlyPrice: number;
   annualMonthlyPrice: number;
@@ -13,21 +14,62 @@ export interface PlanDefinition {
   tiktokAccountsLimit: number;
   ebayAccountsLimit: number;
   whatnotAccountsLimit: number;
-  crosslistMonthlyLimit: number | null;
+  activeItemsLimit: number | null;
+  crosslistMonthlyLimit: number; // 0 = disabled, -1 = unlimited
+  aiCreditsMonthlyLimit: number; // 0 = disabled, -1 = unlimited
+  autoCrosslistAllowed: boolean;
+  pdfInvoicesAllowed: boolean;
+  unifiedMessagesAllowed: boolean;
+  novaAssistantAllowed: boolean;
   companiesLimit: number;
   collaboratorsLimit: number;
   accountantAccess: boolean;
-  autoInvoiceEmails: boolean;
-  skuSlipSummary: boolean;
   supportSla: string;
   features: string[];
+  lockedFeatures: string[];
 }
 
 export const PLANS: Record<PlanId, PlanDefinition> = {
-  starter: {
-    id: "starter",
-    name: "Starter",
-    tagline: "Couvre tout ce qu'il faut pour vendre proprement.",
+  essentiel: {
+    id: "essentiel",
+    name: "Essentiel",
+    tagline: "Pour démarrer proprement sans fichier Excel.",
+    monthlyPrice: 9,
+    annualMonthlyPrice: 7,
+    annualTotal: 84,
+    vintedAccountsLimit: 1,
+    leboncoinAccountsLimit: 1,
+    tiktokAccountsLimit: 0,
+    ebayAccountsLimit: 0,
+    whatnotAccountsLimit: 0,
+    activeItemsLimit: 40,
+    crosslistMonthlyLimit: 0,
+    aiCreditsMonthlyLimit: 0,
+    autoCrosslistAllowed: false,
+    pdfInvoicesAllowed: false,
+    unifiedMessagesAllowed: false,
+    novaAssistantAllowed: false,
+    companiesLimit: 1,
+    collaboratorsLimit: 0,
+    accountantAccess: false,
+    supportSla: "Sous 48 h",
+    features: [
+      "1 compte Vinted + 1 compte Leboncoin",
+      "Stock SKU jusqu'à 40 articles actifs",
+      "Calcul automatique marge nette & URSSAF",
+      "Export CSV du livre des recettes",
+    ],
+    lockedFeatures: [
+      "Sans Studio Photo & Outils IA",
+      "Sans Crosslisting Vinted ↔ Leboncoin",
+      "Sans Factures PDF, Bordereaux 10×15 ni Nova IA",
+    ],
+  },
+  plus: {
+    id: "plus",
+    name: "Vendeur Plus",
+    badge: "Populaire",
+    tagline: "Les meilleurs outils avec quotas mensuels pour accélérer.",
     monthlyPrice: 29,
     annualMonthlyPrice: 24,
     annualTotal: 290,
@@ -36,27 +78,34 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     tiktokAccountsLimit: 1,
     ebayAccountsLimit: 1,
     whatnotAccountsLimit: 1,
-    crosslistMonthlyLimit: 500,
+    activeItemsLimit: 300,
+    crosslistMonthlyLimit: 100,
+    aiCreditsMonthlyLimit: 30,
+    autoCrosslistAllowed: false,
+    pdfInvoicesAllowed: true,
+    unifiedMessagesAllowed: true,
+    novaAssistantAllowed: false,
     companiesLimit: 1,
     collaboratorsLimit: 0,
     accountantAccess: false,
-    autoInvoiceEmails: false,
-    skuSlipSummary: false,
     supportSla: "Sous 24 h",
     features: [
-      "3 comptes Vinted (jusqu'à 5 en option), 1 Leboncoin, 1 TikTok Shop, 1 eBay, 1 Whatnot",
-      "Crosslisting Vinted ↔ Leboncoin : 500 publications/mois, retrait auto quand ça se vend",
-      "Synchronisation automatique toutes les heures, historique inclus",
-      "Marge réelle, URSSAF, TVA, achats et stock reliés aux ventes",
-      "Factures PDF et exports comptables France & Belgique (CSV / Excel)",
-      "Inventaire, SKU, lots et bordereaux 10×15 (4×6)",
-      "Assistant IA Copilote connecté à tes chiffres & support 24 h",
+      "3 comptes Vinted, 1 Leboncoin, 1 TikTok Shop, 1 eBay, 1 Whatnot",
+      "300 articles actifs + Crosslisting Vinted ↔ Leboncoin (100/mois)",
+      "30 crédits IA/mois : Studio Photo, Annonce IA, Anti-Shadowban & Sniper Négo",
+      "Factures PDF conformes + Bordereaux thermiques 10×15 SKU",
+      "Messagerie unifiée multi-comptes avec réponses rapides",
+    ],
+    lockedFeatures: [
+      "Crosslisting limité à 100/mois (sans publication auto 8h–23h)",
+      "Sans Assistant IA Nova connecté aux données",
     ],
   },
   pro: {
     id: "pro",
-    name: "Pro",
-    tagline: "Ajoute les comptes, le comptable, les collaborateurs et le volume.",
+    name: "Pro Scale",
+    badge: "Tout illimité",
+    tagline: "La puissance maximale en illimité pour les gros vendeurs.",
     monthlyPrice: 49,
     annualMonthlyPrice: 41,
     annualTotal: 490,
@@ -65,21 +114,32 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     tiktokAccountsLimit: 3,
     ebayAccountsLimit: 3,
     whatnotAccountsLimit: 3,
-    crosslistMonthlyLimit: null,
+    activeItemsLimit: null,
+    crosslistMonthlyLimit: -1,
+    aiCreditsMonthlyLimit: -1,
+    autoCrosslistAllowed: true,
+    pdfInvoicesAllowed: true,
+    unifiedMessagesAllowed: true,
+    novaAssistantAllowed: true,
     companiesLimit: 3,
     collaboratorsLimit: 3,
     accountantAccess: true,
-    autoInvoiceEmails: true,
-    skuSlipSummary: true,
     supportSla: "Prioritaire sous 2 h",
     features: [
-      "10 comptes Vinted (illimités en option), 3 Leboncoin, 3 TikTok Shop, 3 eBay, 3 Whatnot",
-      "Crosslisting illimité Vinted ↔ Leboncoin + publication auto 8h–23h",
-      "Jusqu'à 3 sociétés et comptabilité consolidée par entité",
-      "Accès comptable en lecture seule + 3 collaborateurs limités par page",
-      "E-mails d'expédition automatiques avec facture & formulaire de retour",
-      "Récapitulatif des colis avec étiquettes SKU pour préparation rapide",
-      "Assistant IA Copilote avancé & support prioritaire sous 2 h",
+      "10 comptes Vinted, 3 Leboncoin, 3 TikTok Shop, 3 eBay, 3 Whatnot",
+      "Crosslisting ILLIMITÉ + Publication auto 8h–23h + Retrait auto à la vente",
+      "Suite IA ILLIMITÉE : Vision IA, Détourage, 3-en-1, Anti-Shadowban & Sniper",
+      "Assistant IA Nova illimité connecté à tes vrais chiffres (actions 1 clic)",
+      "Factures PDF auto + Bordereaux 10×15 + jusqu'à 3 sociétés & accès comptable",
+      "3 collaborateurs + Support prioritaire sous 2 h",
     ],
+    lockedFeatures: [],
   },
 };
+
+export function normalizePlanId(raw: string | undefined | null): PlanId {
+  if (raw === "pro") return "pro";
+  if (raw === "essentiel") return "essentiel";
+  // Map legacy "starter" to "plus"
+  return "plus";
+}

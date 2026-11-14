@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { generateListingCopy } from "@/lib/format";
+import { PLANS } from "@/lib/plans";
 
 const COLOR_PALETTE = [
   "#0f766e",
@@ -19,6 +20,23 @@ export async function POST(request: Request) {
 
   const auth = await requireAuthenticatedUser();
   if ("response" in auth) return auth.response;
+  const plan = PLANS[auth.user.plan];
+
+  if (plan.activeItemsLimit !== null) {
+    const countRows = await sql<{ cnt: string | number }>(
+      "select count(*) as cnt from inventory_items where user_id = $1 and status = 'active'",
+      [auth.user.id],
+    );
+    const currentActive = Number(countRows[0]?.cnt ?? 0);
+    if (currentActive >= plan.activeItemsLimit) {
+      return NextResponse.json(
+        {
+          error: `Limite de ${plan.activeItemsLimit} articles actifs atteinte sur le plan ${plan.name}. Passe au palier supérieur.`,
+        },
+        { status: 403 },
+      );
+    }
+  }
 
   let body: {
     sku?: string;
@@ -77,8 +95,39 @@ export async function POST(request: Request) {
       100 + Math.random() * 900,
     )}`;
 
-  const leboncoinStatus =
-    body.crosslist_lbc || auth.user.auto_crosslist ? "listed" : "not_listed";
+  const wantsCrosslistLbc =
+    Boolean(body.crosslist_lbc) ||
+    (auth.user.auto_crosslist && plan.autoCrosslistAllowed);
+
+  let leboncoinStatus = "not_listed";
+  if (wantsCrosslistLbc) {
+    if (plan.crosslistMonthlyLimit === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Le crosslisting Vinted ↔ Leboncoin est disponible à partir du plan Vendeur Plus (29 €/mois).",
+        },
+        { status: 403 },
+      );
+    }
+    if (
+      plan.crosslistMonthlyLimit > 0 &&
+      auth.user.crosslist_used >= plan.crosslistMonthlyLimit
+    ) {
+      return NextResponse.json(
+        {
+          error: `Quota de ${plan.crosslistMonthlyLimit} crosslistings/mois atteint. Passe à Pro Scale pour l'illimité.`,
+        },
+        { status: 403 },
+      );
+    }
+    leboncoinStatus = "listed";
+    await sql(
+      "update users set crosslist_used = crosslist_used + 1 where id = $1",
+      [auth.user.id],
+    );
+  }
+
   const tiktokStatus = body.crosslist_tiktok ? "listed" : "not_listed";
   const ebayStatus = body.crosslist_ebay ? "listed" : "not_listed";
   const color =

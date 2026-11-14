@@ -54,9 +54,9 @@ export function DocumentPrintModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-white border-slate-200 text-slate-900 sm:max-w-xl shadow-xl">
+      <DialogContent className="bg-[#10141c] border-white/10 text-zinc-100 sm:max-w-xl shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between pr-6 text-slate-900">
+          <DialogTitle className="flex items-center justify-between pr-6 text-white">
             <span>
               {mode === "invoice"
                 ? `Facture ${sale.invoice_number}`
@@ -65,7 +65,7 @@ export function DocumentPrintModal({
             <Button
               size="sm"
               onClick={() => window.print()}
-              className="bg-teal-600 text-white hover:bg-teal-700 font-semibold"
+              className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold"
             >
               <Printer className="h-4 w-4 mr-1.5" />
               Imprimer / PDF

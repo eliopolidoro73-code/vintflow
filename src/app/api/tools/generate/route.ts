@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
+import { sql } from "@/lib/db";
 import { computeNetMargin, generateListingCopy } from "@/lib/format";
+import { PLANS } from "@/lib/plans";
 
 const BRAND_CATALOG = [
   { key: "carhartt", brand: "Carhartt", cat: "Vestes & Manteaux", avgPrice: 85 },
@@ -23,6 +25,32 @@ export async function POST(request: Request) {
 
   const auth = await requireAuthenticatedUser();
   if ("response" in auth) return auth.response;
+
+  const plan = PLANS[auth.user.plan];
+  if (plan.aiCreditsMonthlyLimit === 0) {
+    return NextResponse.json(
+      {
+        error:
+          "Les outils IA (Vision, Annonces 3-en-1, Anti-Shadowban, Sniper Négo) ne sont pas inclus dans le plan Essentiel (9 €). Passe à Vendeur Plus (29 €) ou Pro Scale (49 €).",
+      },
+      { status: 403 },
+    );
+  }
+  if (
+    plan.aiCreditsMonthlyLimit > 0 &&
+    auth.user.ai_credits_used >= plan.aiCreditsMonthlyLimit
+  ) {
+    return NextResponse.json(
+      {
+        error: `Quota de ${plan.aiCreditsMonthlyLimit} crédits IA/mois atteint sur ${plan.name}. Passe au plan Pro Scale (49 €) pour l'IA illimitée.`,
+      },
+      { status: 403 },
+    );
+  }
+  await sql(
+    "update users set ai_credits_used = ai_credits_used + 1 where id = $1",
+    [auth.user.id],
+  );
 
   let body: {
     mode?: "listing" | "antishadowban" | "negotiation" | "vision_analyze";

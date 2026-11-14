@@ -7,6 +7,7 @@ import {
   hashPassword,
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { normalizePlanId } from "@/lib/plans";
 import { seedUserWorkspace } from "@/lib/seed";
 
 export async function POST(request: Request) {
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
     body = {};
   }
 
-  const plan = body.plan === "pro" ? "pro" : "starter";
+  const plan = body.plan ? normalizePlanId(body.plan) : "pro";
   const userId = crypto.randomUUID();
   const shortId = userId.slice(0, 8);
   const email = `demo-${shortId}@demo.vintflow.local`;

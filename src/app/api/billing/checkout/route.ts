@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { PLANS, type BillingCycle, type PlanId } from "@/lib/plans";
+import {
+  normalizePlanId,
+  PLANS,
+  type BillingCycle,
+  type PlanId,
+} from "@/lib/plans";
 
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
@@ -17,7 +22,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Corps JSON invalide" }, { status: 400 });
   }
 
-  const planId: PlanId = body.plan === "pro" ? "pro" : "starter";
+  const planId: PlanId = normalizePlanId(body.plan);
   const billingCycle: BillingCycle =
     body.billing_cycle === "annual" ? "annual" : "monthly";
   const plan = PLANS[planId];
@@ -48,7 +53,7 @@ export async function POST(request: Request) {
     params.set("line_items[0][price_data][currency]", "eur");
     params.set(
       "line_items[0][price_data][product_data][name]",
-      `VintFlow ${plan.name} (${billingCycle === "annual" ? "Annuel" : "Mensuel"})`,
+      `Vintflow ${plan.name} (${billingCycle === "annual" ? "Annuel" : "Mensuel"})`,
     );
     params.set(
       "line_items[0][price_data][unit_amount]",
@@ -98,6 +103,6 @@ export async function POST(request: Request) {
     mode: "trial_local",
     plan: planId,
     billing_cycle: billingCycle,
-    message: `Plan ${plan.name} activé en essai gratuit 14 jours (mode 0 € sans clé Stripe).`,
+    message: `Plan ${plan.name} activé en essai gratuit 14 jours.`,
   });
 }

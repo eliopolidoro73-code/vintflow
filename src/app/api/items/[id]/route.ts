@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { computeNetMargin } from "@/lib/format";
+import { PLANS } from "@/lib/plans";
 
 export async function PATCH(
   request: Request,
@@ -60,11 +61,36 @@ export async function PATCH(
   }
 
   if (body.action === "crosslist_lbc") {
+    const plan = PLANS[auth.user.plan];
+    if (plan.crosslistMonthlyLimit === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Le crosslisting Vinted ↔ Leboncoin nécessite le plan Vendeur Plus (29 €) ou Pro Scale (49 €).",
+        },
+        { status: 403 },
+      );
+    }
+    if (
+      plan.crosslistMonthlyLimit > 0 &&
+      auth.user.crosslist_used >= plan.crosslistMonthlyLimit
+    ) {
+      return NextResponse.json(
+        {
+          error: `Quota de ${plan.crosslistMonthlyLimit} crosslistings/mois atteint. Passe à Pro Scale pour l'illimité.`,
+        },
+        { status: 403 },
+      );
+    }
     await sql(
       `update inventory_items
        set leboncoin_status = 'listed'
        where id = $1 and user_id = $2`,
       [id, auth.user.id],
+    );
+    await sql(
+      "update users set crosslist_used = crosslist_used + 1 where id = $1",
+      [auth.user.id],
     );
     return NextResponse.json({ ok: true });
   }

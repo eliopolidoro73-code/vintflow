@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { PLANS } from "@/lib/plans";
 
 export async function PATCH(request: Request) {
   const originError = assertSameOrigin(request);
@@ -8,6 +9,16 @@ export async function PATCH(request: Request) {
 
   const auth = await requireAuthenticatedUser();
   if ("response" in auth) return auth.response;
+
+  if (!PLANS[auth.user.plan].unifiedMessagesAllowed) {
+    return NextResponse.json(
+      {
+        error:
+          "La messagerie unifiée multi-comptes est incluse à partir du plan Vendeur Plus (29 €/mois).",
+      },
+      { status: 403 },
+    );
+  }
 
   let body: { id?: string; reply_text?: string };
   try {

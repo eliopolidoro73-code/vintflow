@@ -5,6 +5,7 @@ import {
   requireAuthenticatedUser,
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { PLANS } from "@/lib/plans";
 
 export async function GET() {
   const user = await getAuthenticatedUser();
@@ -59,10 +60,20 @@ export async function PATCH(request: Request) {
     body.vat_threshold <= 500000
       ? Math.round(body.vat_threshold)
       : auth.user.vat_threshold;
+  const plan = PLANS[auth.user.plan];
   const autoCrosslist =
     typeof body.auto_crosslist === "boolean"
-      ? body.auto_crosslist
+      ? body.auto_crosslist && plan.autoCrosslistAllowed
       : auth.user.auto_crosslist;
+  if (body.auto_crosslist === true && !plan.autoCrosslistAllowed) {
+    return NextResponse.json(
+      {
+        error:
+          "La publication automatique (8h–23h) est réservée au plan Pro Scale (49 €/mois).",
+      },
+      { status: 403 },
+    );
+  }
   const autoDelist =
     typeof body.auto_delist === "boolean"
       ? body.auto_delist

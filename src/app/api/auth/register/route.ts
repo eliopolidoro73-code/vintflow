@@ -7,6 +7,7 @@ import {
   hashPassword,
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { normalizePlanId } from "@/lib/plans";
 import { seedUserWorkspace } from "@/lib/seed";
 
 export async function POST(request: Request) {
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
   const email = (body.email ?? "").trim().toLowerCase();
   const password = body.password ?? "";
   const name = (body.name ?? "").trim();
-  const plan = body.plan === "pro" ? "pro" : "starter";
+  const plan = normalizePlanId(body.plan);
   const billingCycle = body.billing_cycle === "annual" ? "annual" : "monthly";
   const withSampleData = body.withSampleData !== false;
 

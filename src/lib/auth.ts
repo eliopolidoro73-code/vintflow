@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { sql } from "./db";
+import { normalizePlanId, type BillingCycle, type PlanId } from "./plans";
 
 export const SESSION_COOKIE_NAME = "vintflow_session";
 
@@ -112,8 +113,8 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
-  plan: "starter" | "pro";
-  billing_cycle: "monthly" | "annual";
+  plan: PlanId;
+  billing_cycle: BillingCycle;
   subscription_status: string;
   trial_ends_at: string;
   company_name: string;
@@ -123,6 +124,8 @@ export interface AuthUser {
   vat_threshold: number;
   auto_crosslist: boolean;
   auto_delist: boolean;
+  ai_credits_used: number;
+  crosslist_used: number;
   is_demo: boolean;
 }
 
@@ -147,11 +150,13 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     vat_threshold: number;
     auto_crosslist: boolean;
     auto_delist: boolean;
+    ai_credits_used: number;
+    crosslist_used: number;
     is_demo: boolean;
   }>(
     `select id, email, name, plan, billing_cycle, subscription_status, trial_ends_at,
             company_name, siret, fiscal_regime, urssaf_rate, vat_threshold,
-            auto_crosslist, auto_delist, is_demo
+            auto_crosslist, auto_delist, ai_credits_used, crosslist_used, is_demo
      from users where id = $1`,
     [userId],
   );
@@ -163,7 +168,7 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     id: row.id,
     email: row.email,
     name: row.name,
-    plan: row.plan === "pro" ? "pro" : "starter",
+    plan: normalizePlanId(row.plan),
     billing_cycle: row.billing_cycle === "annual" ? "annual" : "monthly",
     subscription_status: row.subscription_status,
     trial_ends_at: String(row.trial_ends_at),
@@ -174,6 +179,8 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     vat_threshold: Number(row.vat_threshold),
     auto_crosslist: Boolean(row.auto_crosslist),
     auto_delist: Boolean(row.auto_delist),
+    ai_credits_used: Number(row.ai_credits_used ?? 0),
+    crosslist_used: Number(row.crosslist_used ?? 0),
     is_demo: Boolean(row.is_demo),
   };
 }

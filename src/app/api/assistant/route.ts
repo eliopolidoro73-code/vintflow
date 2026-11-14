@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { daysSince, formatEuro } from "@/lib/format";
+import { PLANS } from "@/lib/plans";
 
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
@@ -10,6 +11,16 @@ export async function POST(request: Request) {
   const auth = await requireAuthenticatedUser();
   if ("response" in auth) return auth.response;
   const user = auth.user;
+
+  if (!PLANS[user.plan].novaAssistantAllowed) {
+    return NextResponse.json(
+      {
+        error:
+          "L'Assistant IA Nova connecté à tes données en temps réel est exclusif au plan Pro Scale (49 €/mois).",
+      },
+      { status: 403 },
+    );
+  }
 
   let body: {
     question?: string;
