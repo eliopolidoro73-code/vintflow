@@ -952,7 +952,7 @@ export function BackOffice({
 
         <main
           key={tab}
-          className="vf-tab-enter flex-1 p-4 sm:p-6 space-y-6 max-w-7xl w-full mx-auto"
+          className="vf-tab-enter flex-1 p-4 pb-24 sm:p-6 lg:pb-6 space-y-6 max-w-7xl w-full mx-auto"
         >
           {/* TAB 1: OVERVIEW */}
           {tab === "overview" && (
@@ -2583,6 +2583,39 @@ export function BackOffice({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Native iPhone Bottom Tab Bar */}
+      <nav
+        aria-label="Navigation mobile"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-[#07080d]/95 backdrop-blur-xl px-1.5 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+      >
+        <div className="grid grid-cols-5 gap-1">
+          {[
+            { id: "overview" as TabId, label: "Accueil", icon: <LayoutDashboard className="h-4 w-4" /> },
+            { id: "dressing" as TabId, label: "Dressing", icon: <Layers className="h-4 w-4" /> },
+            { id: "tools" as TabId, label: "Outils IA", icon: <Wand2 className="h-4 w-4" /> },
+            { id: "sales" as TabId, label: "Ventes", icon: <ShoppingBag className="h-4 w-4" /> },
+            { id: "assistant" as TabId, label: "Nova IA", icon: <Bot className="h-4 w-4" /> },
+          ].map((item) => {
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setTab(item.id)}
+                className={`vf-click-press flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium transition-all ${
+                  active
+                    ? "bg-violet-500/20 text-violet-300 font-bold"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                {item.icon}
+                <span className="truncate">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

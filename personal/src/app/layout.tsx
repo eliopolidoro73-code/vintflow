@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -13,10 +13,26 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+  themeColor: "#07080d",
+};
+
 export const metadata: Metadata = {
-  title: "Vintflow — Logiciel de Gestion Vinted, Leboncoin, TikTok Shop & eBay",
+  title: "Vintflow Perso — Cockpit Vinted & Leboncoin",
   description:
-    "Centralise tout ton business de revente : ventes, marge commerciale, crosslisting Vinted ↔ Leboncoin, studio photo IA, stock SKU, bordereaux 10×15 et factures PDF.",
+    "Édition privée complète pour piloter tes ventes, marge commerciale, studio photo IA, crosslisting et factures depuis ton iPhone.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Vintflow",
+  },
+  icons: {
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
