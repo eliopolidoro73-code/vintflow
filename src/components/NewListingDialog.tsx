@@ -122,64 +122,64 @@ export function NewListingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#10141c] border-white/10 text-zinc-100 sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-white border-slate-200 text-slate-900 sm:max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold">
-            Studio d&apos;annonce &amp; Stock SKU
+          <DialogTitle className="text-lg font-bold text-slate-900">
+            Ajouter un article au Stock &amp; Dressing
           </DialogTitle>
-          <DialogDescription className="text-zinc-400">
-            Ajoute un article à ton inventaire, génère les descriptions Vinted +
-            Leboncoin et calcule ta marge nette après URSSAF.
+          <DialogDescription className="text-slate-500">
+            Renseigne ton article, génère les fiches Vinted + Leboncoin et vérifie
+            ta marge nette après URSSAF.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="sm:col-span-2 space-y-1.5">
-              <Label className="text-xs text-zinc-300">Titre de l&apos;article</Label>
+              <Label className="text-xs text-slate-700">Titre de l&apos;article</Label>
               <Input
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ex: Veste Nike Vintage Windbreaker Noir"
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white border-slate-200 text-slate-900"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-zinc-300">Marque</Label>
+              <Label className="text-xs text-slate-700">Marque</Label>
               <Input
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
                 placeholder="Ex: Nike, Carhartt, Ralph Lauren..."
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white border-slate-200 text-slate-900"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-zinc-300">Catégorie</Label>
+              <Label className="text-xs text-slate-700">Catégorie</Label>
               <Input
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white border-slate-200 text-slate-900"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-zinc-300">Taille</Label>
+              <Label className="text-xs text-slate-700">Taille</Label>
               <Input
                 value={size}
                 onChange={(e) => setSize(e.target.value)}
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white border-slate-200 text-slate-900"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-zinc-300">État</Label>
+              <Label className="text-xs text-slate-700">État</Label>
               <select
                 value={condition}
                 onChange={(e) => setCondition(e.target.value)}
-                className="h-9 w-full rounded-md border border-white/10 bg-[#161b24] px-3 text-sm text-white"
+                className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900"
               >
                 <option value="Neuf avec étiquette">Neuf avec étiquette</option>
                 <option value="Neuf sans étiquette">Neuf sans étiquette</option>
@@ -190,51 +190,51 @@ export function NewListingDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-zinc-300">SKU (auto si vide)</Label>
+              <Label className="text-xs text-slate-700">SKU (auto si vide)</Label>
               <Input
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
                 placeholder="Ex: SKU-NKE-104"
-                className="bg-white/5 border-white/10 text-white font-mono"
+                className="bg-white border-slate-200 text-slate-900 font-mono"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-zinc-300">Emplacement stock</Label>
+              <Label className="text-xs text-slate-700">Emplacement stock</Label>
               <Input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Ex: Rack A1, Bac B3"
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white border-slate-200 text-slate-900"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
+          <div className="grid grid-cols-3 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
             <div className="space-y-1">
-              <Label className="text-[11px] text-zinc-400">Prix achat (€)</Label>
+              <Label className="text-[11px] text-slate-600">Prix achat (€)</Label>
               <Input
                 type="number"
                 step="0.5"
                 min="0"
                 value={purchasePrice}
                 onChange={(e) => setPurchasePrice(e.target.value)}
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white border-slate-200 text-slate-900"
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-[11px] text-zinc-400">Frais annexes (€)</Label>
+              <Label className="text-[11px] text-slate-600">Frais annexes (€)</Label>
               <Input
                 type="number"
                 step="0.5"
                 min="0"
                 value={extraCosts}
                 onChange={(e) => setExtraCosts(e.target.value)}
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white border-slate-200 text-slate-900"
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-[11px] text-emerald-400 font-semibold">
+              <Label className="text-[11px] text-teal-700 font-semibold">
                 Prix de vente (€)
               </Label>
               <Input
@@ -243,23 +243,23 @@ export function NewListingDialog({
                 min="1"
                 value={listingPrice}
                 onChange={(e) => setListingPrice(e.target.value)}
-                className="bg-emerald-500/10 border-emerald-500/30 text-white font-bold"
+                className="bg-white border-teal-500 text-slate-900 font-bold"
               />
             </div>
-            <div className="col-span-3 flex flex-wrap items-center justify-between text-xs border-t border-white/10 pt-2.5">
-              <span className="text-zinc-400">
+            <div className="col-span-3 flex flex-wrap items-center justify-between text-xs border-t border-slate-200 pt-2.5">
+              <span className="text-slate-600">
                 URSSAF ({urssafRate}%) :{" "}
-                <strong className="text-zinc-200">
+                <strong className="text-slate-900">
                   {formatEuro(previewMargin.urssafAmount)}
                 </strong>
               </span>
-              <span className="text-zinc-300">
+              <span className="text-slate-700">
                 Marge nette estimée :{" "}
                 <strong
                   className={
                     previewMargin.netMargin >= 0
-                      ? "text-emerald-400"
-                      : "text-red-400"
+                      ? "text-teal-700"
+                      : "text-red-600"
                   }
                 >
                   {formatEuro(previewMargin.netMargin)}
@@ -268,10 +268,9 @@ export function NewListingDialog({
             </div>
           </div>
 
-          {/* Multi-platform & copy generation */}
-          <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
+          <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-semibold text-white">
+              <span className="text-xs font-semibold text-slate-900">
                 Diffusion &amp; Fiches préremplies
               </span>
               <Button
@@ -279,7 +278,7 @@ export function NewListingDialog({
                 size="sm"
                 variant="outline"
                 onClick={handleGenerateCopy}
-                className="border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 text-xs"
+                className="border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 text-xs"
               >
                 <Sparkles className="h-3.5 w-3.5 mr-1.5" />
                 Optimiser textes Vinted &amp; Leboncoin
@@ -288,11 +287,11 @@ export function NewListingDialog({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[11px] text-zinc-400">Compte Vinted</Label>
+                <Label className="text-[11px] text-slate-600">Compte Vinted</Label>
                 <select
                   value={vintedAccount}
                   onChange={(e) => setVintedAccount(e.target.value)}
-                  className="h-9 w-full rounded-md border border-white/10 bg-[#161b24] px-3 text-xs text-white"
+                  className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-900"
                 >
                   {(vintedAccounts.length > 0
                     ? vintedAccounts
@@ -304,13 +303,13 @@ export function NewListingDialog({
                   ))}
                 </select>
               </div>
-              <div className="flex items-end gap-4 pb-1 text-xs">
+              <div className="flex items-end gap-4 pb-1 text-xs text-slate-700">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={crosslistLbc}
                     onChange={(e) => setCrosslistLbc(e.target.checked)}
-                    className="accent-emerald-500"
+                    className="accent-teal-600"
                   />
                   Crosslister Leboncoin
                 </label>
@@ -319,7 +318,7 @@ export function NewListingDialog({
                     type="checkbox"
                     checked={crosslistTiktok}
                     onChange={(e) => setCrosslistTiktok(e.target.checked)}
-                    className="accent-emerald-500"
+                    className="accent-teal-600"
                   />
                   TikTok Shop
                 </label>
@@ -328,34 +327,34 @@ export function NewListingDialog({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[11px] text-zinc-400">
-                  Description Vinted (auto-générée si vide)
+                <Label className="text-[11px] text-slate-600">
+                  Description Vinted (auto si vide)
                 </Label>
                 <Textarea
                   rows={3}
                   value={descVinted}
                   onChange={(e) => setDescVinted(e.target.value)}
                   placeholder="Texte optimisé Vinted avec hashtags..."
-                  className="bg-white/5 border-white/10 text-xs text-white"
+                  className="bg-white border-slate-200 text-xs text-slate-900"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-[11px] text-zinc-400">
-                  Description Leboncoin (auto-générée si vide)
+                <Label className="text-[11px] text-slate-600">
+                  Description Leboncoin (auto si vide)
                 </Label>
                 <Textarea
                   rows={3}
                   value={descLbc}
                   onChange={(e) => setDescLbc(e.target.value)}
                   placeholder="Texte détaillé Leboncoin..."
-                  className="bg-white/5 border-white/10 text-xs text-white"
+                  className="bg-white border-slate-200 text-xs text-slate-900"
                 />
               </div>
             </div>
           </div>
 
           {error && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
               {error}
             </div>
           )}
@@ -365,14 +364,14 @@ export function NewListingDialog({
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="text-zinc-400"
+              className="text-slate-600"
             >
               Annuler
             </Button>
             <Button
               type="submit"
               disabled={saving}
-              className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold"
+              className="bg-teal-600 text-white hover:bg-teal-700 font-semibold"
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1.5" />

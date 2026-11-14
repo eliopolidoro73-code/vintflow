@@ -146,23 +146,23 @@ interface ChatTurn {
 const PLATFORM_BADGE: Record<string, { label: string; cls: string }> = {
   vinted: {
     label: "Vinted",
-    cls: "bg-teal-500/15 text-teal-300 border-teal-500/30",
+    cls: "bg-teal-50 text-teal-700 border-teal-200",
   },
   leboncoin: {
     label: "Leboncoin",
-    cls: "bg-orange-500/15 text-orange-300 border-orange-500/30",
+    cls: "bg-orange-50 text-orange-700 border-orange-200",
   },
   tiktok_shop: {
     label: "TikTok Shop",
-    cls: "bg-pink-500/15 text-pink-300 border-pink-500/30",
+    cls: "bg-pink-50 text-pink-700 border-pink-200",
   },
   ebay: {
     label: "eBay",
-    cls: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+    cls: "bg-blue-50 text-blue-700 border-blue-200",
   },
   whatnot: {
     label: "Whatnot",
-    cls: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+    cls: "bg-amber-50 text-amber-700 border-amber-200",
   },
 };
 
@@ -201,7 +201,6 @@ export function BackOffice({
   );
   const [syncing, setSyncing] = useState(false);
 
-  // Modals
   const [newListingOpen, setNewListingOpen] = useState(false);
   const [printModal, setPrintModal] = useState<{
     open: boolean;
@@ -216,27 +215,23 @@ export function BackOffice({
   const [sellCarrier, setSellCarrier] = useState("Mondial Relay");
   const [sellPrice, setSellPrice] = useState("");
 
-  // Dressing filters
   const [search, setSearch] = useState("");
   const [dressingFilter, setDressingFilter] = useState<
     "all" | "active" | "not_lbc" | "dormant" | "sold"
   >("all");
 
-  // Messages state
   const [selectedMsgId, setSelectedMsgId] = useState<string | null>(null);
   const [replyInput, setReplyInput] = useState("");
 
-  // Assistant state
   const [chatHistory, setChatHistory] = useState<ChatTurn[]>([
     {
       role: "assistant",
-      text: "Bonjour ! Je suis Nova, ton copilote VintFlow. Je lis tes ventes, ton stock SKU, tes cotisations URSSAF et tes annonces crosslistées. Pose-moi une question.",
+      text: "Bonjour ! Je suis Nova, ton copilote Vintflow. Pose-moi une question sur ton CA, ton URSSAF ou tes articles dormants.",
     },
   ]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
 
-  // Settings & Accounts
   const [newAccPlatform, setNewAccPlatform] = useState("vinted");
   const [newAccHandle, setNewAccHandle] = useState("");
   const [settingsForm, setSettingsForm] = useState({
@@ -544,9 +539,9 @@ export function BackOffice({
 
   if (loading || !data) {
     return (
-      <div className="min-h-screen bg-[#090b0f] flex items-center justify-center text-zinc-400">
-        <Loader2 className="h-6 w-6 animate-spin text-emerald-400 mr-2" />
-        Chargement de ton back-office VintFlow...
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center text-slate-500">
+        <Loader2 className="h-5 w-5 animate-spin text-teal-600 mr-2" />
+        Chargement de ton espace Vintflow...
       </div>
     );
   }
@@ -611,27 +606,26 @@ export function BackOffice({
   ];
 
   return (
-    <div className="min-h-screen bg-[#090b0f] text-zinc-100 flex flex-col lg:flex-row">
-      {/* Toast notification */}
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col lg:flex-row">
       {toast && (
-        <div className="fixed bottom-5 right-5 z-50 rounded-xl border border-emerald-500/40 bg-[#10141c] px-4 py-3 text-xs font-medium text-emerald-200 shadow-2xl">
+        <div className="fixed bottom-5 right-5 z-50 rounded-xl border border-teal-200 bg-white px-4 py-3 text-xs font-semibold text-teal-800 shadow-lg">
           {toast}
         </div>
       )}
 
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:w-64 lg:flex-col border-r border-white/10 bg-[#0c1017] p-4 justify-between shrink-0">
+      {/* Clean White Sidebar */}
+      <aside className="hidden lg:flex lg:w-64 lg:flex-col border-r border-slate-200 bg-white p-4 justify-between shrink-0">
         <div>
-          <div className="flex items-center justify-between px-2 pb-5 border-b border-white/10">
+          <div className="flex items-center justify-between px-2 pb-4 border-b border-slate-100">
             <Link href="/">
               <VintflowLogo size="sm" />
             </Link>
-            <Badge className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30 text-[10px] uppercase">
+            <Badge className="bg-teal-50 text-teal-700 border border-teal-200 text-[10px] uppercase font-bold">
               {activePlan.name}
             </Badge>
           </div>
 
-          <nav className="mt-5 space-y-1">
+          <nav className="mt-4 space-y-1">
             {navItems.map((item) => (
               <button
                 key={item.id}
@@ -639,8 +633,8 @@ export function BackOffice({
                 onClick={() => setTab(item.id)}
                 className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium transition ${
                   tab === item.id
-                    ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold"
-                    : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-100"
+                    ? "bg-teal-50 text-teal-800 border border-teal-200 font-bold"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                 }`}
               >
                 <span className="flex items-center gap-2.5">
@@ -648,7 +642,7 @@ export function BackOffice({
                   {item.label}
                 </span>
                 {item.badge !== undefined && (
-                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
                     {item.badge}
                   </span>
                 )}
@@ -657,11 +651,11 @@ export function BackOffice({
           </nav>
         </div>
 
-        <div className="space-y-3 border-t border-white/10 pt-4">
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs">
-            <p className="font-semibold text-white truncate">{user.name}</p>
-            <p className="text-[11px] text-zinc-400 truncate">{user.company_name}</p>
-            <p className="mt-1.5 text-[10px] text-emerald-400">
+        <div className="space-y-3 border-t border-slate-100 pt-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
+            <p className="font-bold text-slate-900 truncate">{user.name}</p>
+            <p className="text-[11px] text-slate-500 truncate">{user.company_name}</p>
+            <p className="mt-1 text-[10px] font-medium text-teal-700">
               Essai {activePlan.name} · 14j actifs
             </p>
           </div>
@@ -669,19 +663,19 @@ export function BackOffice({
             variant="ghost"
             size="sm"
             onClick={handleLogout}
-            className="w-full justify-start text-zinc-400 hover:text-white hover:bg-white/5 text-xs"
+            className="w-full justify-start text-slate-500 hover:text-slate-900 hover:bg-slate-100 text-xs"
           >
             <LogOut className="h-3.5 w-3.5 mr-2" />
             Déconnexion
           </Button>
-          <div className="flex items-center gap-3 px-2 text-[10px] text-zinc-500">
-            <Link href="/legal/cgv" className="hover:text-zinc-300">
+          <div className="flex items-center gap-3 px-2 text-[10px] text-slate-400">
+            <Link href="/legal/cgv" className="hover:text-slate-700">
               CGV
             </Link>
-            <Link href="/legal/mentions-legales" className="hover:text-zinc-300">
+            <Link href="/legal/mentions-legales" className="hover:text-slate-700">
               Mentions
             </Link>
-            <Link href="/legal/confidentialite" className="hover:text-zinc-300">
+            <Link href="/legal/confidentialite" className="hover:text-slate-700">
               RGPD
             </Link>
           </div>
@@ -690,21 +684,19 @@ export function BackOffice({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Topbar */}
-        <header className="sticky top-0 z-30 border-b border-white/10 bg-[#090b0f]/90 backdrop-blur-lg px-4 py-3 sm:px-6">
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Link href="/" className="lg:hidden">
                 <VintflowLogo size="sm" showText={false} />
               </Link>
               <div>
-                <h1 className="text-base sm:text-lg font-bold text-white">
+                <h1 className="text-base sm:text-lg font-extrabold text-slate-900">
                   {navItems.find((n) => n.id === tab)?.label}
                 </h1>
-                <p className="text-[11px] text-zinc-400">
-                  {accounts.length} compte(s) connecté(s) · Régime URSSAF{" "}
-                  {user.urssaf_rate}%
-                  {user.is_demo ? " · Mode Bac à sable" : ""}
+                <p className="text-[11px] text-slate-500">
+                  {accounts.length} compte(s) connecté(s) · URSSAF {user.urssaf_rate}%
+                  {user.is_demo ? " · Bac à sable Démo" : ""}
                 </p>
               </div>
             </div>
@@ -715,7 +707,7 @@ export function BackOffice({
                 variant="outline"
                 onClick={handleSync}
                 disabled={syncing}
-                className="border-white/15 bg-white/5 text-zinc-200 hover:bg-white/10 text-xs"
+                className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs"
               >
                 <RefreshCw
                   className={`h-3.5 w-3.5 mr-1.5 ${syncing ? "animate-spin" : ""}`}
@@ -725,7 +717,7 @@ export function BackOffice({
               <Button
                 size="sm"
                 onClick={() => setNewListingOpen(true)}
-                className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs"
+                className="bg-teal-600 text-white hover:bg-teal-700 font-semibold text-xs"
               >
                 <Plus className="h-3.5 w-3.5 mr-1" />
                 Nouvel article
@@ -742,8 +734,8 @@ export function BackOffice({
                 onClick={() => setTab(item.id)}
                 className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium ${
                   tab === item.id
-                    ? "bg-emerald-500 text-emerald-950 font-bold"
-                    : "bg-white/5 text-zinc-400"
+                    ? "bg-teal-600 text-white font-bold"
+                    : "bg-slate-100 text-slate-600"
                 }`}
               >
                 {item.icon}
@@ -758,88 +750,85 @@ export function BackOffice({
           {tab === "overview" && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                <div className="rounded-2xl border border-white/10 bg-[#10141c] p-5">
-                  <p className="text-xs text-zinc-400">CA brut synchronisé</p>
-                  <p className="mt-2 text-2xl font-extrabold text-white">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                  <p className="text-xs font-medium text-slate-500">CA brut synchronisé</p>
+                  <p className="mt-2 text-2xl font-extrabold text-slate-950">
                     {formatEuro(kpis.totalRevenue)}
                   </p>
-                  <p className="mt-1 text-[11px] text-zinc-400">
+                  <p className="mt-1 text-[11px] text-slate-500">
                     Sur {sales.length} vente(s) multi-plateformes
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.06] p-5">
-                  <p className="text-xs text-emerald-300">Marge nette réelle</p>
-                  <p className="mt-2 text-2xl font-extrabold text-emerald-400">
+                <div className="rounded-2xl border border-teal-200 bg-teal-50/60 p-5 shadow-xs">
+                  <p className="text-xs font-semibold text-teal-800">Marge nette réelle</p>
+                  <p className="mt-2 text-2xl font-extrabold text-teal-700">
                     {formatEuro(kpis.totalNetMargin)}
                   </p>
-                  <p className="mt-1 text-[11px] text-zinc-300">
-                    Taux net : {kpis.marginPercent} % · URSSAF :{" "}
-                    {formatEuro(kpis.totalUrssaf)}
+                  <p className="mt-1 text-[11px] text-teal-800/80">
+                    Taux net : {kpis.marginPercent} % · URSSAF : {formatEuro(kpis.totalUrssaf)}
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-[#10141c] p-5">
-                  <p className="text-xs text-zinc-400">Stock actif (coût d&apos;achat)</p>
-                  <p className="mt-2 text-2xl font-extrabold text-white">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                  <p className="text-xs font-medium text-slate-500">Stock actif (coût d&apos;achat)</p>
+                  <p className="mt-2 text-2xl font-extrabold text-slate-950">
                     {formatEuro(kpis.stockCostValue)}
                   </p>
-                  <p className="mt-1 text-[11px] text-zinc-400">
-                    {kpis.activeListingsCount} annonces · Valeur revente{" "}
-                    {formatEuro(kpis.stockListingValue)}
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    {kpis.activeListingsCount} annonces · Valeur {formatEuro(kpis.stockListingValue)}
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-[#10141c] p-5">
-                  <p className="text-xs text-zinc-400">Actions du jour</p>
-                  <p className="mt-2 text-2xl font-extrabold text-amber-300">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                  <p className="text-xs font-medium text-slate-500">À traiter aujourd&apos;hui</p>
+                  <p className="mt-2 text-2xl font-extrabold text-amber-600">
                     {kpis.toShipCount} colis · {kpis.unreadCount} msg
                   </p>
-                  <p className="mt-1 text-[11px] text-zinc-400">
+                  <p className="mt-1 text-[11px] text-slate-500">
                     {kpis.crosslistedCount} annonces crosslistées Vinted ↔ LBC
                   </p>
                 </div>
               </div>
 
-              {/* Quick AI Studio Banner */}
-              <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/[0.08] via-[#10141c] to-cyan-500/[0.06] p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+              {/* Quick AI Studio Shortcut */}
+              <div className="rounded-2xl border border-teal-200 bg-white p-5 flex flex-wrap items-center justify-between gap-4 shadow-xs">
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700 border border-teal-200">
                     <Wand2 className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-white">
-                      Suite IA Haute Performance : Studio Photo, Détourage &amp; Sniper Négo
+                    <h2 className="text-sm font-bold text-slate-900">
+                      Boîte à outils IA : Studio Photo, Détourage &amp; Sniper Négo
                     </h2>
-                    <p className="text-xs text-zinc-400">
-                      Détoure tes photos, scanne un article vers Vinted/Leboncoin/TikTok ou
-                      contre-attaque une offre à -40 % en 5 secondes.
+                    <p className="text-xs text-slate-500">
+                      Optimise tes photos, crée 3 annonces d&apos;un coup ou réponds aux
+                      offres agressives sans brader ta marge.
                     </p>
                   </div>
                 </div>
                 <Button
                   size="sm"
                   onClick={() => setTab("tools")}
-                  className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs"
+                  className="bg-teal-600 text-white hover:bg-teal-700 font-semibold text-xs"
                 >
-                  Ouvrir la Boîte à outils IA
+                  Ouvrir la Boîte à outils
                   <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                 </Button>
               </div>
 
-              {/* VAT Threshold + Platform Breakdown */}
               <div className="grid gap-4 lg:grid-cols-3">
-                <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4">
+                <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-emerald-400" />
+                    <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-teal-600" />
                       Ventes par plateforme
                     </h2>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => setTab("sales")}
-                      className="text-xs text-emerald-400 hover:text-emerald-300"
+                      className="text-xs text-teal-700 hover:text-teal-800 hover:bg-teal-50"
                     >
                       Voir toutes les ventes <ArrowRight className="ml-1 h-3.5 w-3.5" />
                     </Button>
@@ -853,7 +842,7 @@ export function BackOffice({
                           : 0;
                       const badge = PLATFORM_BADGE[p.platform] ?? {
                         label: p.platform,
-                        cls: "bg-zinc-800 text-zinc-300",
+                        cls: "bg-slate-100 text-slate-700",
                       };
                       return (
                         <div key={p.platform} className="space-y-1.5">
@@ -862,17 +851,17 @@ export function BackOffice({
                               <Badge className={`${badge.cls} border text-[10px]`}>
                                 {badge.label}
                               </Badge>
-                              <span className="text-zinc-400">
+                              <span className="text-slate-500">
                                 {p.count} vente(s)
                               </span>
                             </span>
-                            <span className="font-bold text-white">
+                            <span className="font-bold text-slate-900">
                               {formatEuro(p.revenue)} ({pct}%)
                             </span>
                           </div>
-                          <div className="h-2 w-full rounded-full bg-white/5 overflow-hidden">
+                          <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                             <div
-                              className="h-full rounded-full bg-emerald-500"
+                              className="h-full rounded-full bg-teal-600"
                               style={{ width: `${Math.max(4, pct)}%` }}
                             />
                           </div>
@@ -882,38 +871,37 @@ export function BackOffice({
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4">
-                  <h2 className="text-sm font-bold text-white">
-                    Seuil TVA &amp; URSSAF
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
+                  <h2 className="text-sm font-bold text-slate-900">
+                    Seuil TVA &amp; Alertes stock
                   </h2>
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs">
-                      <span className="text-zinc-400">CA cumulé / Seuil</span>
-                      <span className="font-mono text-white">
+                      <span className="text-slate-500">CA / Seuil TVA</span>
+                      <span className="font-mono font-semibold text-slate-900">
                         {formatEuro(kpis.totalRevenue)} /{" "}
                         {formatEuro(user.vat_threshold)}
                       </span>
                     </div>
-                    <div className="h-2.5 w-full rounded-full bg-white/5 overflow-hidden">
+                    <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-400"
+                        className="h-full rounded-full bg-gradient-to-r from-teal-600 to-cyan-500"
                         style={{ width: `${Math.max(3, vatProgress)}%` }}
                       />
                     </div>
-                    <p className="text-[11px] text-zinc-400">
+                    <p className="text-[11px] text-slate-500">
                       {vatProgress}% du seuil de franchise en base de TVA atteint.
                     </p>
                   </div>
 
                   {kpis.dormantCount > 0 && (
-                    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs space-y-2">
-                      <div className="flex items-center gap-2 font-bold text-amber-300">
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs space-y-2">
+                      <div className="flex items-center gap-2 font-bold text-amber-800">
                         <AlertTriangle className="h-4 w-4" />
                         {kpis.dormantCount} article(s) dormant(s) (+14j)
                       </div>
-                      <p className="text-amber-100/80 text-[11px]">
-                        Baisse légèrement le prix ou crossliste sur Leboncoin pour
-                        libérer ta trésorerie.
+                      <p className="text-amber-700 text-[11px]">
+                        Baisse légèrement le prix ou rafraîchis l&apos;annonce avec le Bouclier Anti-Shadowban.
                       </p>
                       <Button
                         size="sm"
@@ -921,7 +909,7 @@ export function BackOffice({
                           setDressingFilter("dormant");
                           setTab("dressing");
                         }}
-                        className="w-full bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold text-xs h-8"
+                        className="w-full bg-amber-500 text-white hover:bg-amber-600 font-bold text-xs h-8"
                       >
                         Traiter le stock dormant
                       </Button>
@@ -935,14 +923,13 @@ export function BackOffice({
           {/* TAB 2: DRESSING, SKU & CROSSLISTING */}
           {tab === "dressing" && (
             <div className="space-y-4">
-              {/* Automation Switches (Vinteer-style) */}
               <div className="grid gap-3 md:grid-cols-2">
-                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#10141c] p-4">
+                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
                   <div>
-                    <p className="text-sm font-bold text-white">
+                    <p className="text-sm font-bold text-slate-900">
                       Publier tout seul sur Leboncoin (8h–23h)
                     </p>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-slate-500">
                       Crossliste automatiquement chaque nouvel article ajouté.
                     </p>
                   </div>
@@ -953,12 +940,12 @@ export function BackOffice({
                     }
                   />
                 </div>
-                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#10141c] p-4">
+                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
                   <div>
-                    <p className="text-sm font-bold text-white">
+                    <p className="text-sm font-bold text-slate-900">
                       Retirer quand ça se vend
                     </p>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-slate-500">
                       Masque automatiquement l&apos;annonce sur les autres plateformes.
                     </p>
                   </div>
@@ -971,7 +958,6 @@ export function BackOffice({
                 </div>
               </div>
 
-              {/* Filters & Search */}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap gap-1.5">
                   {[
@@ -989,8 +975,8 @@ export function BackOffice({
                       }
                       className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                         dressingFilter === f.id
-                          ? "bg-emerald-500 text-emerald-950 font-bold"
-                          : "bg-white/5 text-zinc-400 hover:text-white"
+                          ? "bg-teal-600 text-white font-bold"
+                          : "bg-white border border-slate-200 text-slate-600 hover:text-slate-900"
                       }`}
                     >
                       {f.label}
@@ -999,19 +985,18 @@ export function BackOffice({
                 </div>
 
                 <div className="relative w-full sm:w-64">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                   <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Rechercher SKU, marque, titre..."
-                    className="pl-9 bg-[#10141c] border-white/10 text-xs text-white"
+                    className="pl-9 bg-white border-slate-200 text-xs text-slate-900"
                   />
                 </div>
               </div>
 
-              {/* Items List */}
               {filteredItems.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-white/15 p-10 text-center text-sm text-zinc-400">
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
                   Aucun article ne correspond à ce filtre.
                 </div>
               ) : (
@@ -1031,64 +1016,64 @@ export function BackOffice({
                     return (
                       <div
                         key={item.id}
-                        className="rounded-2xl border border-white/10 bg-[#10141c] p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                        className="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-xs"
                       >
                         <div className="flex items-start gap-3.5">
                           <div
-                            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-inner"
+                            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-xs"
                             style={{ backgroundColor: item.image_color }}
                           >
                             {(item.brand || item.title).slice(0, 2).toUpperCase()}
                           </div>
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-bold text-sm text-white">
+                              <span className="font-bold text-sm text-slate-900">
                                 {item.title}
                               </span>
-                              <span className="rounded bg-white/5 px-2 py-0.5 font-mono text-[10px] text-zinc-300">
+                              <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-[10px] text-slate-600">
                                 {item.sku}
                               </span>
                               {isDormant && (
-                                <Badge className="bg-amber-500/15 text-amber-300 border-amber-500/30 text-[10px]">
+                                <Badge className="bg-amber-50 text-amber-800 border-amber-200 text-[10px]">
                                   Dormant · {item.days_listed}j
                                 </Badge>
                               )}
                               {item.status === "sold" && (
-                                <Badge className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30 text-[10px]">
+                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">
                                   Vendu
                                 </Badge>
                               )}
                             </div>
-                            <p className="mt-1 text-xs text-zinc-400">
+                            <p className="mt-1 text-xs text-slate-500">
                               Taille {item.size} · {item.condition} ·{" "}
                               {item.location} · Compte {item.vinted_account}
                             </p>
                             <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
                               <span
-                                className={`rounded-full px-2 py-0.5 border ${
+                                className={`rounded-full px-2 py-0.5 border font-medium ${
                                   item.vinted_status === "listed"
-                                    ? "bg-teal-500/15 text-teal-300 border-teal-500/30"
-                                    : "bg-zinc-800 text-zinc-400 border-white/10"
+                                    ? "bg-teal-50 text-teal-700 border-teal-200"
+                                    : "bg-slate-100 text-slate-500 border-slate-200"
                                 }`}
                               >
                                 Vinted : {item.vinted_status}
                               </span>
                               <span
-                                className={`rounded-full px-2 py-0.5 border ${
+                                className={`rounded-full px-2 py-0.5 border font-medium ${
                                   item.leboncoin_status === "listed"
-                                    ? "bg-orange-500/15 text-orange-300 border-orange-500/30"
-                                    : "bg-zinc-800 text-zinc-400 border-white/10"
+                                    ? "bg-orange-50 text-orange-700 border-orange-200"
+                                    : "bg-slate-100 text-slate-500 border-slate-200"
                                 }`}
                               >
                                 Leboncoin : {item.leboncoin_status}
                               </span>
                               {item.tiktok_status === "listed" && (
-                                <span className="rounded-full bg-pink-500/15 text-pink-300 border border-pink-500/30 px-2 py-0.5">
+                                <span className="rounded-full bg-pink-50 text-pink-700 border border-pink-200 px-2 py-0.5 font-medium">
                                   TikTok Shop
                                 </span>
                               )}
                               {item.ebay_status === "listed" && (
-                                <span className="rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30 px-2 py-0.5">
+                                <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 font-medium">
                                   eBay
                                 </span>
                               )}
@@ -1096,15 +1081,15 @@ export function BackOffice({
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center justify-between lg:justify-end gap-4 border-t lg:border-t-0 border-white/10 pt-3 lg:pt-0">
+                        <div className="flex flex-wrap items-center justify-between lg:justify-end gap-4 border-t lg:border-t-0 border-slate-100 pt-3 lg:pt-0">
                           <div className="text-left lg:text-right text-xs">
-                            <p className="text-base font-extrabold text-white">
+                            <p className="text-base font-extrabold text-slate-900">
                               {formatEuro(item.listing_price)}
                             </p>
-                            <p className="text-[11px] text-zinc-400">
+                            <p className="text-[11px] text-slate-500">
                               Achat {formatEuro(item.purchase_price + item.extra_costs)} ·
                               Marge est.{" "}
-                              <strong className="text-emerald-400">
+                              <strong className="text-teal-700">
                                 {formatEuro(est.netMargin)}
                               </strong>
                             </p>
@@ -1117,7 +1102,7 @@ export function BackOffice({
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleCrosslistLbc(item.id)}
-                                  className="border-orange-500/30 bg-orange-500/10 text-orange-300 hover:bg-orange-500/20 text-xs h-8"
+                                  className="border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs h-8"
                                 >
                                   Crosslister LBC
                                 </Button>
@@ -1127,7 +1112,7 @@ export function BackOffice({
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleQuickDiscount(item)}
-                                  className="border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 text-xs h-8"
+                                  className="border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 text-xs h-8"
                                 >
                                   -10 %
                                 </Button>
@@ -1138,7 +1123,7 @@ export function BackOffice({
                                   setSellModalItem(item);
                                   setSellPrice(String(item.listing_price));
                                 }}
-                                className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs h-8"
+                                className="bg-teal-600 text-white hover:bg-teal-700 font-semibold text-xs h-8"
                               >
                                 Marquer vendu
                               </Button>
@@ -1146,7 +1131,7 @@ export function BackOffice({
                                 size="icon"
                                 variant="ghost"
                                 onClick={() => handleDeleteItem(item.id)}
-                                className="h-8 w-8 text-zinc-500 hover:text-red-400"
+                                className="h-8 w-8 text-slate-400 hover:text-red-600"
                                 title="Supprimer"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -1162,7 +1147,7 @@ export function BackOffice({
             </div>
           )}
 
-          {/* TAB 2B: BOÎTE À OUTILS IA & ANTI-GALÈRES */}
+          {/* TAB 2B: AI TOOLS STUDIO */}
           {tab === "tools" && (
             <ResellerToolsStudio
               urssafRate={user.urssaf_rate}
@@ -1175,15 +1160,15 @@ export function BackOffice({
           {tab === "sales" && (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-slate-600">
                   {sales.length} vente(s) · Marge nette cumulée :{" "}
-                  <strong className="text-emerald-400">
+                  <strong className="text-teal-700">
                     {formatEuro(kpis.totalNetMargin)}
                   </strong>
                 </p>
                 <a
                   href="/api/exports/csv"
-                  className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20"
+                  className="inline-flex items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3.5 py-2 text-xs font-semibold text-teal-800 hover:bg-teal-100"
                 >
                   <Download className="h-3.5 w-3.5" />
                   Exporter Livre des recettes (CSV / Excel)
@@ -1194,36 +1179,36 @@ export function BackOffice({
                 {sales.map((sale) => {
                   const badge = PLATFORM_BADGE[sale.platform] ?? {
                     label: sale.platform,
-                    cls: "bg-zinc-800 text-zinc-300",
+                    cls: "bg-slate-100 text-slate-700",
                   };
                   return (
                     <div
                       key={sale.id}
-                      className="rounded-2xl border border-white/10 bg-[#10141c] p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                      className="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-xs"
                     >
                       <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-emerald-400">
+                          <span className="font-mono text-xs font-bold text-teal-700">
                             {sale.invoice_number}
                           </span>
                           <Badge className={`${badge.cls} border text-[10px]`}>
                             {badge.label}
                           </Badge>
-                          <span className="text-xs font-bold text-white">
+                          <span className="text-xs font-bold text-slate-900">
                             {sale.item_title}
                           </span>
                         </div>
-                        <p className="text-xs text-zinc-400">
-                          Acheteur : <strong className="text-zinc-200">{sale.buyer_name}</strong> (
+                        <p className="text-xs text-slate-500">
+                          Acheteur : <strong className="text-slate-800">{sale.buyer_name}</strong> (
                           {sale.buyer_city}) · {sale.carrier} ({sale.tracking_code}) ·{" "}
                           {formatDateFr(sale.sold_at)}
                         </p>
-                        <p className="text-[11px] text-zinc-500">
+                        <p className="text-[11px] text-slate-500">
                           Brut {formatEuro(sale.gross_amount)} − Achat{" "}
                           {formatEuro(sale.purchase_cost)} − Frais{" "}
                           {formatEuro(sale.platform_fees + sale.boost_cost)} − URSSAF{" "}
                           {formatEuro(sale.urssaf_amount)} ={" "}
-                          <strong className="text-emerald-400">
+                          <strong className="text-teal-700">
                             Marge nette {formatEuro(sale.net_margin)}
                           </strong>
                         </p>
@@ -1235,7 +1220,7 @@ export function BackOffice({
                           onChange={(e) =>
                             handleUpdateShipment(sale.id, e.target.value)
                           }
-                          className="h-8 rounded-md border border-white/10 bg-[#161b24] px-2.5 text-xs text-white"
+                          className="h-8 rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-800"
                         >
                           <option value="to_ship">À expédier</option>
                           <option value="in_transit">En transit</option>
@@ -1249,7 +1234,7 @@ export function BackOffice({
                           onClick={() =>
                             setPrintModal({ open: true, mode: "label", sale })
                           }
-                          className="border-white/15 bg-white/5 text-zinc-200 hover:bg-white/10 text-xs h-8"
+                          className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs h-8"
                         >
                           <Printer className="h-3.5 w-3.5 mr-1.5" />
                           Bordereau 10×15
@@ -1261,7 +1246,7 @@ export function BackOffice({
                           onClick={() =>
                             setPrintModal({ open: true, mode: "invoice", sale })
                           }
-                          className="border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 text-xs h-8"
+                          className="border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100 text-xs h-8"
                         >
                           <FileText className="h-3.5 w-3.5 mr-1.5" />
                           Facture PDF
@@ -1277,11 +1262,11 @@ export function BackOffice({
           {/* TAB 4: UNIFIED MESSAGING */}
           {tab === "messages" && (
             <div className="grid gap-4 lg:grid-cols-12">
-              <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#10141c] p-3 space-y-2">
+              <div className="lg:col-span-5 rounded-2xl border border-slate-200 bg-white p-3 space-y-2 shadow-xs">
                 {messages.map((m) => {
                   const badge = PLATFORM_BADGE[m.platform] ?? {
                     label: m.platform,
-                    cls: "bg-zinc-800 text-zinc-300",
+                    cls: "bg-slate-100 text-slate-700",
                   };
                   return (
                     <button
@@ -1290,14 +1275,14 @@ export function BackOffice({
                       onClick={() => setSelectedMsgId(m.id)}
                       className={`w-full rounded-xl border p-3 text-left transition ${
                         selectedMsg?.id === m.id
-                          ? "border-emerald-500/50 bg-emerald-500/10"
-                          : "border-white/[0.06] bg-white/[0.02] hover:border-white/15"
+                          ? "border-teal-500 bg-teal-50/60"
+                          : "border-slate-100 bg-slate-50/70 hover:border-slate-200"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-xs text-white flex items-center gap-2">
+                        <span className="font-bold text-xs text-slate-900 flex items-center gap-2">
                           {m.unread && (
-                            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                            <span className="h-2 w-2 rounded-full bg-teal-600" />
                           )}
                           {m.buyer_name}
                         </span>
@@ -1305,10 +1290,10 @@ export function BackOffice({
                           {badge.label}
                         </Badge>
                       </div>
-                      <p className="mt-1 text-[11px] text-zinc-400 truncate">
+                      <p className="mt-1 text-[11px] text-slate-500 truncate">
                         {m.item_title} · {formatEuro(m.item_price)}
                       </p>
-                      <p className="mt-1 text-xs text-zinc-200 truncate">
+                      <p className="mt-1 text-xs text-slate-700 truncate">
                         {m.last_message}
                       </p>
                     </button>
@@ -1316,19 +1301,19 @@ export function BackOffice({
                 })}
               </div>
 
-              <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#10141c] p-5 flex flex-col justify-between min-h-[380px]">
+              <div className="lg:col-span-7 rounded-2xl border border-slate-200 bg-white p-5 flex flex-col justify-between min-h-[380px] shadow-xs">
                 {selectedMsg ? (
                   <>
                     <div className="space-y-4">
-                      <div className="border-b border-white/10 pb-3 flex items-center justify-between">
+                      <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-bold text-white">
+                          <p className="text-sm font-bold text-slate-900">
                             {selectedMsg.buyer_name} ·{" "}
-                            <span className="text-emerald-400">
+                            <span className="text-teal-700">
                               {selectedMsg.item_title}
                             </span>
                           </p>
-                          <p className="text-xs text-zinc-400">
+                          <p className="text-xs text-slate-500">
                             Compte : {selectedMsg.account_handle} · Affiché à{" "}
                             {formatEuro(selectedMsg.item_price)}
                           </p>
@@ -1336,18 +1321,18 @@ export function BackOffice({
                       </div>
 
                       <div className="space-y-3">
-                        <div className="max-w-[85%] rounded-2xl rounded-bl-sm border border-white/10 bg-white/[0.04] px-4 py-3 text-xs text-zinc-100">
+                        <div className="max-w-[85%] rounded-2xl rounded-bl-sm border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-800">
                           {selectedMsg.last_message}
                         </div>
                         {selectedMsg.reply_text && (
-                          <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm border border-emerald-500/30 bg-emerald-500/15 px-4 py-3 text-xs text-emerald-100">
+                          <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-teal-600 px-4 py-3 text-xs text-white">
                             {selectedMsg.reply_text}
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="mt-6 space-y-3 border-t border-white/10 pt-4">
+                    <div className="mt-6 space-y-3 border-t border-slate-100 pt-4">
                       <div className="flex flex-wrap gap-1.5">
                         {[
                           "Bonjour ! Oui toujours dispo, envoi dès demain matin.",
@@ -1360,7 +1345,7 @@ export function BackOffice({
                             key={idx}
                             type="button"
                             onClick={() => handleSendReply(selectedMsg.id, quick)}
-                            className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-zinc-300 hover:border-emerald-500/40 hover:text-white text-left"
+                            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-700 hover:border-teal-400 hover:text-slate-900 text-left"
                           >
                             {quick}
                           </button>
@@ -1372,7 +1357,7 @@ export function BackOffice({
                           value={replyInput}
                           onChange={(e) => setReplyInput(e.target.value)}
                           placeholder="Écrire une réponse..."
-                          className="bg-white/5 border-white/10 text-xs text-white"
+                          className="bg-white border-slate-200 text-xs text-slate-900"
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
@@ -1382,7 +1367,7 @@ export function BackOffice({
                         />
                         <Button
                           onClick={() => handleSendReply(selectedMsg.id)}
-                          className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs"
+                          className="bg-teal-600 text-white hover:bg-teal-700 font-semibold text-xs"
                         >
                           <Send className="h-3.5 w-3.5 mr-1.5" />
                           Envoyer
@@ -1391,7 +1376,7 @@ export function BackOffice({
                     </div>
                   </>
                 ) : (
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-slate-500">
                     Sélectionne une conversation.
                   </p>
                 )}
@@ -1401,17 +1386,17 @@ export function BackOffice({
 
           {/* TAB 5: AI ASSISTANT NOVA */}
           {tab === "assistant" && (
-            <div className="rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-600 text-white">
                     <Bot className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-white">
+                    <h2 className="text-sm font-bold text-slate-900">
                       Nova · Assistant IA connecté à tes chiffres
                     </h2>
-                    <p className="text-[11px] text-zinc-400">
+                    <p className="text-[11px] text-slate-500">
                       {integrations.openaiConfigured
                         ? "Propulsé par OpenAI + tes données SQL temps réel"
                         : "Moteur analytique local temps réel (0 € · aucune clé API requise)"}
@@ -1422,7 +1407,7 @@ export function BackOffice({
 
               <div className="flex flex-wrap gap-2">
                 {[
-                  "Combien j'ai vendu ce mois-ci ?",
+                  "Quel est mon ROI et mon seuil TVA ?",
                   "J'ai combien en attente de finalisation ?",
                   "Quels articles dorment depuis +14 jours ?",
                   "Que reste-t-il à crosslister sur Leboncoin ?",
@@ -1431,7 +1416,7 @@ export function BackOffice({
                     key={q}
                     type="button"
                     onClick={() => handleAskAssistant(q)}
-                    className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-zinc-300 hover:border-emerald-500/40 hover:text-white"
+                    className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 hover:border-teal-400 hover:text-slate-900"
                   >
                     {q}
                   </button>
@@ -1444,26 +1429,26 @@ export function BackOffice({
                     <div
                       className={`max-w-[88%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                         turn.role === "user"
-                          ? "ml-auto bg-emerald-500/20 border border-emerald-500/30 text-emerald-100 rounded-br-sm"
-                          : "mr-auto bg-white/[0.04] border border-white/10 text-zinc-200 rounded-bl-sm"
+                          ? "ml-auto bg-teal-600 text-white rounded-br-sm"
+                          : "mr-auto bg-slate-50 border border-slate-200 text-slate-800 rounded-bl-sm"
                       }`}
                     >
                       {turn.text}
                     </div>
 
                     {turn.proposedAction && (
-                      <div className="mr-auto max-w-[88%] rounded-xl border border-emerald-500/40 bg-emerald-500/[0.08] p-3.5 text-xs space-y-2">
-                        <p className="font-bold text-emerald-300 flex items-center gap-1.5">
+                      <div className="mr-auto max-w-[88%] rounded-xl border border-teal-200 bg-teal-50/70 p-3.5 text-xs space-y-2">
+                        <p className="font-bold text-teal-800 flex items-center gap-1.5">
                           <Sparkles className="h-3.5 w-3.5" />
                           Proposition Avant / Après
                         </p>
                         <div className="grid sm:grid-cols-2 gap-2 text-[11px]">
-                          <div className="rounded bg-black/30 p-2 text-zinc-400">
-                            <span className="font-bold text-zinc-300">Avant :</span>{" "}
+                          <div className="rounded bg-white border border-slate-200 p-2 text-slate-600">
+                            <span className="font-bold text-slate-800">Avant :</span>{" "}
                             {turn.proposedAction.before}
                           </div>
-                          <div className="rounded bg-emerald-950/60 p-2 text-emerald-200">
-                            <span className="font-bold text-emerald-300">Après :</span>{" "}
+                          <div className="rounded bg-teal-100/60 border border-teal-200 p-2 text-teal-900">
+                            <span className="font-bold text-teal-800">Après :</span>{" "}
                             {turn.proposedAction.after}
                           </div>
                         </div>
@@ -1472,7 +1457,7 @@ export function BackOffice({
                           onClick={() =>
                             handleExecuteAiAction(turn.proposedAction!.id)
                           }
-                          className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs h-8"
+                          className="bg-teal-600 text-white hover:bg-teal-700 font-bold text-xs h-8"
                         >
                           {turn.proposedAction.label}
                         </Button>
@@ -1481,7 +1466,7 @@ export function BackOffice({
                   </div>
                 ))}
                 {chatLoading && (
-                  <div className="text-xs text-zinc-400 flex items-center gap-2">
+                  <div className="text-xs text-slate-500 flex items-center gap-2">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     Analyse de tes données en cours...
                   </div>
@@ -1493,18 +1478,18 @@ export function BackOffice({
                   e.preventDefault();
                   handleAskAssistant();
                 }}
-                className="flex gap-2 border-t border-white/10 pt-3"
+                className="flex gap-2 border-t border-slate-100 pt-3"
               >
                 <Input
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Pose une question à Nova sur tes ventes, marges ou stock..."
-                  className="bg-white/5 border-white/10 text-xs text-white"
+                  className="bg-white border-slate-200 text-xs text-slate-900"
                 />
                 <Button
                   type="submit"
                   disabled={chatLoading}
-                  className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs"
+                  className="bg-teal-600 text-white hover:bg-teal-700 font-semibold text-xs"
                 >
                   Envoyer
                 </Button>
@@ -1515,12 +1500,12 @@ export function BackOffice({
           {/* TAB 6: ACCOUNTS & FISCAL SETTINGS */}
           {tab === "accounts" && (
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-bold text-white">
+                  <h2 className="text-sm font-bold text-slate-900">
                     Comptes connectés ({activePlan.name})
                   </h2>
-                  <span className="text-xs text-zinc-400">
+                  <span className="text-xs text-slate-500">
                     Limite Vinted :{" "}
                     {accounts.filter((a) => a.platform === "vinted").length} /{" "}
                     {activePlan.vintedAccountsLimit}
@@ -1531,18 +1516,18 @@ export function BackOffice({
                   {accounts.map((acc) => {
                     const badge = PLATFORM_BADGE[acc.platform] ?? {
                       label: acc.platform,
-                      cls: "bg-zinc-800 text-zinc-300",
+                      cls: "bg-slate-100 text-slate-700",
                     };
                     return (
                       <div
                         key={acc.id}
-                        className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-3.5 py-2.5 text-xs"
+                        className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs"
                       >
                         <div className="flex items-center gap-2.5">
                           <Badge className={`${badge.cls} border text-[10px]`}>
                             {badge.label}
                           </Badge>
-                          <span className="font-semibold text-white">
+                          <span className="font-semibold text-slate-900">
                             {acc.handle}
                           </span>
                         </div>
@@ -1559,7 +1544,7 @@ export function BackOffice({
                             });
                             await fetchWorkspace();
                           }}
-                          className="text-zinc-500 hover:text-red-400 text-[11px]"
+                          className="text-slate-400 hover:text-red-600 text-[11px]"
                         >
                           Retirer
                         </button>
@@ -1570,12 +1555,12 @@ export function BackOffice({
 
                 <form
                   onSubmit={handleConnectAccount}
-                  className="flex flex-wrap gap-2 border-t border-white/10 pt-4"
+                  className="flex flex-wrap gap-2 border-t border-slate-100 pt-4"
                 >
                   <select
                     value={newAccPlatform}
                     onChange={(e) => setNewAccPlatform(e.target.value)}
-                    className="h-9 rounded-md border border-white/10 bg-[#161b24] px-2.5 text-xs text-white"
+                    className="h-9 rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-800"
                   >
                     <option value="vinted">Vinted</option>
                     <option value="leboncoin">Leboncoin</option>
@@ -1587,12 +1572,12 @@ export function BackOffice({
                     value={newAccHandle}
                     onChange={(e) => setNewAccHandle(e.target.value)}
                     placeholder="@nouveau_compte"
-                    className="flex-1 bg-white/5 border-white/10 text-xs text-white"
+                    className="flex-1 bg-white border-slate-200 text-xs text-slate-900"
                   />
                   <Button
                     type="submit"
                     size="sm"
-                    className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs"
+                    className="bg-teal-600 text-white hover:bg-teal-700 font-semibold text-xs"
                   >
                     Connecter
                   </Button>
@@ -1601,14 +1586,14 @@ export function BackOffice({
 
               <form
                 onSubmit={handleSaveSettings}
-                className="rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4"
+                className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs"
               >
-                <h2 className="text-sm font-bold text-white">
+                <h2 className="text-sm font-bold text-slate-900">
                   Paramètres Factures &amp; URSSAF
                 </h2>
                 <div className="space-y-3 text-xs">
                   <div className="space-y-1">
-                    <Label className="text-xs text-zinc-400">
+                    <Label className="text-xs text-slate-600">
                       Nom / Raison sociale (sur les factures)
                     </Label>
                     <Input
@@ -1619,22 +1604,22 @@ export function BackOffice({
                           company_name: e.target.value,
                         }))
                       }
-                      className="bg-white/5 border-white/10 text-white"
+                      className="bg-white border-slate-200 text-slate-900"
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-zinc-400">SIRET</Label>
+                    <Label className="text-xs text-slate-600">SIRET</Label>
                     <Input
                       value={settingsForm.siret}
                       onChange={(e) =>
                         setSettingsForm((s) => ({ ...s, siret: e.target.value }))
                       }
-                      className="bg-white/5 border-white/10 text-white font-mono"
+                      className="bg-white border-slate-200 text-slate-900 font-mono"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs text-zinc-400">Régime fiscal</Label>
+                      <Label className="text-xs text-slate-600">Régime fiscal</Label>
                       <select
                         value={settingsForm.fiscal_regime}
                         onChange={(e) =>
@@ -1643,7 +1628,7 @@ export function BackOffice({
                             fiscal_regime: e.target.value,
                           }))
                         }
-                        className="h-9 w-full rounded-md border border-white/10 bg-[#161b24] px-2.5 text-xs text-white"
+                        className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-900"
                       >
                         <option value="micro_bic">Micro-entreprise BIC</option>
                         <option value="micro_bnc">Micro-entreprise BNC</option>
@@ -1653,7 +1638,7 @@ export function BackOffice({
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-zinc-400">
+                      <Label className="text-xs text-slate-600">
                         Taux URSSAF (%)
                       </Label>
                       <Input
@@ -1666,12 +1651,12 @@ export function BackOffice({
                             urssaf_rate: e.target.value,
                           }))
                         }
-                        className="bg-white/5 border-white/10 text-white"
+                        className="bg-white border-slate-200 text-slate-900"
                       />
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-zinc-400">
+                    <Label className="text-xs text-slate-600">
                       Seuil d&apos;alerte TVA (€)
                     </Label>
                     <Input
@@ -1683,13 +1668,13 @@ export function BackOffice({
                           vat_threshold: e.target.value,
                         }))
                       }
-                      className="bg-white/5 border-white/10 text-white"
+                      className="bg-white border-slate-200 text-slate-900"
                     />
                   </div>
                 </div>
                 <Button
                   type="submit"
-                  className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs"
+                  className="bg-teal-600 text-white hover:bg-teal-700 font-semibold text-xs"
                 >
                   Enregistrer mes paramètres fiscaux
                 </Button>
@@ -1700,30 +1685,30 @@ export function BackOffice({
           {/* TAB 7: BILLING & SUBSCRIPTION */}
           {tab === "billing" && (
             <div className="space-y-6">
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.06] p-5 flex flex-wrap items-center justify-between gap-4">
+              <div className="rounded-2xl border border-teal-200 bg-teal-50/50 p-5 flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                  <p className="text-xs font-bold uppercase tracking-wider text-teal-800">
                     Abonnement actuel : {activePlan.name} ({user.billing_cycle})
                   </p>
-                  <p className="mt-1 text-sm text-white">
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
                     Essai gratuit 14 jours actif jusqu&apos;au{" "}
                     {formatDateFr(user.trial_ends_at)}.
                   </p>
-                  <p className="mt-1 text-xs text-zinc-400">
+                  <p className="mt-1 text-xs text-slate-600">
                     {integrations.stripeConfigured
                       ? "Paiements Stripe en ligne activés."
-                      : "Mode lancement 0 € actif : bascule librement entre Starter et Pro pour tester (ajoute STRIPE_SECRET_KEY dans Secrets pour encaisser par carte)."}
+                      : "Mode essai 0 € actif : bascule librement entre Starter et Pro."}
                   </p>
                 </div>
 
-                <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#10141c] p-1 text-xs">
+                <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 text-xs">
                   <button
                     type="button"
                     onClick={() => setBillingCycle("monthly")}
                     className={`rounded-full px-3 py-1.5 font-semibold ${
                       billingCycle === "monthly"
-                        ? "bg-white text-zinc-950"
-                        : "text-zinc-400"
+                        ? "bg-slate-900 text-white"
+                        : "text-slate-600"
                     }`}
                   >
                     Mensuel
@@ -1733,8 +1718,8 @@ export function BackOffice({
                     onClick={() => setBillingCycle("annual")}
                     className={`rounded-full px-3 py-1.5 font-semibold ${
                       billingCycle === "annual"
-                        ? "bg-emerald-500 text-emerald-950"
-                        : "text-zinc-400"
+                        ? "bg-teal-600 text-white"
+                        : "text-slate-600"
                     }`}
                   >
                     Annuel (-2 mois)
@@ -1753,27 +1738,27 @@ export function BackOffice({
                   return (
                     <div
                       key={pid}
-                      className={`rounded-2xl border p-6 flex flex-col justify-between ${
+                      className={`rounded-2xl border p-6 flex flex-col justify-between bg-white shadow-xs ${
                         pid === "pro"
-                          ? "border-emerald-500/50 bg-[#10141c]"
-                          : "border-white/10 bg-[#10141c]"
+                          ? "border-teal-500 ring-1 ring-teal-500/20"
+                          : "border-slate-200"
                       }`}
                     >
                       <div>
                         <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-extrabold text-white">
+                          <h3 className="text-lg font-extrabold text-slate-900">
                             {p.name}
                           </h3>
                           {isCurrent && (
-                            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+                            <Badge className="bg-teal-50 text-teal-800 border-teal-200">
                               Plan actif
                             </Badge>
                           )}
                         </div>
-                        <p className="mt-1 text-xs text-zinc-400">{p.tagline}</p>
-                        <p className="mt-4 text-3xl font-extrabold text-white">
+                        <p className="mt-1 text-xs text-slate-500">{p.tagline}</p>
+                        <p className="mt-4 text-3xl font-extrabold text-slate-950">
                           {price} €{" "}
-                          <span className="text-xs font-normal text-zinc-400">
+                          <span className="text-xs font-normal text-slate-500">
                             / mois TTC
                           </span>
                         </p>
@@ -1781,9 +1766,9 @@ export function BackOffice({
                           {p.features.map((f, i) => (
                             <li
                               key={i}
-                              className="flex items-start gap-2 text-xs text-zinc-300"
+                              className="flex items-start gap-2 text-xs text-slate-700"
                             >
-                              <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400 mt-0.5" />
+                              <Check className="h-3.5 w-3.5 shrink-0 text-teal-600 mt-0.5" />
                               <span>{f}</span>
                             </li>
                           ))}
@@ -1791,10 +1776,10 @@ export function BackOffice({
                       </div>
                       <Button
                         onClick={() => handleSelectPlan(pid)}
-                        className={`mt-6 w-full font-bold text-xs ${
+                        className={`mt-6 w-full font-bold text-xs h-10 ${
                           pid === "pro"
-                            ? "bg-emerald-500 text-emerald-950 hover:bg-emerald-400"
-                            : "bg-white/10 text-white hover:bg-white/15"
+                            ? "bg-teal-600 text-white hover:bg-teal-700"
+                            : "bg-slate-900 text-white hover:bg-slate-800"
                         }`}
                       >
                         {isCurrent
@@ -1810,7 +1795,6 @@ export function BackOffice({
         </main>
       </div>
 
-      {/* Modals */}
       <NewListingDialog
         open={newListingOpen}
         onOpenChange={setNewListingOpen}
@@ -1831,24 +1815,24 @@ export function BackOffice({
         open={Boolean(sellModalItem)}
         onOpenChange={(open) => !open && setSellModalItem(null)}
       >
-        <DialogContent className="bg-[#10141c] border-white/10 text-zinc-100 sm:max-w-md">
+        <DialogContent className="bg-white border-slate-200 text-slate-900 sm:max-w-md shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold">
+            <DialogTitle className="text-base font-bold text-slate-900">
               Enregistrer la vente
             </DialogTitle>
           </DialogHeader>
           {sellModalItem && (
             <form onSubmit={handleConfirmSale} className="space-y-3 text-xs">
-              <p className="text-zinc-300 font-semibold">
+              <p className="text-slate-700 font-semibold">
                 {sellModalItem.title} ({sellModalItem.sku})
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Plateforme</Label>
+                  <Label className="text-xs text-slate-600">Plateforme</Label>
                   <select
                     value={sellPlatform}
                     onChange={(e) => setSellPlatform(e.target.value)}
-                    className="h-9 w-full rounded-md border border-white/10 bg-[#161b24] px-2.5 text-white"
+                    className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-slate-900"
                   >
                     <option value="vinted">Vinted</option>
                     <option value="leboncoin">Leboncoin</option>
@@ -1857,31 +1841,31 @@ export function BackOffice({
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Prix vendu (€)</Label>
+                  <Label className="text-xs text-slate-600">Prix vendu (€)</Label>
                   <Input
                     type="number"
                     step="0.5"
                     value={sellPrice}
                     onChange={(e) => setSellPrice(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Acheteur</Label>
+                  <Label className="text-xs text-slate-600">Acheteur</Label>
                   <Input
                     value={sellBuyer}
                     onChange={(e) => setSellBuyer(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Transporteur</Label>
+                  <Label className="text-xs text-slate-600">Transporteur</Label>
                   <select
                     value={sellCarrier}
                     onChange={(e) => setSellCarrier(e.target.value)}
-                    className="h-9 w-full rounded-md border border-white/10 bg-[#161b24] px-2.5 text-white"
+                    className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-slate-900"
                   >
                     <option value="Mondial Relay">Mondial Relay</option>
                     <option value="Vinted Go">Vinted Go</option>
@@ -1892,7 +1876,7 @@ export function BackOffice({
                   </select>
                 </div>
               </div>
-              <p className="text-[11px] text-emerald-400">
+              <p className="text-[11px] text-teal-700 font-medium">
                 Génère automatiquement la facture, calcule l&apos;URSSAF (
                 {user.urssaf_rate}%) et{" "}
                 {user.auto_delist
@@ -1909,7 +1893,7 @@ export function BackOffice({
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold"
+                  className="bg-teal-600 text-white hover:bg-teal-700 font-bold"
                 >
                   Confirmer la vente
                 </Button>

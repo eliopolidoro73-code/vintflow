@@ -3,12 +3,14 @@ import React from "react";
 interface VintflowLogoProps {
   size?: "sm" | "md" | "lg";
   showText?: boolean;
+  darkText?: boolean;
   className?: string;
 }
 
 export function VintflowLogo({
   size = "md",
   showText = true,
+  darkText = true,
   className = "",
 }: VintflowLogoProps) {
   const iconDims =
@@ -22,51 +24,41 @@ export function VintflowLogo({
         viewBox="0 0 40 40"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className={`${iconDims} shrink-0 drop-shadow-[0_0_12px_rgba(16,185,129,0.35)]`}
+        className={`${iconDims} shrink-0 shadow-sm rounded-[11px]`}
         aria-hidden="true"
       >
         <defs>
           <linearGradient id="vf-bg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#10b981" />
-            <stop offset="55%" stopColor="#14b8a6" />
-            <stop offset="100%" stopColor="#06b6d4" />
-          </linearGradient>
-          <linearGradient id="vf-shine" x1="6" y1="6" x2="34" y2="34" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="0%" stopColor="#0d9488" />
+            <stop offset="55%" stopColor="#0891b2" />
+            <stop offset="100%" stopColor="#0284c7" />
           </linearGradient>
         </defs>
         <rect width="40" height="40" rx="11" fill="url(#vf-bg)" />
-        <rect
-          x="1"
-          y="1"
-          width="38"
-          height="38"
-          rx="10"
-          stroke="url(#vf-shine)"
-          strokeWidth="1.2"
-        />
-        {/* V + dynamic resale flow arrow */}
         <path
           d="M10.5 13L18.2 28.2C18.9 29.5 20.8 29.5 21.5 28.2L29.5 12.2"
-          stroke="#042219"
-          strokeWidth="4.2"
+          stroke="#ffffff"
+          strokeWidth="4"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         <path
           d="M24.2 12.2H29.8V17.8"
-          stroke="#042219"
-          strokeWidth="3.2"
+          stroke="#ffffff"
+          strokeWidth="3.1"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <circle cx="10.5" cy="13" r="2.1" fill="#ecfdf5" />
+        <circle cx="10.5" cy="13" r="2.2" fill="#99f6e4" />
       </svg>
 
       {showText && (
-        <span className={`font-extrabold tracking-tight text-white ${textSize}`}>
-          Vint<span className="text-emerald-400">flow</span>
+        <span
+          className={`font-extrabold tracking-tight ${textSize} ${
+            darkText ? "text-slate-900" : "text-white"
+          }`}
+        >
+          Vint<span className="text-teal-600">flow</span>
         </span>
       )}
     </span>

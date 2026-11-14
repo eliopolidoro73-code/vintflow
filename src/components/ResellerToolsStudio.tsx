@@ -81,7 +81,6 @@ function removeBackgroundByEdgeFlood(
   const imgData = octx.getImageData(0, 0, w, h);
   const data = imgData.data;
 
-  // Sample average edge color from the 4 corners
   const corners = [
     [2, 2],
     [w - 3, 2],
@@ -139,16 +138,13 @@ function removeBackgroundByEdgeFlood(
     const p = queue[head++];
     const x = p % w;
     const y = (p - x) / w;
-    const idx = p * 4;
-    data[idx + 3] = 0;
-
+    data[p * 4 + 3] = 0;
     pushIfBg(x + 1, y);
     pushIfBg(x - 1, y);
     pushIfBg(x, y + 1);
     pushIfBg(x, y - 1);
   }
 
-  // Soften edges adjacent to removed background
   for (let y = 1; y < h - 1; y++) {
     for (let x = 1; x < w - 1; x++) {
       const p = y * w + x;
@@ -176,7 +172,6 @@ export function ResellerToolsStudio({
   const [subTab, setSubTab] = useState<ToolSubTab>("photo");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  // --- 1. STUDIO PHOTO CANVAS STATE ---
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [photoSrc, setPhotoSrc] = useState<string | null>(null);
   const [photoFileName, setPhotoFileName] = useState<string>("");
@@ -192,7 +187,6 @@ export function ResellerToolsStudio({
   const [showOriginal, setShowOriginal] = useState(false);
   const [visionLoading, setVisionLoading] = useState(false);
 
-  // --- 2. LISTING + TIKTOK GENERATOR STATE ---
   const [genTitle, setGenTitle] = useState("Veste Carhartt Detroit Canvas Noir");
   const [genBrand, setGenBrand] = useState("Carhartt");
   const [genCategory, setGenCategory] = useState("Vestes & Manteaux");
@@ -215,7 +209,6 @@ export function ResellerToolsStudio({
     }>;
   } | null>(null);
 
-  // --- 3. ANTI-SHADOWBAN STATE ---
   const [shadowTitle, setShadowTitle] = useState("Pull Ralph Lauren Marine Taille M");
   const [shadowText, setShadowText] = useState(
     "Pull Ralph Lauren très bon état taille M envoi rapide #ralphlauren #vintage #mode #pascher #vintedfrance",
@@ -228,7 +221,6 @@ export function ResellerToolsStudio({
     checklist: string[];
   } | null>(null);
 
-  // --- 4. NEGOTIATION & BUNDLE CALCULATOR STATE ---
   const [lotTotalCost, setLotTotalCost] = useState("140");
   const [lotShipping, setLotShipping] = useState("12");
   const [lotCount, setLotCount] = useState("10");
@@ -262,7 +254,6 @@ export function ResellerToolsStudio({
     onToast("Auto-éclairage Studio appliqué !");
   }
 
-  // Render Studio Photo Canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -275,7 +266,7 @@ export function ResellerToolsStudio({
 
     const drawFrame = (img: HTMLImageElement | null) => {
       if (img && showOriginal) {
-        ctx.fillStyle = "#090b0f";
+        ctx.fillStyle = "#f1f5f9";
         ctx.fillRect(0, 0, fmt.w, fmt.h);
         const scale = Math.min(fmt.w / img.width, fmt.h / img.height);
         const dw = img.width * scale;
@@ -312,15 +303,15 @@ export function ResellerToolsStudio({
         const dx = (fmt.w - drawW) / 2;
         const dy = (fmt.h - drawH) / 2;
 
-        ctx.shadowColor = "rgba(0,0,0,0.22)";
-        ctx.shadowBlur = 32;
-        ctx.shadowOffsetY = 14;
+        ctx.shadowColor = "rgba(15, 23, 42, 0.16)";
+        ctx.shadowBlur = 28;
+        ctx.shadowOffsetY = 12;
 
         ctx.drawImage(sourceToDraw, dx, dy, drawW, drawH);
         ctx.restore();
       } else {
         ctx.save();
-        ctx.fillStyle = studioBg.id === "dark" ? "#1e293b" : "#f1f5f9";
+        ctx.fillStyle = studioBg.id === "dark" ? "#1e293b" : "#f8fafc";
         ctx.strokeStyle = studioBg.id === "dark" ? "#334155" : "#cbd5e1";
         ctx.lineWidth = 4;
         ctx.beginPath();
@@ -329,7 +320,7 @@ export function ResellerToolsStudio({
         ctx.stroke();
 
         ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
-        ctx.fillStyle = "#0f766e";
+        ctx.fillStyle = "#0d9488";
         ctx.beginPath();
         const cx = fmt.w / 2;
         const cy = fmt.h / 2;
@@ -351,7 +342,7 @@ export function ResellerToolsStudio({
         ctx.fillStyle = studioBg.id === "dark" ? "#94a3b8" : "#475569";
         ctx.font = "600 28px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("Importe ta photo pour activer le Studio IA", cx, cy + 305);
+        ctx.fillText("Importe ta photo pour l'optimiser", cx, cy + 305);
         ctx.restore();
       }
 
@@ -365,12 +356,12 @@ export function ResellerToolsStudio({
         const px = fmt.w - pillW - 36;
         const py = fmt.h - pillH - 36;
 
-        ctx.fillStyle = "rgba(9, 11, 15, 0.88)";
+        ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
         ctx.beginPath();
         ctx.roundRect(px, py, pillW, pillH, 26);
         ctx.fill();
 
-        ctx.fillStyle = "#34d399";
+        ctx.fillStyle = "#5eead4";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(label, px + pillW / 2, py + pillH / 2 + 1);
@@ -482,7 +473,6 @@ export function ResellerToolsStudio({
         setGenTargetPrice(String(analysis.estimatedPrice));
         setSubTab("listing");
 
-        // Auto-generate the 3 platform listings right away
         const genRes = await fetch("/api/tools/generate", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -613,32 +603,32 @@ export function ResellerToolsStudio({
 
   return (
     <div className="space-y-5">
-      {/* Sub-navigation for the 4 killer tools */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+      {/* Clean 4-pill switcher */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           {
             id: "photo" as ToolSubTab,
-            title: "Studio Photo & Vision IA",
-            sub: "Détourage + 1080px + Scan IA",
-            icon: <Camera className="h-4 w-4 text-emerald-400" />,
+            title: "Studio Photo & Détourage",
+            sub: "Format 1080px + Scan IA",
+            icon: <Camera className="h-4 w-4 text-teal-600" />,
           },
           {
             id: "listing" as ToolSubTab,
             title: "Générateur IA 3-en-1",
-            sub: "Vinted + Leboncoin + Script TikTok",
-            icon: <Sparkles className="h-4 w-4 text-cyan-400" />,
+            sub: "Vinted + LBC + TikTok",
+            icon: <Sparkles className="h-4 w-4 text-cyan-600" />,
           },
           {
             id: "antishadowban" as ToolSubTab,
             title: "Bouclier Anti-Shadowban",
-            sub: "Re-listing sûr & meilleurs horaires",
-            icon: <ShieldAlert className="h-4 w-4 text-amber-400" />,
+            sub: "Re-listing & Créneaux",
+            icon: <ShieldAlert className="h-4 w-4 text-amber-600" />,
           },
           {
             id: "negotiation" as ToolSubTab,
             title: "Sniper Négo & Lots",
-            sub: "Contre-offres + Calculateur de lot",
-            icon: <Swords className="h-4 w-4 text-rose-400" />,
+            sub: "Contre-offres & Seuil",
+            icon: <Swords className="h-4 w-4 text-rose-600" />,
           },
         ].map((item) => (
           <button
@@ -647,31 +637,30 @@ export function ResellerToolsStudio({
             onClick={() => setSubTab(item.id)}
             className={`rounded-2xl border p-3.5 text-left transition ${
               subTab === item.id
-                ? "border-emerald-500/60 bg-emerald-500/10"
-                : "border-white/10 bg-[#10141c] hover:border-white/20"
+                ? "border-teal-500 bg-teal-50/70 shadow-xs"
+                : "border-slate-200 bg-white hover:border-slate-300"
             }`}
           >
-            <div className="flex items-center gap-2 font-bold text-xs text-white">
+            <div className="flex items-center gap-2 font-bold text-xs text-slate-900">
               {item.icon}
               <span>{item.title}</span>
             </div>
-            <p className="mt-1 text-[11px] text-zinc-400">{item.sub}</p>
+            <p className="mt-1 text-[11px] text-slate-500">{item.sub}</p>
           </button>
         ))}
       </div>
 
-      {/* TOOL 1: STUDIO PHOTO CANVAS + MAGIC BACKGROUND REMOVAL + AI VISION */}
+      {/* TOOL 1: STUDIO PHOTO */}
       {subTab === "photo" && (
-        <div className="grid gap-6 lg:grid-cols-12 rounded-2xl border border-white/10 bg-[#10141c] p-5">
+        <div className="grid gap-6 lg:grid-cols-12 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
           <div className="lg:col-span-5 space-y-4">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h2 className="text-sm font-bold text-white">
+                <h2 className="text-sm font-bold text-slate-900">
                   Studio Photo IA &amp; Détourage
                 </h2>
-                <p className="mt-1 text-xs text-zinc-400">
-                  Détoure le fond, illumine l&apos;article, change l&apos;empreinte anti-shadowban
-                  et envoie la photo à l&apos;IA pour créer l&apos;annonce.
+                <p className="mt-1 text-xs text-slate-500">
+                  Détoure le fond, ajuste la lumière et génère ta fiche en 1 clic.
                 </p>
               </div>
               <Button
@@ -679,14 +668,14 @@ export function ResellerToolsStudio({
                 size="sm"
                 variant="outline"
                 onClick={handleAutoEnhance}
-                className="shrink-0 border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 text-[11px] h-8"
+                className="shrink-0 border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 text-[11px] h-8"
               >
                 <Wand2 className="h-3.5 w-3.5 mr-1" />
                 Auto
               </Button>
             </div>
 
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-500/40 bg-emerald-500/[0.06] px-4 py-3 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10 transition">
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-teal-400 bg-teal-50/50 px-4 py-3 text-xs font-semibold text-teal-800 hover:bg-teal-50 transition">
               <ImagePlus className="h-4 w-4" />
               {photoSrc ? "Changer la photo" : "Importer une photo de mon article"}
               <input
@@ -697,17 +686,16 @@ export function ResellerToolsStudio({
               />
             </label>
 
-            {/* Magic background removal */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-2.5">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-xs font-semibold text-white">
-                  <Eraser className="h-3.5 w-3.5 text-emerald-400" />
+                <span className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+                  <Eraser className="h-3.5 w-3.5 text-teal-600" />
                   Détourage intelligent du fond
                 </span>
                 <Switch checked={removeBg} onCheckedChange={setRemoveBg} />
               </div>
               {removeBg && (
-                <label className="block space-y-1 text-[11px] text-zinc-400">
+                <label className="block space-y-1 text-[11px] text-slate-600">
                   <span>Sensibilité détourage ({bgTolerance})</span>
                   <input
                     type="range"
@@ -715,14 +703,14 @@ export function ResellerToolsStudio({
                     max={95}
                     value={bgTolerance}
                     onChange={(e) => setBgTolerance(Number(e.target.value))}
-                    className="w-full accent-emerald-500"
+                    className="w-full accent-teal-600"
                   />
                 </label>
               )}
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-zinc-400">Format plateforme</Label>
+              <Label className="text-xs text-slate-600">Format plateforme</Label>
               <div className="grid grid-cols-3 gap-1.5">
                 {(Object.keys(PHOTO_FORMATS) as Array<keyof typeof PHOTO_FORMATS>).map(
                   (k) => (
@@ -732,8 +720,8 @@ export function ResellerToolsStudio({
                       onClick={() => setPhotoFormat(k)}
                       className={`rounded-lg border px-2 py-2 text-[11px] font-medium ${
                         photoFormat === k
-                          ? "border-emerald-500 bg-emerald-500/15 text-emerald-300 font-bold"
-                          : "border-white/10 bg-white/[0.02] text-zinc-400"
+                          ? "border-teal-600 bg-teal-50 text-teal-800 font-bold"
+                          : "border-slate-200 bg-white text-slate-600"
                       }`}
                     >
                       {PHOTO_FORMATS[k].label}
@@ -744,7 +732,7 @@ export function ResellerToolsStudio({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-zinc-400">Fond studio</Label>
+              <Label className="text-xs text-slate-600">Fond studio</Label>
               <div className="grid grid-cols-4 gap-1.5">
                 {STUDIO_BACKGROUNDS.map((bg) => (
                   <button
@@ -753,12 +741,12 @@ export function ResellerToolsStudio({
                     onClick={() => setStudioBg(bg)}
                     className={`rounded-lg border p-2 text-[10px] font-medium ${
                       studioBg.id === bg.id
-                        ? "border-emerald-500 text-white"
-                        : "border-white/10 text-zinc-400"
+                        ? "border-teal-600 text-slate-900 bg-teal-50/40"
+                        : "border-slate-200 text-slate-600 bg-white"
                     }`}
                   >
                     <span
-                      className="block h-4 w-full rounded mb-1 border border-white/20"
+                      className="block h-4 w-full rounded mb-1 border border-slate-200"
                       style={{ backgroundColor: bg.color }}
                     />
                     {bg.label}
@@ -769,60 +757,60 @@ export function ResellerToolsStudio({
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <label className="space-y-1">
-                <span className="text-zinc-400">Luminosité ({brightness}%)</span>
+                <span className="text-slate-600">Luminosité ({brightness}%)</span>
                 <input
                   type="range"
                   min={80}
                   max={135}
                   value={brightness}
                   onChange={(e) => setBrightness(Number(e.target.value))}
-                  className="w-full accent-emerald-500"
+                  className="w-full accent-teal-600"
                 />
               </label>
               <label className="space-y-1">
-                <span className="text-zinc-400">Contraste ({contrast}%)</span>
+                <span className="text-slate-600">Contraste ({contrast}%)</span>
                 <input
                   type="range"
                   min={85}
                   max={135}
                   value={contrast}
                   onChange={(e) => setContrast(Number(e.target.value))}
-                  className="w-full accent-emerald-500"
+                  className="w-full accent-teal-600"
                 />
               </label>
               <label className="space-y-1">
-                <span className="text-zinc-400">Couleurs ({saturation}%)</span>
+                <span className="text-slate-600">Couleurs ({saturation}%)</span>
                 <input
                   type="range"
                   min={80}
                   max={135}
                   value={saturation}
                   onChange={(e) => setSaturation(Number(e.target.value))}
-                  className="w-full accent-emerald-500"
+                  className="w-full accent-teal-600"
                 />
               </label>
               <label className="space-y-1">
-                <span className="text-zinc-400">Marge cadre ({paddingPct}%)</span>
+                <span className="text-slate-600">Marge cadre ({paddingPct}%)</span>
                 <input
                   type="range"
                   min={0}
                   max={16}
                   value={paddingPct}
                   onChange={(e) => setPaddingPct(Number(e.target.value))}
-                  className="w-full accent-emerald-500"
+                  className="w-full accent-teal-600"
                 />
               </label>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs text-zinc-400">
+              <Label className="text-xs text-slate-600">
                 Badge confiance (laisser vide pour aucun)
               </Label>
               <Input
                 value={badgeText}
                 onChange={(e) => setBadgeText(e.target.value)}
                 placeholder="Ex: ENVOI 24H · VÉRIFIÉ"
-                className="bg-white/5 border-white/10 text-xs text-white"
+                className="bg-white border-slate-200 text-xs text-slate-900"
               />
             </div>
 
@@ -831,7 +819,7 @@ export function ResellerToolsStudio({
                 type="button"
                 onClick={handleDownloadCanvas}
                 variant="outline"
-                className="border-white/15 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs h-10"
+                className="border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs h-10"
               >
                 <Download className="h-4 w-4 mr-1.5" />
                 Télécharger (.png)
@@ -840,7 +828,7 @@ export function ResellerToolsStudio({
                 type="button"
                 disabled={visionLoading}
                 onClick={handleAnalyzePhotoToListing}
-                className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs h-10"
+                className="bg-teal-600 text-white hover:bg-teal-700 font-bold text-xs h-10"
               >
                 {visionLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
@@ -852,18 +840,18 @@ export function ResellerToolsStudio({
             </div>
           </div>
 
-          <div className="lg:col-span-7 flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#090b0f] p-4 gap-3">
+          <div className="lg:col-span-7 flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 p-4 gap-3">
             {photoSrc && (
               <div className="flex w-full items-center justify-between px-2">
-                <span className="text-[11px] text-zinc-400 font-mono truncate max-w-[220px]">
+                <span className="text-[11px] text-slate-500 font-mono truncate max-w-[220px]">
                   {photoFileName || "image-article.png"}
                 </span>
                 <Button
                   type="button"
                   size="sm"
-                  variant="ghost"
+                  variant="outline"
                   onClick={() => setShowOriginal((v) => !v)}
-                  className="text-xs text-zinc-300 hover:text-white h-7"
+                  className="text-xs text-slate-700 bg-white border-slate-200 h-7"
                 >
                   <Eye className="h-3.5 w-3.5 mr-1.5" />
                   {showOriginal ? "Voir Studio IA" : "Comparer l'original"}
@@ -872,10 +860,10 @@ export function ResellerToolsStudio({
             )}
             <canvas
               ref={canvasRef}
-              className="max-h-[430px] w-auto max-w-full rounded-xl border border-white/10 shadow-2xl"
+              className="max-h-[430px] w-auto max-w-full rounded-xl border border-slate-200 shadow-md"
             />
-            <p className="text-[11px] text-zinc-500">
-              Aperçu temps réel · Export haute résolution {PHOTO_FORMATS[photoFormat].w}×
+            <p className="text-[11px] text-slate-500">
+              Export haute résolution {PHOTO_FORMATS[photoFormat].w}×
               {PHOTO_FORMATS[photoFormat].h} px
             </p>
           </div>
@@ -887,92 +875,92 @@ export function ResellerToolsStudio({
         <div className="grid gap-6 lg:grid-cols-12">
           <form
             onSubmit={handleGenerateListing}
-            className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-3 text-xs"
+            className="lg:col-span-5 rounded-2xl border border-slate-200 bg-white p-5 space-y-3 text-xs shadow-xs"
           >
-            <h2 className="text-sm font-bold text-white">
+            <h2 className="text-sm font-bold text-slate-900">
               Générateur d&apos;annonce SEO + Script TikTok Shop
             </h2>
-            <p className="text-zinc-400">
-              Fini les 10 minutes par fiche. Rédige d&apos;un coup pour Vinted, Leboncoin et
-              TikTok avec stratégie de prix et mention anti-litige.
+            <p className="text-slate-500">
+              Rédige en 1 clic pour Vinted, Leboncoin et TikTok avec stratégie de prix
+              et mention anti-litige.
             </p>
 
             <div className="space-y-1">
-              <Label className="text-zinc-400">Article</Label>
+              <Label className="text-slate-700">Article</Label>
               <Input
                 value={genTitle}
                 onChange={(e) => setGenTitle(e.target.value)}
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white border-slate-200 text-slate-900"
               />
             </div>
             <div className="grid grid-cols-2 gap-2.5">
               <div className="space-y-1">
-                <Label className="text-zinc-400">Marque</Label>
+                <Label className="text-slate-700">Marque</Label>
                 <Input
                   value={genBrand}
                   onChange={(e) => setGenBrand(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-white border-slate-200 text-slate-900"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-zinc-400">Catégorie</Label>
+                <Label className="text-slate-700">Catégorie</Label>
                 <Input
                   value={genCategory}
                   onChange={(e) => setGenCategory(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-white border-slate-200 text-slate-900"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-zinc-400">Taille</Label>
+                <Label className="text-slate-700">Taille</Label>
                 <Input
                   value={genSize}
                   onChange={(e) => setGenSize(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-white border-slate-200 text-slate-900"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-zinc-400">État</Label>
+                <Label className="text-slate-700">État</Label>
                 <Input
                   value={genCondition}
                   onChange={(e) => setGenCondition(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-white border-slate-200 text-slate-900"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-zinc-400">Prix achat (€)</Label>
+                <Label className="text-slate-700">Prix achat (€)</Label>
                 <Input
                   type="number"
                   value={genBuyPrice}
                   onChange={(e) => setGenBuyPrice(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-white border-slate-200 text-slate-900"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-zinc-400">Prix visé (€)</Label>
+                <Label className="text-slate-700">Prix visé (€)</Label>
                 <Input
                   type="number"
                   value={genTargetPrice}
                   onChange={(e) => setGenTargetPrice(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-white border-slate-200 text-slate-900"
                 />
               </div>
             </div>
             <div className="space-y-1">
-              <Label className="text-zinc-400">
-                Défaut à signaler (optionnel — évite les retours Vinted)
+              <Label className="text-slate-700">
+                Défaut à signaler (optionnel — évite les litiges)
               </Label>
               <Input
                 value={genDefects}
                 onChange={(e) => setGenDefects(e.target.value)}
                 placeholder="Ex: micro trace sur la manche droite"
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white border-slate-200 text-slate-900"
               />
             </div>
 
             <Button
               type="submit"
               disabled={genLoading}
-              className="w-full bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold h-10"
+              className="w-full bg-teal-600 text-white hover:bg-teal-700 font-bold h-10"
             >
               {genLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
@@ -983,10 +971,10 @@ export function ResellerToolsStudio({
             </Button>
           </form>
 
-          <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4">
+          <div className="lg:col-span-7 rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
             {!genResult ? (
-              <div className="flex h-full min-h-[300px] flex-col items-center justify-center text-center text-xs text-zinc-400">
-                <Sparkles className="h-8 w-8 text-emerald-400/70 mb-2" />
+              <div className="flex h-full min-h-[300px] flex-col items-center justify-center text-center text-xs text-slate-500">
+                <Sparkles className="h-8 w-8 text-teal-600/70 mb-2" />
                 Clique sur <strong>Générer mes 3 fiches + prix</strong> (ou scanne une
                 photo dans le Studio) pour obtenir ton titre SEO, tes descriptions Vinted
                 &amp; Leboncoin, ton script vidéo TikTok Shop et ta marge nette (
@@ -998,13 +986,13 @@ export function ResellerToolsStudio({
                   {genResult.pricingTiers.map((tier) => (
                     <div
                       key={tier.label}
-                      className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs"
+                      className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs"
                     >
-                      <p className="text-zinc-400 text-[11px]">{tier.label}</p>
-                      <p className="text-lg font-extrabold text-white mt-0.5">
+                      <p className="text-slate-500 text-[11px]">{tier.label}</p>
+                      <p className="text-lg font-extrabold text-slate-900 mt-0.5">
                         {formatEuro(tier.price)}
                       </p>
-                      <p className="text-[11px] text-emerald-400">
+                      <p className="text-[11px] font-semibold text-teal-700">
                         Net : {formatEuro(tier.netMargin)}
                       </p>
                     </div>
@@ -1012,64 +1000,64 @@ export function ResellerToolsStudio({
                 </div>
 
                 <div className="space-y-3 text-xs">
-                  <div className="rounded-xl border border-white/10 bg-[#090b0f] p-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
                     <div className="flex items-center justify-between mb-1.5">
-                      <Badge className="bg-teal-500/15 text-teal-300 border-teal-500/30">
+                      <Badge className="bg-teal-100 text-teal-800 border-teal-200">
                         Vinted (SEO + Mesures + Hashtags)
                       </Badge>
                       <button
                         type="button"
                         onClick={() => copyText("vinted", genResult.vinted)}
-                        className="inline-flex items-center gap-1 text-zinc-400 hover:text-white"
+                        className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 font-medium"
                       >
                         {copiedKey === "vinted" ? (
-                          <Check className="h-3.5 w-3.5 text-emerald-400" />
+                          <Check className="h-3.5 w-3.5 text-teal-600" />
                         ) : (
                           <Copy className="h-3.5 w-3.5" />
                         )}
                         Copier
                       </button>
                     </div>
-                    <pre className="whitespace-pre-wrap font-sans text-zinc-200 leading-relaxed">
+                    <pre className="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">
                       {genResult.vinted}
                     </pre>
                   </div>
 
-                  <div className="rounded-xl border border-white/10 bg-[#090b0f] p-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
                     <div className="flex items-center justify-between mb-1.5">
-                      <Badge className="bg-orange-500/15 text-orange-300 border-orange-500/30">
+                      <Badge className="bg-orange-100 text-orange-800 border-orange-200">
                         Leboncoin (Propre &amp; Rassurant)
                       </Badge>
                       <button
                         type="button"
                         onClick={() => copyText("lbc", genResult.leboncoin)}
-                        className="inline-flex items-center gap-1 text-zinc-400 hover:text-white"
+                        className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 font-medium"
                       >
                         <Copy className="h-3.5 w-3.5" />
                         Copier
                       </button>
                     </div>
-                    <pre className="whitespace-pre-wrap font-sans text-zinc-200 leading-relaxed">
+                    <pre className="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">
                       {genResult.leboncoin}
                     </pre>
                   </div>
 
-                  <div className="rounded-xl border border-white/10 bg-[#090b0f] p-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
                     <div className="flex items-center justify-between mb-1.5">
-                      <Badge className="bg-pink-500/15 text-pink-300 border-pink-500/30">
+                      <Badge className="bg-pink-100 text-pink-800 border-pink-200">
                         <Video className="h-3 w-3 mr-1" />
                         Script Vidéo TikTok Shop / Reels (15s)
                       </Badge>
                       <button
                         type="button"
                         onClick={() => copyText("tiktok", genResult.tiktokScript)}
-                        className="inline-flex items-center gap-1 text-zinc-400 hover:text-white"
+                        className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 font-medium"
                       >
                         <Copy className="h-3.5 w-3.5" />
                         Copier
                       </button>
                     </div>
-                    <pre className="whitespace-pre-wrap font-sans text-zinc-200 leading-relaxed">
+                    <pre className="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">
                       {genResult.tiktokScript}
                     </pre>
                   </div>
@@ -1077,7 +1065,7 @@ export function ResellerToolsStudio({
 
                 <Button
                   onClick={handleSaveGeneratedToStock}
-                  className="w-full bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs"
+                  className="w-full bg-teal-600 text-white hover:bg-teal-700 font-bold text-xs h-10"
                 >
                   <Plus className="h-4 w-4 mr-1.5" />
                   Enregistrer cet article dans mon Dressing &amp; Crosslister
@@ -1088,55 +1076,55 @@ export function ResellerToolsStudio({
         </div>
       )}
 
-      {/* TOOL 3: ANTI-SHADOWBAN & RELIST SHIELD */}
+      {/* TOOL 3: ANTI-SHADOWBAN */}
       {subTab === "antishadowban" && (
         <div className="grid gap-6 lg:grid-cols-12">
           <form
             onSubmit={handleAntiShadowban}
-            className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-3 text-xs"
+            className="lg:col-span-5 rounded-2xl border border-slate-200 bg-white p-5 space-y-3 text-xs shadow-xs"
           >
-            <h2 className="text-sm font-bold text-white">
+            <h2 className="text-sm font-bold text-slate-900">
               Bouclier Anti-Shadowban &amp; Vérification 24h
             </h2>
-            <p className="text-zinc-400">
-              Les vendeurs perdent leurs vues quand ils republient le même texte/hashtags
-              en boucle. Colle ton annonce qui stagne : Vintflow la réécrit proprement.
+            <p className="text-slate-500">
+              Colle une annonce qui stagne ou que tu veux remettre en ligne sans être
+              bloqué en vérification.
             </p>
             <div className="space-y-1">
-              <Label className="text-zinc-400">Titre actuel</Label>
+              <Label className="text-slate-700">Titre actuel</Label>
               <Input
                 value={shadowTitle}
                 onChange={(e) => setShadowTitle(e.target.value)}
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white border-slate-200 text-slate-900"
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-zinc-400">Description actuelle</Label>
+              <Label className="text-slate-700">Description actuelle</Label>
               <Textarea
                 rows={5}
                 value={shadowText}
                 onChange={(e) => setShadowText(e.target.value)}
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white border-slate-200 text-slate-900"
               />
             </div>
             <Button
               type="submit"
               disabled={shadowLoading}
-              className="w-full bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold h-10"
+              className="w-full bg-amber-500 text-white hover:bg-amber-600 font-bold h-10"
             >
               {shadowLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
               ) : (
                 <ShieldAlert className="h-4 w-4 mr-1.5" />
               )}
-              Générer une variante sûre sans shadowban
+              Générer une variante sûre
             </Button>
           </form>
 
-          <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4 text-xs">
+          <div className="lg:col-span-7 rounded-2xl border border-slate-200 bg-white p-5 space-y-4 text-xs shadow-xs">
             {!shadowResult ? (
               <div className="space-y-4">
-                <p className="text-zinc-300 font-semibold">
+                <p className="text-slate-900 font-bold">
                   Meilleurs créneaux de publication Vinted / Leboncoin (heure FR) :
                 </p>
                 <div className="grid sm:grid-cols-3 gap-3">
@@ -1147,41 +1135,41 @@ export function ResellerToolsStudio({
                   ].map((slot) => (
                     <div
                       key={slot.day}
-                      className="rounded-xl border border-white/10 bg-[#090b0f] p-3"
+                      className="rounded-xl border border-slate-200 bg-slate-50 p-3.5"
                     >
-                      <p className="font-bold text-white flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5 text-emerald-400" />
+                      <p className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5 text-teal-600" />
                         {slot.day}
                       </p>
-                      <p className="mt-1 text-zinc-300">{slot.window}</p>
-                      <p className="mt-1 text-emerald-400 font-semibold">{slot.score}</p>
+                      <p className="mt-1 text-slate-600">{slot.window}</p>
+                      <p className="mt-1 text-teal-700 font-bold">{slot.score}</p>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="rounded-xl border border-emerald-500/30 bg-[#090b0f] p-3.5 space-y-2">
+                <div className="rounded-xl border border-teal-200 bg-teal-50/50 p-3.5 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-emerald-300">
+                    <span className="font-bold text-teal-800">
                       Nouveau titre anti-duplication
                     </span>
                     <button
                       type="button"
                       onClick={() => copyText("stitle", shadowResult.reorderedTitle)}
-                      className="text-zinc-400 hover:text-white inline-flex items-center gap-1"
+                      className="text-slate-600 hover:text-slate-900 inline-flex items-center gap-1 font-medium"
                     >
                       <Copy className="h-3.5 w-3.5" /> Copier
                     </button>
                   </div>
-                  <p className="font-semibold text-white">
+                  <p className="font-semibold text-slate-900">
                     {shadowResult.reorderedTitle}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-white/10 bg-[#090b0f] p-3.5 space-y-2">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-white">
+                    <span className="font-bold text-slate-900">
                       Description nettoyée (zéro spam)
                     </span>
                     <button
@@ -1189,21 +1177,21 @@ export function ResellerToolsStudio({
                       onClick={() =>
                         copyText("sdesc", shadowResult.refreshedDescription)
                       }
-                      className="text-zinc-400 hover:text-white inline-flex items-center gap-1"
+                      className="text-slate-600 hover:text-slate-900 inline-flex items-center gap-1 font-medium"
                     >
                       <Copy className="h-3.5 w-3.5" /> Copier
                     </button>
                   </div>
-                  <pre className="whitespace-pre-wrap font-sans text-zinc-300 leading-relaxed">
+                  <pre className="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">
                     {shadowResult.refreshedDescription}
                   </pre>
                 </div>
 
                 <div className="space-y-1.5">
-                  <p className="font-bold text-amber-300">Checklist anti-shadowban :</p>
+                  <p className="font-bold text-amber-700">Checklist anti-shadowban :</p>
                   {shadowResult.checklist.map((tip, i) => (
-                    <p key={i} className="text-zinc-400 flex items-start gap-2">
-                      <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                    <p key={i} className="text-slate-600 flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 text-teal-600 shrink-0 mt-0.5" />
                       {tip}
                     </p>
                   ))}
@@ -1217,58 +1205,58 @@ export function ResellerToolsStudio({
       {/* TOOL 4: BUNDLE CALCULATOR & NEGOTIATION SNIPER */}
       {subTab === "negotiation" && (
         <div className="grid gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4 text-xs">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <Calculator className="h-4 w-4 text-emerald-400" />
+          <div className="lg:col-span-5 rounded-2xl border border-slate-200 bg-white p-5 space-y-4 text-xs shadow-xs">
+            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Calculator className="h-4 w-4 text-teal-600" />
               Calculateur de Lot &amp; Seuil de Rentabilité
             </h2>
             <div className="grid grid-cols-3 gap-2.5">
               <div className="space-y-1">
-                <Label className="text-zinc-400">Prix du lot (€)</Label>
+                <Label className="text-slate-600">Prix du lot (€)</Label>
                 <Input
                   type="number"
                   value={lotTotalCost}
                   onChange={(e) => setLotTotalCost(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-white border-slate-200 text-slate-900"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-zinc-400">Frais port (€)</Label>
+                <Label className="text-slate-600">Frais port (€)</Label>
                 <Input
                   type="number"
                   value={lotShipping}
                   onChange={(e) => setLotShipping(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-white border-slate-200 text-slate-900"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-zinc-400">Nb de pièces</Label>
+                <Label className="text-slate-600">Nb de pièces</Label>
                 <Input
                   type="number"
                   min={1}
                   value={lotCount}
                   onChange={(e) => setLotCount(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-white border-slate-200 text-slate-900"
                 />
               </div>
             </div>
 
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] p-3.5 space-y-1.5">
+            <div className="rounded-xl border border-teal-200 bg-teal-50/50 p-3.5 space-y-1.5">
               <div className="flex justify-between">
-                <span className="text-zinc-300">Coût de revient / pièce :</span>
-                <strong className="text-white">{formatEuro(unitLotCost)}</strong>
+                <span className="text-slate-600">Coût de revient / pièce :</span>
+                <strong className="text-slate-900">{formatEuro(unitLotCost)}</strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-300">
+                <span className="text-slate-600">
                   Seuil zéro perte (URSSAF {urssafRate}%) :
                 </span>
-                <strong className="text-amber-300">
+                <strong className="text-amber-700">
                   {formatEuro(unitLotCost / Math.max(0.1, 1 - urssafRate / 100))}
                 </strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-300">Prix conseillé cible (×2,8) :</span>
-                <strong className="text-emerald-400">
+                <span className="text-slate-600">Prix conseillé cible (×2,8) :</span>
+                <strong className="text-teal-700">
                   {formatEuro(Math.round(unitLotCost * 2.8))}
                 </strong>
               </div>
@@ -1276,88 +1264,88 @@ export function ResellerToolsStudio({
 
             <form
               onSubmit={handleNegotiation}
-              className="space-y-3 border-t border-white/10 pt-4"
+              className="space-y-3 border-t border-slate-200 pt-4"
             >
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Swords className="h-4 w-4 text-rose-400" />
-                Sniper Négociation (Offres -40% / &quot;Dernier prix ?&quot;)
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Swords className="h-4 w-4 text-rose-600" />
+                Sniper Négociation (Offres -40 %)
               </h3>
               <div className="grid grid-cols-3 gap-2.5">
                 <div className="space-y-1">
-                  <Label className="text-zinc-400">Affiché (€)</Label>
+                  <Label className="text-slate-600">Affiché (€)</Label>
                   <Input
                     type="number"
                     value={negTarget}
                     onChange={(e) => setNegTarget(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-zinc-400">Ton achat (€)</Label>
+                  <Label className="text-slate-600">Ton achat (€)</Label>
                   <Input
                     type="number"
                     value={negBuy}
                     onChange={(e) => setNegBuy(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-rose-300">Offre reçue (€)</Label>
+                  <Label className="text-rose-700 font-semibold">Offre reçue (€)</Label>
                   <Input
                     type="number"
                     value={negOffer}
                     onChange={(e) => setNegOffer(e.target.value)}
-                    className="bg-rose-500/10 border-rose-500/30 text-white font-bold"
+                    className="bg-rose-50 border-rose-300 text-slate-900 font-bold"
                   />
                 </div>
               </div>
               <Button
                 type="submit"
                 disabled={negLoading}
-                className="w-full bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold"
+                className="w-full bg-teal-600 text-white hover:bg-teal-700 font-bold"
               >
                 Calculer ma riposte &amp; contre-offre
               </Button>
             </form>
           </div>
 
-          <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#10141c] p-5 space-y-4 text-xs">
+          <div className="lg:col-span-7 rounded-2xl border border-slate-200 bg-white p-5 space-y-4 text-xs shadow-xs">
             {!negResult ? (
-              <div className="flex h-full min-h-[280px] flex-col items-center justify-center text-center text-zinc-400">
-                <Swords className="h-8 w-8 text-rose-400/70 mb-2" />
+              <div className="flex h-full min-h-[280px] flex-col items-center justify-center text-center text-slate-500">
+                <Swords className="h-8 w-8 text-rose-500/70 mb-2" />
                 Entre une offre agressive à gauche pour voir ta marge réelle après
                 URSSAF et copier la meilleure contre-offre en 1 clic.
               </div>
             ) : (
               <>
                 <div className="grid grid-cols-3 gap-2.5">
-                  <div className="rounded-xl border border-white/10 bg-[#090b0f] p-3">
-                    <p className="text-zinc-400">Marge à l&apos;offre</p>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-slate-500">Marge à l&apos;offre</p>
                     <p
                       className={`text-lg font-extrabold mt-0.5 ${
                         negResult.offerNetMargin > 0
-                          ? "text-white"
-                          : "text-red-400"
+                          ? "text-slate-900"
+                          : "text-red-600"
                       }`}
                     >
                       {formatEuro(negResult.offerNetMargin)}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-[#090b0f] p-3">
-                    <p className="text-zinc-400">Prix plancher sûr</p>
-                    <p className="text-lg font-extrabold text-amber-300 mt-0.5">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-slate-500">Prix plancher sûr</p>
+                    <p className="text-lg font-extrabold text-amber-600 mt-0.5">
                       {formatEuro(negResult.minAcceptable)}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
-                    <p className="text-emerald-300">Contre-offre idéale</p>
-                    <p className="text-lg font-extrabold text-emerald-400 mt-0.5">
+                  <div className="rounded-xl border border-teal-200 bg-teal-50 p-3">
+                    <p className="text-teal-800 font-medium">Contre-offre idéale</p>
+                    <p className="text-lg font-extrabold text-teal-700 mt-0.5">
                       {formatEuro(negResult.counterPrice)}
                     </p>
                   </div>
                 </div>
 
-                <p className="rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 font-medium text-zinc-200">
+                <p className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 font-semibold text-slate-800">
                   {negResult.verdict}
                 </p>
 
@@ -1365,21 +1353,21 @@ export function ResellerToolsStudio({
                   {negResult.replies.map((rep, idx) => (
                     <div
                       key={idx}
-                      className="rounded-xl border border-white/10 bg-[#090b0f] p-3.5 space-y-1.5"
+                      className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-1.5"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-emerald-400">
+                        <span className="font-bold text-teal-700">
                           {rep.tone}
                         </span>
                         <button
                           type="button"
                           onClick={() => copyText(`rep-${idx}`, rep.text)}
-                          className="text-zinc-400 hover:text-white inline-flex items-center gap-1"
+                          className="text-slate-600 hover:text-slate-900 inline-flex items-center gap-1 font-medium"
                         >
                           <Copy className="h-3.5 w-3.5" /> Copier
                         </button>
                       </div>
-                      <p className="text-zinc-200 leading-relaxed">{rep.text}</p>
+                      <p className="text-slate-700 leading-relaxed">{rep.text}</p>
                     </div>
                   ))}
                 </div>

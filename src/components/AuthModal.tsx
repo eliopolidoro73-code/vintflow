@@ -105,31 +105,31 @@ export function AuthModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#10141c] border-white/10 text-zinc-100 sm:max-w-md">
+      <DialogContent className="bg-white border-slate-200 text-slate-900 sm:max-w-md shadow-xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold tracking-tight">
+          <DialogTitle className="text-xl font-bold tracking-tight text-slate-900">
             {mode === "register"
-              ? "Démarre ton essai gratuit 14 jours"
+              ? "Essai gratuit 14 jours"
               : "Connexion à Vintflow"}
           </DialogTitle>
-          <DialogDescription className="text-zinc-400">
+          <DialogDescription className="text-slate-500">
             {mode === "register"
-              ? "Sans engagement. Accès immédiat à tout le back-office Vinted, Leboncoin & TikTok Shop."
+              ? "Sans engagement. Accès immédiat à ton cockpit Vinted, Leboncoin & TikTok."
               : "Retrouve tes ventes, ton stock SKU et tes marges en temps réel."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-white/5 p-1 text-xs font-medium">
+        <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 text-xs font-medium">
           <button
             type="button"
             onClick={() => {
               setMode("register");
               setError(null);
             }}
-            className={`rounded-md py-2 transition ${
+            className={`rounded-lg py-2 transition ${
               mode === "register"
-                ? "bg-emerald-500 text-emerald-950 font-semibold"
-                : "text-zinc-400 hover:text-white"
+                ? "bg-white text-slate-900 font-semibold shadow-xs"
+                : "text-slate-500 hover:text-slate-900"
             }`}
           >
             Créer un compte
@@ -140,10 +140,10 @@ export function AuthModal({
               setMode("login");
               setError(null);
             }}
-            className={`rounded-md py-2 transition ${
+            className={`rounded-lg py-2 transition ${
               mode === "login"
-                ? "bg-emerald-500 text-emerald-950 font-semibold"
-                : "text-zinc-400 hover:text-white"
+                ? "bg-white text-slate-900 font-semibold shadow-xs"
+                : "text-slate-500 hover:text-slate-900"
             }`}
           >
             J&apos;ai déjà un compte
@@ -153,57 +153,57 @@ export function AuthModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === "register" && (
             <>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
                   onClick={() => setPlan("starter")}
-                  className={`rounded-lg border p-2.5 text-left transition ${
+                  className={`rounded-xl border p-3 text-left transition ${
                     plan === "starter"
-                      ? "border-emerald-500 bg-emerald-500/10"
-                      : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                      ? "border-teal-600 bg-teal-50/70"
+                      : "border-slate-200 bg-white hover:border-slate-300"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold">Starter</span>
-                    <span className="text-xs font-semibold text-emerald-400">
+                    <span className="text-xs font-bold text-slate-900">Starter</span>
+                    <span className="text-xs font-bold text-teal-700">
                       {cycle === "annual" ? "24 €/m" : "29 €/m"}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[11px] text-zinc-400">
+                  <p className="mt-0.5 text-[11px] text-slate-500">
                     3 comptes Vinted + LBC
                   </p>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPlan("pro")}
-                  className={`rounded-lg border p-2.5 text-left transition ${
+                  className={`rounded-xl border p-3 text-left transition ${
                     plan === "pro"
-                      ? "border-emerald-500 bg-emerald-500/10"
-                      : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                      ? "border-teal-600 bg-teal-50/70"
+                      : "border-slate-200 bg-white hover:border-slate-300"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold">Pro</span>
-                    <span className="text-xs font-semibold text-emerald-400">
+                    <span className="text-xs font-bold text-slate-900">Pro</span>
+                    <span className="text-xs font-bold text-teal-700">
                       {cycle === "annual" ? "41 €/m" : "49 €/m"}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[11px] text-zinc-400">
+                  <p className="mt-0.5 text-[11px] text-slate-500">
                     10 comptes + Comptable
                   </p>
                 </button>
               </div>
 
-              <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs">
-                <span className="text-zinc-300">Facturation</span>
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                <span className="text-slate-600 font-medium">Facturation</span>
                 <div className="flex gap-1">
                   <button
                     type="button"
                     onClick={() => setCycle("monthly")}
-                    className={`rounded px-2 py-1 ${
+                    className={`rounded-md px-2.5 py-1 ${
                       cycle === "monthly"
-                        ? "bg-white/15 text-white font-medium"
-                        : "text-zinc-400"
+                        ? "bg-white text-slate-900 font-semibold shadow-xs"
+                        : "text-slate-500"
                     }`}
                   >
                     Mensuel
@@ -211,10 +211,10 @@ export function AuthModal({
                   <button
                     type="button"
                     onClick={() => setCycle("annual")}
-                    className={`rounded px-2 py-1 ${
+                    className={`rounded-md px-2.5 py-1 ${
                       cycle === "annual"
-                        ? "bg-emerald-500/20 text-emerald-300 font-medium"
-                        : "text-zinc-400"
+                        ? "bg-teal-600 text-white font-semibold"
+                        : "text-slate-500"
                     }`}
                   >
                     Annuel (-2 mois)
@@ -223,7 +223,7 @@ export function AuthModal({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="auth-name" className="text-xs text-zinc-300">
+                <Label htmlFor="auth-name" className="text-xs text-slate-700">
                   Prénom ou nom du dressing
                 </Label>
                 <Input
@@ -232,15 +232,15 @@ export function AuthModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ex: Charles"
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-white border-slate-200 text-slate-900"
                 />
               </div>
             </>
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="auth-email" className="text-xs text-zinc-300">
-              Email professionnel ou personnel
+            <Label htmlFor="auth-email" className="text-xs text-slate-700">
+              Email
             </Label>
             <Input
               id="auth-email"
@@ -249,12 +249,12 @@ export function AuthModal({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="charles@exemple.fr"
-              className="bg-white/5 border-white/10 text-white"
+              className="bg-white border-slate-200 text-slate-900"
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="auth-password" className="text-xs text-zinc-300">
+            <Label htmlFor="auth-password" className="text-xs text-slate-700">
               Mot de passe (min. 6 caractères)
             </Label>
             <Input
@@ -265,24 +265,24 @@ export function AuthModal({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="bg-white/5 border-white/10 text-white"
+              className="bg-white border-slate-200 text-slate-900"
             />
           </div>
 
           {mode === "register" && (
-            <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
+            <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
               <input
                 type="checkbox"
                 checked={withSampleData}
                 onChange={(e) => setWithSampleData(e.target.checked)}
-                className="rounded border-white/20 bg-white/5 accent-emerald-500"
+                className="rounded border-slate-300 accent-teal-600"
               />
-              Pré-remplir avec des articles &amp; ventes d&apos;exemple pour tester vite
+              Pré-remplir avec des articles &amp; ventes d&apos;exemple
             </label>
           )}
 
           {error && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
               {error}
             </div>
           )}
@@ -290,7 +290,7 @@ export function AuthModal({
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-semibold h-10"
+            className="w-full bg-teal-600 text-white hover:bg-teal-700 font-semibold h-10"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -298,17 +298,17 @@ export function AuthModal({
               <Lock className="h-4 w-4 mr-2" />
             )}
             {mode === "register"
-              ? "Lancer mon essai gratuit (14 jours)"
+              ? "Démarrer l'essai gratuit (14 jours)"
               : "Se connecter"}
           </Button>
         </form>
 
         <div className="relative py-1">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-white/10" />
+            <span className="w-full border-t border-slate-200" />
           </div>
           <div className="relative flex justify-center text-[11px] uppercase">
-            <span className="bg-[#10141c] px-2 text-zinc-500">ou</span>
+            <span className="bg-white px-2 text-slate-400">ou</span>
           </div>
         </div>
 
@@ -317,24 +317,24 @@ export function AuthModal({
           variant="outline"
           disabled={demoLoading}
           onClick={handleDemo}
-          className="w-full border-white/15 bg-white/5 text-zinc-100 hover:bg-white/10"
+          className="w-full border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100"
         >
           {demoLoading ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
           ) : (
-            <Sparkles className="h-4 w-4 mr-2 text-emerald-400" />
+            <Sparkles className="h-4 w-4 mr-2 text-teal-600" />
           )}
-          Accès instantané au Bac à sable Démo (1 clic)
+          Tester le back-office en 1 clic (Démo)
         </Button>
 
-        <div className="flex items-center justify-center gap-4 text-[11px] text-zinc-500">
+        <div className="flex items-center justify-center gap-4 text-[11px] text-slate-500">
           <span className="flex items-center gap-1">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-teal-600" />
             Sans engagement
           </span>
           <span className="flex items-center gap-1">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-            Essai 14j offert
+            <CheckCircle2 className="h-3.5 w-3.5 text-teal-600" />
+            14 jours offerts
           </span>
         </div>
       </DialogContent>
