@@ -27,9 +27,9 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${plusJakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${plusJakarta.variable} ${jetbrainsMono.variable} h-full antialiased scroll-smooth`}
     >
-      <body className="min-h-full flex flex-col bg-[#f8fafc] text-slate-900">
+      <body className="min-h-full flex flex-col bg-[#090b0f] text-zinc-100">
         {children}
       </body>
     </html>
