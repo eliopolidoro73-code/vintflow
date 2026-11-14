@@ -122,7 +122,7 @@ export function AuthModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="vf-tab-enter bg-[#10141c] border-white/15 text-zinc-100 sm:max-w-md shadow-[0_25px_70px_-10px_rgba(0,0,0,0.85)]">
+      <DialogContent className="vf-tab-enter bg-[#0e111a] border-white/15 text-zinc-100 sm:max-w-md shadow-[0_25px_70px_-10px_rgba(0,0,0,0.85)]">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold tracking-tight text-white">
             {mode === "register"
@@ -145,7 +145,7 @@ export function AuthModal({
             }}
             className={`vf-click-press rounded-md py-2 transition-all ${
               mode === "register"
-                ? "bg-emerald-500 text-emerald-950 font-semibold shadow-sm"
+                ? "bg-violet-600 text-white font-semibold shadow-sm"
                 : "text-zinc-400 hover:text-white"
             }`}
           >
@@ -159,7 +159,7 @@ export function AuthModal({
             }}
             className={`vf-click-press rounded-md py-2 transition-all ${
               mode === "login"
-                ? "bg-emerald-500 text-emerald-950 font-semibold shadow-sm"
+                ? "bg-violet-600 text-white font-semibold shadow-sm"
                 : "text-zinc-400 hover:text-white"
             }`}
           >
@@ -182,14 +182,14 @@ export function AuthModal({
                       onClick={() => setPlan(pid)}
                       className={`vf-click-press rounded-lg border p-2.5 text-left transition-all ${
                         plan === pid
-                          ? "border-emerald-500 bg-emerald-500/15 shadow-[0_0_20px_rgba(16,185,129,0.18)]"
+                          ? "border-violet-500 bg-violet-500/15 shadow-[0_0_20px_rgba(139,92,246,0.2)]"
                           : "border-white/10 bg-white/[0.02] hover:border-white/25"
                       }`}
                     >
                       <p className="text-[11px] font-bold text-white truncate">
                         {p.name}
                       </p>
-                      <p className="mt-0.5 text-xs font-extrabold text-emerald-400">
+                      <p className="mt-0.5 text-xs font-extrabold text-violet-400">
                         {price} €/m
                       </p>
                     </button>
@@ -308,7 +308,7 @@ export function AuthModal({
           <Button
             type="submit"
             disabled={loading}
-            className="vf-shimmer-btn w-full bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold h-11 shadow-[0_0_25px_rgba(16,185,129,0.25)]"
+            className="vf-shimmer-btn w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 font-bold h-11 shadow-[0_0_25px_rgba(139,92,246,0.35)]"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -340,18 +340,18 @@ export function AuthModal({
           {demoLoading ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
           ) : (
-            <Sparkles className="h-4 w-4 mr-2 text-emerald-400" />
+            <Sparkles className="h-4 w-4 mr-2 text-violet-400" />
           )}
           Tester le back-office en 1 clic (Démo)
         </Button>
 
         <div className="flex items-center justify-center gap-4 text-[11px] text-zinc-500">
           <span className="flex items-center gap-1">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-violet-400" />
             Sans engagement
           </span>
           <span className="flex items-center gap-1">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-violet-400" />
             Essai 14 jours offert
           </span>
         </div>

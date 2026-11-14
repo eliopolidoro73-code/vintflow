@@ -207,11 +207,11 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#090b0f] text-zinc-100 selection:bg-emerald-500/30">
-      <div className="pointer-events-none fixed inset-x-0 top-0 h-[560px] bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.18),transparent_68%)]" />
+    <div className="min-h-screen bg-[#07080d] text-zinc-100 selection:bg-violet-500/30">
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-[560px] bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.22),transparent_68%)]" />
 
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#090b0f]/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#07080d]/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <a href="#" className="vf-click-press">
             <VintflowLogo />
@@ -236,7 +236,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
             {isLoggedIn ? (
               <Button
                 onClick={() => router.push("/app")}
-                className="vf-shimmer-btn bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold rounded-xl"
+                className="vf-shimmer-btn bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 font-bold rounded-xl"
               >
                 Ouvrir mon espace
                 <ArrowRight className="ml-1.5 h-4 w-4" />
@@ -252,7 +252,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 </Button>
                 <Button
                   onClick={() => openSignup("plus")}
-                  className="vf-shimmer-btn bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.28)]"
+                  className="vf-shimmer-btn bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 font-bold rounded-xl shadow-[0_0_20px_rgba(139,92,246,0.32)]"
                 >
                   Essai gratuit 14j
                 </Button>
@@ -265,15 +265,15 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
       <main className="relative">
         {/* Hero */}
         <section className="mx-auto max-w-5xl px-4 pt-16 pb-20 sm:px-6 md:pt-24 text-center">
-          <div className="vf-fade-up inline-flex items-center gap-2 mb-6 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold text-emerald-300">
-            <span className="vf-live-dot h-2 w-2 rounded-full bg-emerald-400" />
+          <div className="vf-fade-up inline-flex items-center gap-2 mb-6 rounded-full border border-violet-500/35 bg-violet-500/12 px-4 py-1.5 text-xs font-semibold text-violet-300">
+            <span className="vf-live-dot h-2 w-2 rounded-full bg-violet-400" />
             Conçu pour Vinted, Leboncoin, TikTok Shop, eBay &amp; Whatnot
           </div>
 
           <h1 className="vf-fade-up-delay-1 text-4xl font-extrabold tracking-tight text-white sm:text-6xl leading-[1.08]">
             Domine la revente.
             <br />
-            <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">
               Maximise tes profits.
             </span>
           </h1>
@@ -288,7 +288,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
             <Button
               size="lg"
               onClick={() => (isLoggedIn ? router.push("/app") : openSignup("plus"))}
-              className="vf-shimmer-btn w-full sm:w-auto h-12 rounded-xl bg-emerald-500 px-8 text-base font-bold text-emerald-950 hover:bg-emerald-400 shadow-[0_0_32px_rgba(16,185,129,0.35)]"
+              className="vf-shimmer-btn w-full sm:w-auto h-12 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-8 text-base font-bold text-white hover:from-violet-500 hover:to-indigo-500 shadow-[0_0_36px_rgba(139,92,246,0.4)]"
             >
               Essai gratuit 14 jours
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -298,9 +298,9 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               variant="outline"
               disabled={demoLoading}
               onClick={launchDemo}
-              className="w-full sm:w-auto h-12 rounded-xl border-white/15 bg-white/[0.04] px-6 text-base font-semibold text-white hover:bg-white/[0.09] hover:border-emerald-500/40"
+              className="w-full sm:w-auto h-12 rounded-xl border-white/15 bg-white/[0.04] px-6 text-base font-semibold text-white hover:bg-white/[0.09] hover:border-violet-500/45"
             >
-              <Sparkles className="mr-2 h-4 w-4 text-emerald-400" />
+              <Sparkles className="mr-2 h-4 w-4 text-violet-400" />
               {demoLoading ? "Chargement..." : "Tester la démo en 1 clic"}
             </Button>
           </div>
@@ -310,7 +310,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               {["T", "I", "K", "L", "M"].map((l, i) => (
                 <span
                   key={i}
-                  className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#090b0f] bg-gradient-to-br from-emerald-500 to-teal-700 text-[11px] font-bold text-white"
+                  className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#07080d] bg-gradient-to-br from-violet-500 to-indigo-700 text-[11px] font-bold text-white"
                 >
                   {l}
                 </span>
@@ -323,7 +323,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
 
           {/* Interactive Clickable Dashboard Frame */}
-          <div className="mt-14 rounded-3xl border border-white/10 bg-[#10141c]/95 p-4 sm:p-6 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.75)] text-left backdrop-blur-md">
+          <div className="mt-14 rounded-3xl border border-white/10 bg-[#0e111a]/95 p-4 sm:p-6 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.75)] text-left backdrop-blur-md">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4 mb-5">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
@@ -346,7 +346,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                     onClick={() => setHeroTab(t.id as typeof heroTab)}
                     className={`vf-click-press rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all ${
                       heroTab === t.id
-                        ? "bg-emerald-500 text-emerald-950 shadow-sm"
+                        ? "bg-violet-600 text-white shadow-sm"
                         : "text-zinc-400 hover:text-white"
                     }`}
                   >
@@ -462,7 +462,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
 
           <div className="grid gap-5 md:grid-cols-6">
-            <div className="vf-card-interactive md:col-span-3 rounded-3xl border border-white/10 bg-[#10141c] p-6 overflow-hidden">
+            <div className="vf-card-interactive md:col-span-3 rounded-3xl border border-white/10 bg-[#0e111a] p-6 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
                 <span className="inline-flex items-center gap-2 text-base font-bold text-white">
                   <TrendingUp className="h-4 w-4 text-emerald-400" />
@@ -492,7 +492,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            <div className="vf-card-interactive md:col-span-3 rounded-3xl border border-white/10 bg-[#10141c] p-6 overflow-hidden">
+            <div className="vf-card-interactive md:col-span-3 rounded-3xl border border-white/10 bg-[#0e111a] p-6 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
                 <span className="inline-flex items-center gap-2 text-base font-bold text-white">
                   <MessageSquare className="h-4 w-4 text-cyan-400" />
@@ -521,7 +521,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            <div className="vf-card-interactive md:col-span-2 rounded-3xl border border-white/10 bg-[#10141c] p-6">
+            <div className="vf-card-interactive md:col-span-2 rounded-3xl border border-white/10 bg-[#0e111a] p-6">
               <div className="flex items-center gap-2 text-base font-bold text-white mb-2">
                 <Package className="h-4 w-4 text-amber-400" />
                 Stock &amp; SKU
@@ -542,7 +542,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            <div className="vf-card-interactive md:col-span-2 rounded-3xl border border-white/10 bg-[#10141c] p-6">
+            <div className="vf-card-interactive md:col-span-2 rounded-3xl border border-white/10 bg-[#0e111a] p-6">
               <div className="flex items-center gap-2 text-base font-bold text-white mb-2">
                 <FileText className="h-4 w-4 text-emerald-400" />
                 Factures PDF &amp; Compta
@@ -563,7 +563,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            <div className="vf-card-interactive md:col-span-2 rounded-3xl border border-white/10 bg-[#10141c] p-6 flex flex-col justify-between">
+            <div className="vf-card-interactive md:col-span-2 rounded-3xl border border-white/10 bg-[#0e111a] p-6 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 text-base font-bold text-white mb-2">
                   <Printer className="h-4 w-4 text-purple-400" />
@@ -611,7 +611,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               <div
                 key={i}
                 onClick={() => openSignup("plus")}
-                className="vf-card-interactive vf-click-press cursor-pointer rounded-2xl border border-white/10 bg-[#10141c] p-5"
+                className="vf-card-interactive vf-click-press cursor-pointer rounded-2xl border border-white/10 bg-[#0e111a] p-5"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05] border border-white/10 mb-3.5">
                   {tool.icon}
@@ -625,7 +625,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
 
           {/* Live Simulator */}
-          <div className="rounded-3xl border border-white/10 bg-[#10141c] p-5 sm:p-8 shadow-xl">
+          <div className="rounded-3xl border border-white/10 bg-[#0e111a] p-5 sm:p-8 shadow-xl">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <div>
                 <h3 className="text-lg font-bold text-white">
@@ -638,7 +638,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               <Button
                 size="sm"
                 onClick={() => openSignup("plus")}
-                className="vf-shimmer-btn bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold rounded-xl"
+                className="vf-shimmer-btn bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 font-bold rounded-xl"
               >
                 Débloquer le Studio IA complet
                 <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
@@ -676,7 +676,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 pt-1">
-                  <div className="rounded-xl border border-white/10 bg-[#090b0f] p-3.5">
+                  <div className="rounded-xl border border-white/10 bg-[#07080d] p-3.5">
                     <p className="text-[11px] text-zinc-400">Coût de revient</p>
                     <p className="text-lg font-extrabold text-white">
                       {formatEuro(Number(simBuy) || 0)}
@@ -691,7 +691,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 </div>
               </div>
 
-              <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#090b0f] p-4 space-y-3">
+              <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#07080d] p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex gap-1.5">
                     {[
@@ -705,7 +705,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                         onClick={() => setSimTab(t.id as typeof simTab)}
                         className={`vf-click-press rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                           simTab === t.id
-                            ? "bg-emerald-500 text-emerald-950 shadow-sm"
+                            ? "bg-violet-600 text-white shadow-sm"
                             : "bg-white/5 text-zinc-400 hover:text-white"
                         }`}
                       >
@@ -786,7 +786,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 </div>
               </div>
 
-              <div className="vf-card-interactive rounded-2xl border border-white/10 bg-[#090b0f] p-5 space-y-4">
+              <div className="vf-card-interactive rounded-2xl border border-white/10 bg-[#07080d] p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div>
                     <p className="text-xs text-zinc-400">Mode automatique Pro Scale (8h–23h)</p>
@@ -827,7 +827,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
 
                 <Button
                   onClick={() => openSignup("pro")}
-                  className="vf-shimmer-btn w-full bg-emerald-500 text-emerald-950 hover:bg-emerald-400 rounded-xl h-10 font-bold"
+                  className="vf-shimmer-btn w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 rounded-xl h-10 font-bold"
                 >
                   Activer Pro Scale (14 jours d&apos;essai)
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -870,7 +870,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[#10141c] p-5 space-y-4 shadow-xl">
+            <div className="rounded-3xl border border-white/10 bg-[#0e111a] p-5 space-y-4 shadow-xl">
               <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
                   <Bot className="h-4 w-4" />
@@ -931,14 +931,14 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
 
               <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                <div className="rounded-2xl border border-white/10 bg-[#090b0f] p-4 text-center">
+                <div className="rounded-2xl border border-white/10 bg-[#07080d] p-4 text-center">
                   <p className="text-[11px] text-zinc-400">Temps récupéré</p>
                   <p className="mt-1.5 text-2xl font-extrabold text-white">
                     +{hoursSaved} h
                   </p>
                   <p className="mt-1 text-[10px] text-zinc-500">par mois</p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-[#090b0f] p-4 text-center">
+                <div className="rounded-2xl border border-white/10 bg-[#07080d] p-4 text-center">
                   <p className="text-[11px] text-zinc-400">Ventes en + (LBC)</p>
                   <p className="mt-1.5 text-2xl font-extrabold text-cyan-300">
                     +{extraSalesEst}
@@ -964,7 +964,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               {REVIEWS.map((r) => (
                 <div
                   key={r.name}
-                  className="vf-card-interactive rounded-2xl border border-white/10 bg-[#10141c] p-6 flex flex-col justify-between"
+                  className="vf-card-interactive rounded-2xl border border-white/10 bg-[#0e111a] p-6 flex flex-col justify-between"
                 >
                   <p className="text-sm text-zinc-300 leading-relaxed">&ldquo;{r.text}&rdquo;</p>
                   <div className="mt-5 border-t border-white/10 pt-3">
@@ -991,7 +991,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               Annulation en 1 clic à tout moment.
             </p>
 
-            <div className="mt-6 inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#10141c] p-1 text-xs">
+            <div className="mt-6 inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#0e111a] p-1 text-xs">
               <button
                 type="button"
                 onClick={() => setBillingCycle("monthly")}
@@ -1008,12 +1008,12 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                 onClick={() => setBillingCycle("annual")}
                 className={`vf-click-press rounded-full px-4 py-2 font-semibold transition-all flex items-center gap-1.5 ${
                   billingCycle === "annual"
-                    ? "bg-emerald-500 text-emerald-950 shadow-sm"
+                    ? "bg-violet-600 text-white shadow-sm"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
                 Annuel
-                <span className="rounded bg-black/20 px-1.5 py-0.5 text-[10px]">
+                <span className="rounded bg-black/25 px-1.5 py-0.5 text-[10px]">
                   2 mois offerts
                 </span>
               </button>
@@ -1033,10 +1033,10 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   key={`${planId}-${billingCycle}`}
                   className={`vf-card-interactive vf-tab-enter rounded-3xl border p-7 flex flex-col justify-between ${
                     isPro
-                      ? "border-emerald-500/75 bg-gradient-to-b from-emerald-500/[0.14] to-[#10141c] shadow-[0_0_50px_rgba(16,185,129,0.18)]"
+                      ? "border-violet-500/80 bg-gradient-to-b from-violet-500/[0.16] via-indigo-500/[0.08] to-[#0e111a] shadow-[0_0_55px_rgba(139,92,246,0.22)]"
                       : isPlus
-                        ? "border-cyan-500/45 bg-[#10141c]"
-                        : "border-white/10 bg-[#0d1118]"
+                        ? "border-indigo-500/45 bg-[#0e111a]"
+                        : "border-white/10 bg-[#0b0d14]"
                   }`}
                 >
                   <div>
@@ -1046,8 +1046,8 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                         <Badge
                           className={
                             isPro
-                              ? "bg-emerald-500 text-emerald-950 font-bold"
-                              : "bg-cyan-500/20 text-cyan-300 border-cyan-500/30 font-semibold"
+                              ? "bg-gradient-to-r from-violet-500 to-indigo-500 text-white font-bold border-0"
+                              : "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 font-semibold"
                           }
                         >
                           {p.badge}
@@ -1093,7 +1093,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                     onClick={() => openSignup(planId)}
                     className={`mt-8 w-full h-11 rounded-xl font-bold ${
                       isPro
-                        ? "vf-shimmer-btn bg-emerald-500 text-emerald-950 hover:bg-emerald-400 shadow-[0_0_25px_rgba(16,185,129,0.28)]"
+                        ? "vf-shimmer-btn bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 shadow-[0_0_28px_rgba(139,92,246,0.35)]"
                         : isPlus
                           ? "bg-white text-zinc-950 hover:bg-zinc-200"
                           : "bg-white/10 text-white hover:bg-white/15"
@@ -1122,7 +1122,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
 
           {/* Crisp Comparison Matrix */}
-          <div className="mt-12 rounded-3xl border border-white/10 bg-[#10141c] p-5 sm:p-7 overflow-x-auto">
+          <div className="mt-12 rounded-3xl border border-white/10 bg-[#0e111a] p-5 sm:p-7 overflow-x-auto">
             <h3 className="text-base font-bold text-white mb-4">
               Comparatif rapide des formules
             </h3>
@@ -1173,7 +1173,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               return (
                 <div
                   key={idx}
-                  className="rounded-2xl border border-white/10 bg-[#10141c] overflow-hidden transition-colors hover:border-white/20"
+                  className="rounded-2xl border border-white/10 bg-[#0e111a] overflow-hidden transition-colors hover:border-white/20"
                 >
                   <button
                     type="button"

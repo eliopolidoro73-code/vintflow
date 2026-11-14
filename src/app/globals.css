@@ -49,24 +49,24 @@
 }
 
 :root {
-  --background: #090b0f;
+  --background: #07080d;
   --foreground: #f4f4f5;
-  --card: #10141c;
+  --card: #0e111a;
   --card-foreground: #f4f4f5;
-  --popover: #10141c;
+  --popover: #0e111a;
   --popover-foreground: #f4f4f5;
-  --primary: #10b981;
-  --primary-foreground: #032219;
-  --secondary: #181e29;
+  --primary: #8b5cf6;
+  --primary-foreground: #ffffff;
+  --secondary: #161a26;
   --secondary-foreground: #e4e4e7;
-  --muted: #161b24;
+  --muted: #141824;
   --muted-foreground: #9ca3af;
-  --accent: #18222e;
+  --accent: #1b1830;
   --accent-foreground: #f4f4f5;
   --destructive: #ef4444;
   --border: rgba(255, 255, 255, 0.09);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: #10b981;
+  --ring: #8b5cf6;
   --radius: 0.75rem;
 }
 
@@ -190,7 +190,7 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.38),
+    rgba(255, 255, 255, 0.35),
     transparent
   );
   animation: vf-shimmer-sweep 3.8s ease-in-out infinite;
@@ -207,8 +207,8 @@
 
 .vf-card-interactive:hover {
   transform: translateY(-3px);
-  border-color: rgba(16, 185, 129, 0.42);
-  box-shadow: 0 14px 36px -12px rgba(16, 185, 129, 0.2);
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 16px 40px -12px rgba(139, 92, 246, 0.25);
 }
 
 .vf-click-press {
@@ -232,7 +232,7 @@
   position: absolute;
   inset: 0;
   border-radius: 9999px;
-  background: #34d399;
+  background: #a78bfa;
   animation: vf-pulse-ring 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
 }
 
