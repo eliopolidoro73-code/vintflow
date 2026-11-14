@@ -1,8 +1,9 @@
 import crypto from "node:crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { getIdentity } from "../../cursor/identity";
 import { sql } from "./db";
-import type { BillingCycle, PlanId } from "./plans";
 import { seedUserWorkspace } from "./seed";
+import type { BillingCycle, PlanId } from "./plans";
 
 export const SESSION_COOKIE_NAME = "vintflow_perso_session";
 
@@ -147,49 +148,50 @@ export interface AuthUser {
   is_demo: boolean;
 }
 
-const MIN_OWNER_PASSWORD_LENGTH = 8;
+/** Ensures the signed-in Cursor viewer has a Pro Scale owner row; returns its id. */
+export async function ensureOwnerFromVerifiedIdentity(): Promise<string | null> {
+  const hdrs = await headers();
+  const identity = await getIdentity(hdrs);
+  if (!identity.verified || identity.kind !== "person") {
+    return null;
+  }
 
-function getOwnerPassword(): string | null {
-  const value = process.env.PERSO_PASSWORD?.trim() ?? "";
-  return value.length >= MIN_OWNER_PASSWORD_LENGTH ? value : null;
-}
+  const userId = identity.sub;
+  const displayName = identity.name.trim() || "Mon Dressing";
+  const displayEmail =
+    identity.email.trim() ||
+    `owner-${crypto.createHash("sha256").update(userId).digest("hex").slice(0, 10)}@vintflow.local`;
 
-export function isOwnerPasswordConfigured(): boolean {
-  return getOwnerPassword() !== null;
-}
-
-export function checkOwnerPassword(candidate: string): boolean {
-  const expected = getOwnerPassword();
-  if (!expected) return false;
-  const a = crypto.createHash("sha256").update(candidate).digest();
-  const b = crypto.createHash("sha256").update(expected).digest();
-  return crypto.timingSafeEqual(a, b);
-}
-
-// The edition has a single owner: the oldest non-demo row, which also covers the
-// account the earlier Cursor-identity edition created.
-export async function getOrCreateOwnerId(): Promise<string> {
   const rows = await sql<{ id: string }>(
-    "select id from users where is_demo = false order by created_at asc limit 1",
-    [],
+    "select id from users where id = $1",
+    [userId],
   );
-  if (rows[0]?.id) return rows[0].id;
+  if (rows.length === 0) {
+    const referralCode = `VF-${crypto.createHash("sha256").update(userId).digest("hex").slice(0, 6).toUpperCase()}`;
+    const placeholderHash = crypto.randomBytes(32).toString("hex");
+    await sql(
+      `insert into users (
+        id, email, name, password_hash, plan, billing_cycle, subscription_status,
+        company_name, siret, referral_code, is_demo
+      ) values ($1, $2, $3, $4, 'pro', 'monthly', 'personal_free', $5, '000 000 000 00000', $6, false)
+      on conflict (id) do nothing`,
+      [
+        userId,
+        displayEmail,
+        displayName,
+        placeholderHash,
+        `${displayName} · Perso`,
+        referralCode,
+      ],
+    );
+    await seedUserWorkspace(userId);
+  } else {
+    await sql(
+      "update users set email = $1, name = $2 where id = $3 and is_demo = false",
+      [displayEmail, displayName, userId],
+    );
+  }
 
-  const userId = crypto.randomUUID();
-  await sql(
-    `insert into users (
-      id, email, name, password_hash, plan, billing_cycle, subscription_status,
-      company_name, siret, referral_code, is_demo
-    ) values ($1, $2, 'Mon Dressing', $3, 'pro', 'monthly', 'personal_free',
-      'Mon Dressing · Perso', '000 000 000 00000', $4, false)`,
-    [
-      userId,
-      `owner-${userId.slice(0, 8)}@vintflow.local`,
-      crypto.randomBytes(32).toString("hex"),
-      `VF-${userId.slice(0, 6).toUpperCase()}`,
-    ],
-  );
-  await seedUserWorkspace(userId);
   return userId;
 }
 

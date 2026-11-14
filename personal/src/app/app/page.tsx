@@ -1,6 +1,6 @@
-import { getAuthenticatedUser, isOwnerPasswordConfigured } from "@/lib/auth";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { BackOffice } from "@/components/BackOffice";
-import { OwnerAccess } from "@/components/OwnerAccess";
+import { AutoSignIn } from "@/components/AutoSignIn";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,7 @@ export default async function PersonalAppPage({
 }) {
   const user = await getAuthenticatedUser();
   if (!user) {
-    return <OwnerAccess configured={isOwnerPasswordConfigured()} />;
+    return <AutoSignIn />;
   }
   const params = await searchParams;
   return <BackOffice initialTab={params.tab} />;
