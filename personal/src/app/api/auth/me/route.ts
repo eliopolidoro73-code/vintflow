@@ -6,6 +6,11 @@ import {
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { getEffectivePlan } from "@/lib/perso-plan";
+import {
+  mergePreferences,
+  parsePreferences,
+  type PersoPreferences,
+} from "@/lib/user-preferences";
 
 export async function GET() {
   const user = await getAuthenticatedUser();
@@ -30,6 +35,7 @@ export async function PATCH(request: Request) {
     vat_threshold?: number;
     auto_crosslist?: boolean;
     auto_delist?: boolean;
+    preferences?: PersoPreferences;
   };
   try {
     body = await request.json();
@@ -72,11 +78,17 @@ export async function PATCH(request: Request) {
       ? body.auto_delist
       : auth.user.auto_delist;
 
+  const nextPreferences =
+    body.preferences !== undefined
+      ? mergePreferences(auth.user.preferences, body.preferences)
+      : auth.user.preferences;
+
   await sql(
     `update users
      set name = $1, company_name = $2, siret = $3, fiscal_regime = $4,
-         vat_threshold = $5, auto_crosslist = $6, auto_delist = $7
-     where id = $8`,
+         vat_threshold = $5, auto_crosslist = $6, auto_delist = $7,
+         preferences = $8::jsonb
+     where id = $9`,
     [
       name,
       companyName,
@@ -85,6 +97,7 @@ export async function PATCH(request: Request) {
       vatThreshold,
       autoCrosslist,
       autoDelist,
+      JSON.stringify(nextPreferences),
       auth.user.id,
     ],
   );

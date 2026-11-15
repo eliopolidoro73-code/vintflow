@@ -29,11 +29,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { formatEuro } from "@/lib/format";
 import type { PlanId } from "@/lib/plans";
+import type { StudioPresets } from "@/lib/user-preferences";
 
 interface ResellerToolsStudioProps {
   planId: PlanId;
   aiCreditsUsed: number;
   aiCreditsLimit: number; // 0 = disabled, -1 = unlimited
+  studioPresets?: StudioPresets;
+  onStudioPresetsChange?: (patch: StudioPresets) => void;
   onItemCreated: () => void;
   onUpgradeClick: () => void;
   onToast: (msg: string) => void;
@@ -173,33 +176,45 @@ export function ResellerToolsStudio({
   planId,
   aiCreditsUsed,
   aiCreditsLimit,
+  studioPresets,
+  onStudioPresetsChange,
   onItemCreated,
   onUpgradeClick,
   onToast,
 }: ResellerToolsStudioProps) {
-  const [subTab, setSubTab] = useState<ToolSubTab>("photo");
+  const initialBg =
+    STUDIO_BACKGROUNDS.find((b) => b.id === studioPresets?.studioBgId) ??
+    STUDIO_BACKGROUNDS[0];
+
+  const [subTab, setSubTab] = useState<ToolSubTab>(
+    studioPresets?.subTab ?? "photo",
+  );
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [photoSrc, setPhotoSrc] = useState<string | null>(null);
   const [photoFileName, setPhotoFileName] = useState<string>("");
-  const [photoFormat, setPhotoFormat] = useState<keyof typeof PHOTO_FORMATS>("vinted");
-  const [studioBg, setStudioBg] = useState(STUDIO_BACKGROUNDS[0]);
-  const [brightness, setBrightness] = useState(106);
-  const [contrast, setContrast] = useState(108);
-  const [saturation, setSaturation] = useState(105);
-  const [paddingPct, setPaddingPct] = useState(7);
-  const [badgeText, setBadgeText] = useState("");
-  const [removeBg, setRemoveBg] = useState(false);
-  const [bgTolerance, setBgTolerance] = useState(38);
+  const [photoFormat, setPhotoFormat] = useState<keyof typeof PHOTO_FORMATS>(
+    (studioPresets?.photoFormat as keyof typeof PHOTO_FORMATS) ?? "vinted",
+  );
+  const [studioBg, setStudioBg] = useState(initialBg);
+  const [brightness, setBrightness] = useState(studioPresets?.brightness ?? 106);
+  const [contrast, setContrast] = useState(studioPresets?.contrast ?? 108);
+  const [saturation, setSaturation] = useState(studioPresets?.saturation ?? 105);
+  const [paddingPct, setPaddingPct] = useState(studioPresets?.paddingPct ?? 7);
+  const [badgeText, setBadgeText] = useState(studioPresets?.badgeText ?? "");
+  const [removeBg, setRemoveBg] = useState(studioPresets?.removeBg ?? false);
+  const [bgTolerance, setBgTolerance] = useState(studioPresets?.bgTolerance ?? 38);
   const [showOriginal, setShowOriginal] = useState(false);
   const [visionLoading, setVisionLoading] = useState(false);
 
   const [genTitle, setGenTitle] = useState("");
-  const [genBrand, setGenBrand] = useState("");
-  const [genCategory, setGenCategory] = useState("");
-  const [genSize, setGenSize] = useState("");
-  const [genCondition, setGenCondition] = useState("");
+  const [genBrand, setGenBrand] = useState(studioPresets?.genBrand ?? "");
+  const [genCategory, setGenCategory] = useState(studioPresets?.genCategory ?? "");
+  const [genSize, setGenSize] = useState(studioPresets?.genSize ?? "");
+  const [genCondition, setGenCondition] = useState(
+    studioPresets?.genCondition ?? "",
+  );
   const [genDefects, setGenDefects] = useState("");
   const [genBuyPrice, setGenBuyPrice] = useState("");
   const [genTargetPrice, setGenTargetPrice] = useState("");
@@ -242,6 +257,42 @@ export function ResellerToolsStudio({
     verdict: string;
     replies: Array<{ tone: string; text: string }>;
   } | null>(null);
+
+  useEffect(() => {
+    if (!onStudioPresetsChange) return;
+    onStudioPresetsChange({
+      subTab,
+      photoFormat,
+      studioBgId: studioBg.id,
+      brightness,
+      contrast,
+      saturation,
+      paddingPct,
+      badgeText,
+      removeBg,
+      bgTolerance,
+      genBrand,
+      genCategory,
+      genSize,
+      genCondition,
+    });
+  }, [
+    onStudioPresetsChange,
+    subTab,
+    photoFormat,
+    studioBg.id,
+    brightness,
+    contrast,
+    saturation,
+    paddingPct,
+    badgeText,
+    removeBg,
+    bgTolerance,
+    genBrand,
+    genCategory,
+    genSize,
+    genCondition,
+  ]);
 
   function copyText(key: string, text: string) {
     navigator.clipboard.writeText(text);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -57,6 +57,7 @@ import {
   type PlanId,
 } from "@/lib/plans";
 import type { AuthUser } from "@/lib/auth";
+import type { PersoPreferences, StudioPresets } from "@/lib/user-preferences";
 import {
   DocumentPrintModal,
   type SaleRecord,
@@ -236,11 +237,16 @@ export function BackOffice({
     initialWorkspace ?? null,
   );
   const [loading, setLoading] = useState(!initialWorkspace);
-  const [tab, setTab] = useState<TabId>(
-    initialTab && VALID_TABS.includes(initialTab as TabId)
-      ? (initialTab as TabId)
-      : "overview",
-  );
+  const [tab, setTab] = useState<TabId>(() => {
+    if (initialTab && VALID_TABS.includes(initialTab as TabId)) {
+      return initialTab as TabId;
+    }
+    const saved = initialWorkspace?.user.preferences?.ui?.lastTab;
+    if (saved && VALID_TABS.includes(saved as TabId)) {
+      return saved as TabId;
+    }
+    return "overview";
+  });
   const [toast, setToast] = useState<string | null>(
     initialCheckout === "success"
       ? "Abonnement activé avec succès ! Merci pour ta confiance."
@@ -316,6 +322,32 @@ export function BackOffice({
     setToast(msg);
     setTimeout(() => setToast(null), 4000);
   }, []);
+
+  const prefsSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const savePreferences = useCallback((patch: PersoPreferences) => {
+    if (prefsSaveTimer.current) clearTimeout(prefsSaveTimer.current);
+    prefsSaveTimer.current = setTimeout(() => {
+      void fetch("/api/auth/me", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ preferences: patch }),
+      });
+    }, 600);
+  }, []);
+
+  const saveStudioPresets = useCallback(
+    (studio: StudioPresets) => savePreferences({ studio }),
+    [savePreferences],
+  );
+
+  const selectTab = useCallback(
+    (next: TabId) => {
+      setTab(next);
+      savePreferences({ ui: { lastTab: next } });
+    },
+    [savePreferences],
+  );
 
   const fetchWorkspace = useCallback(async () => {
     try {
@@ -599,7 +631,7 @@ export function BackOffice({
       return;
     }
     await fetchWorkspace();
-    showToast("Paramètres de facturation enregistrés.");
+    showToast("Paramètres enregistrés et sauvegardés.");
   }
 
   function handleSelectPlan(_plan: PlanId) {
@@ -803,7 +835,7 @@ export function BackOffice({
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setTab(item.id)}
+                onClick={() => selectTab(item.id)}
                 className={`vf-click-press flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
                   tab === item.id
                     ? "bg-violet-500/15 text-violet-300 border border-violet-500/40 font-bold shadow-[0_0_18px_rgba(139,92,246,0.16)]"
@@ -898,7 +930,7 @@ export function BackOffice({
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setTab(item.id)}
+                onClick={() => selectTab(item.id)}
                 className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium ${
                   tab === item.id
                     ? "bg-violet-600 text-white font-bold"
@@ -979,7 +1011,7 @@ export function BackOffice({
                 </div>
                 <Button
                   size="sm"
-                  onClick={() => setTab("tools")}
+                  onClick={() => selectTab("tools")}
                   className="vf-shimmer-btn bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 font-bold text-xs"
                 >
                   Ouvrir la Boîte à outils
@@ -1005,7 +1037,7 @@ export function BackOffice({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setTab("finance")}
+                      onClick={() => selectTab("finance")}
                       className="border-white/15 bg-white/5 text-zinc-200 hover:bg-white/10 text-xs h-8"
                     >
                       <Wallet className="h-3.5 w-3.5 mr-1.5 text-emerald-400" />
@@ -1106,7 +1138,7 @@ export function BackOffice({
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => setTab("sales")}
+                      onClick={() => selectTab("sales")}
                       className="text-xs text-emerald-400 hover:text-emerald-300"
                     >
                       Voir toutes les ventes <ArrowRight className="ml-1 h-3.5 w-3.5" />
@@ -1186,7 +1218,7 @@ export function BackOffice({
                         size="sm"
                         onClick={() => {
                           setDressingFilter("dormant");
-                          setTab("dressing");
+                          selectTab("dressing");
                         }}
                         className="w-full bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold text-xs h-8"
                       >
@@ -1466,6 +1498,8 @@ export function BackOffice({
               planId="pro"
               aiCreditsUsed={user.ai_credits_used}
               aiCreditsLimit={-1}
+              studioPresets={user.preferences?.studio}
+              onStudioPresetsChange={saveStudioPresets}
               onItemCreated={fetchWorkspace}
               onUpgradeClick={() =>
                 showToast("Pro Scale actif — tous les outils sont débloqués.")

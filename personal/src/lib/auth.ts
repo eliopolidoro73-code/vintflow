@@ -5,6 +5,7 @@ import {
   stablePersoUserId,
 } from "@/lib/auto-session";
 import { getPrimaryOwnerEmail } from "@/lib/perso-access";
+import { parsePreferences, type PersoPreferences } from "@/lib/user-preferences";
 import { sql } from "./db";
 import type { BillingCycle, PlanId } from "./plans";
 
@@ -170,6 +171,7 @@ export interface AuthUser {
   crosslist_used: number;
   referral_code: string;
   is_demo: boolean;
+  preferences: PersoPreferences;
 }
 
 function buildSyntheticPersoUser(userId: string, email: string): AuthUser {
@@ -192,6 +194,7 @@ function buildSyntheticPersoUser(userId: string, email: string): AuthUser {
     crosslist_used: 0,
     referral_code: `VF-${userId.slice(0, 6).toUpperCase()}`,
     is_demo: false,
+    preferences: {},
   };
 }
 
@@ -219,10 +222,12 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     crosslist_used: number;
     referral_code: string | null;
     is_demo: boolean;
+    preferences: unknown;
   }>(
     `select id, email, name, plan, billing_cycle, subscription_status, trial_ends_at,
             company_name, siret, fiscal_regime, vat_threshold,
-            auto_crosslist, auto_delist, ai_credits_used, crosslist_used, referral_code, is_demo
+            auto_crosslist, auto_delist, ai_credits_used, crosslist_used, referral_code, is_demo,
+            coalesce(preferences, '{}'::jsonb) as preferences
      from users where id = $1`,
     [userId],
   );
@@ -236,7 +241,8 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
         const retry = await sql<typeof rows[0]>(
           `select id, email, name, plan, billing_cycle, subscription_status, trial_ends_at,
                   company_name, siret, fiscal_regime, vat_threshold,
-                  auto_crosslist, auto_delist, ai_credits_used, crosslist_used, referral_code, is_demo
+                  auto_crosslist, auto_delist, ai_credits_used, crosslist_used, referral_code, is_demo,
+                  coalesce(preferences, '{}'::jsonb) as preferences
            from users where id = $1`,
           [userId],
         );
@@ -273,6 +279,7 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     crosslist_used: Number(row.crosslist_used ?? 0),
     referral_code: row.referral_code ?? "VF-PERSO",
     is_demo: Boolean(row.is_demo),
+    preferences: parsePreferences(row.preferences),
   };
 }
 
