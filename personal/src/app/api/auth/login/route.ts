@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Connexion non configurée : ajoute PERSO_ALLOWED_EMAILS et PERSO_OWNER_PASSWORD dans les secrets.",
+          "Connexion non configurée : ajoute PERSO_ALLOWED_EMAILS et PERSO_REGISTRATION_INVITE (ou PERSO_OWNER_PASSWORD) dans les secrets.",
       },
       { status: 503 },
     );

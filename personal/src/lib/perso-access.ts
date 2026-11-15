@@ -18,9 +18,14 @@ export function isPersoOwnerEmail(email: string): boolean {
   return allowed.includes(email.trim().toLowerCase());
 }
 
+/** Mot de passe propriétaire : PERSO_OWNER_PASSWORD, sinon PERSO_REGISTRATION_INVITE. */
+export function getPersoOwnerPasswordFromEnv(): string | null {
+  const primary = process.env.PERSO_OWNER_PASSWORD?.trim();
+  if (primary) return primary;
+  const invite = process.env.PERSO_REGISTRATION_INVITE?.trim();
+  return invite || null;
+}
+
 export function persoLoginConfigured(): boolean {
-  return (
-    getPersoAllowedEmails().length > 0 &&
-    Boolean(process.env.PERSO_OWNER_PASSWORD?.trim())
-  );
+  return getPersoAllowedEmails().length > 0 && Boolean(getPersoOwnerPasswordFromEnv());
 }

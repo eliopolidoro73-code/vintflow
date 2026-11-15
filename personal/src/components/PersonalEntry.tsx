@@ -52,7 +52,7 @@ export function PersonalEntry() {
           <p className="text-xs text-zinc-400 leading-relaxed">
             Pas d&apos;inscription publique. Utilise l&apos;e-mail des secrets{" "}
             <strong className="text-zinc-300">PERSO_ALLOWED_EMAILS</strong> et le mot de passe{" "}
-            <strong className="text-zinc-300">PERSO_OWNER_PASSWORD</strong>.
+            <strong className="text-zinc-300">PERSO_REGISTRATION_INVITE</strong> (ton code secret déjà enregistré).
           </p>
         </div>
 
