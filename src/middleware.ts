@@ -37,5 +37,8 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg).*)"],
+  matcher: [
+    "/google69a22bc60fd55e06.html",
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|google69a22bc60fd55e06.html).*)",
+  ],
 };
