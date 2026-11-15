@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { BackOffice } from "@/components/BackOffice";
 import { ensurePersoServerSession } from "@/lib/perso-session";
 import { loadWorkspaceForUser } from "@/lib/workspace-data";
@@ -14,6 +15,11 @@ export default async function PersonalAppPage({
   const initialWorkspace = user ? await loadWorkspaceForUser(user) : undefined;
 
   return (
-    <BackOffice initialTab={params.tab} initialWorkspace={initialWorkspace} />
+    <BackOffice
+      initialTab={params.tab}
+      initialWorkspace={
+        initialWorkspace as ComponentProps<typeof BackOffice>["initialWorkspace"]
+      }
+    />
   );
 }
