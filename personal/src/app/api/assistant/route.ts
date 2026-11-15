@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
-import { callCloudAi } from "@/lib/ai";
+import { callCloudAi, isPersoCloudAiEnabled } from "@/lib/ai";
+import { INVOICE_FROM_TEXT_SYSTEM } from "@/lib/invoice-ai-prompt";
+import {
+  createSaleFromInvoiceDraft,
+  draftInvoiceFromPrompt,
+} from "@/lib/invoice-sales";
 import { sql } from "@/lib/db";
 import { daysSince, formatEuro } from "@/lib/format";
 import { getEffectivePlan, isPersoUnlimited } from "@/lib/perso-plan";
@@ -155,6 +160,62 @@ export async function POST(request: Request) {
   const question = (body.question ?? "").trim().slice(0, 400);
   if (!question) {
     return NextResponse.json({ error: "Question requise" }, { status: 400 });
+  }
+
+  const invoiceIntent =
+    /facture|invoice|fac-/i.test(question) ||
+    (/€|euros/i.test(question) &&
+      /vendu|vendre|sac|louis|vuitton|nike|jordan|carhartt/i.test(question));
+
+  if (invoiceIntent) {
+    const allowCloudAi =
+      (!user.is_demo || persoUnlimited) && isPersoCloudAiEnabled();
+  const { draft } = await draftInvoiceFromPrompt(
+      question,
+      allowCloudAi,
+      async (userPrompt) => {
+        const aiOut = await callCloudAi({
+          systemPrompt: INVOICE_FROM_TEXT_SYSTEM,
+          userPrompt,
+          jsonMode: true,
+          maxTokens: 900,
+          power: true,
+        });
+        if (!aiOut?.text) return null;
+        try {
+          const parsed = JSON.parse(aiOut.text) as Record<string, unknown>;
+          return {
+            item_title: String(parsed.item_title ?? "Article"),
+            brand: String(parsed.brand ?? ""),
+            sku: String(parsed.sku ?? "VF-01"),
+            buyer_name: String(parsed.buyer_name ?? "Client"),
+            buyer_city: String(parsed.buyer_city ?? "Paris"),
+            gross_amount: Math.max(1, Number(parsed.gross_amount ?? 30)),
+            purchase_cost: Math.max(0, Number(parsed.purchase_cost ?? 0)),
+            platform: String(parsed.platform ?? "vinted"),
+            account_handle: String(
+              parsed.account_handle ?? "@dressing_vintflow",
+            ),
+            carrier: String(parsed.carrier ?? "Mondial Relay"),
+            platform_fees: Math.max(0, Number(parsed.platform_fees ?? 0)),
+            notes: parsed.notes ? String(parsed.notes) : undefined,
+          };
+        } catch {
+          return null;
+        }
+      },
+    );
+    const sale = await createSaleFromInvoiceDraft(user.id, draft);
+    return NextResponse.json({
+      answer: `Facture **${sale.invoice_number}** créée pour « ${draft.item_title} » (${formatEuro(draft.gross_amount)} TTC) — acheteur ${draft.buyer_name}, ${draft.buyer_city}. Utilise le bouton ci-dessous pour télécharger le PDF, ou l'onglet **Factures PDF · IA**.`,
+      proposedAction: {
+        id: "download_invoice_pdf",
+        label: `Télécharger ${sale.invoice_number}.pdf`,
+        before: question,
+        after: `${draft.buyer_name} · ${formatEuro(draft.gross_amount)}`,
+        saleId: sale.id,
+      },
+    });
   }
 
   const [sales, items, messages] = await Promise.all([

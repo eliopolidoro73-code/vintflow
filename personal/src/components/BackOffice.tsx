@@ -65,6 +65,7 @@ import {
 } from "@/components/DocumentPrintModal";
 import { NewListingDialog } from "@/components/NewListingDialog";
 import { ResellerToolsStudio } from "@/components/ResellerToolsStudio";
+import { InvoiceAiStudio } from "@/components/InvoiceAiStudio";
 import { VintflowLogo } from "@/components/VintflowLogo";
 
 interface ConnectedAccount {
@@ -171,6 +172,7 @@ type TabId =
   | "overview"
   | "dressing"
   | "tools"
+  | "invoices"
   | "sales"
   | "finance"
   | "messages"
@@ -181,10 +183,11 @@ interface ChatTurn {
   role: "user" | "assistant";
   text: string;
   proposedAction?: {
-    id: "discount_dormant" | "crosslist_all_lbc";
+    id: "discount_dormant" | "crosslist_all_lbc" | "download_invoice_pdf";
     label: string;
     before: string;
     after: string;
+    saleId?: string;
   } | null;
 }
 
@@ -215,6 +218,7 @@ const VALID_TABS: TabId[] = [
   "overview",
   "dressing",
   "tools",
+  "invoices",
   "sales",
   "finance",
   "messages",
@@ -573,8 +577,14 @@ export function BackOffice({
   }
 
   async function handleExecuteAiAction(
-    actionId: "discount_dormant" | "crosslist_all_lbc",
+    actionId: "discount_dormant" | "crosslist_all_lbc" | "download_invoice_pdf",
+    saleId?: string,
   ) {
+    if (actionId === "download_invoice_pdf" && saleId) {
+      window.location.href = `/api/sales/${saleId}/invoice`;
+      showToast("Téléchargement du PDF…");
+      return;
+    }
     const res = await fetch("/api/assistant", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -779,6 +789,11 @@ export function BackOffice({
       label: "Boîte à outils IA",
       icon: <Wand2 className="h-4 w-4" />,
       locked: activePlan.aiCreditsMonthlyLimit === 0,
+    },
+    {
+      id: "invoices",
+      label: "Factures PDF · IA",
+      icon: <FileText className="h-4 w-4" />,
     },
     {
       id: "sales",
@@ -1492,6 +1507,18 @@ export function BackOffice({
             />
           )}
 
+          {tab === "invoices" && (
+            <InvoiceAiStudio
+              user={user}
+              cloudAiActive={integrations.openaiConfigured}
+              onRefresh={fetchWorkspace}
+              onToast={showToast}
+              onPreview={(sale) =>
+                setPrintModal({ open: true, mode: "invoice", sale })
+              }
+            />
+          )}
+
           {/* TAB 3: SALES, LABELS & INVOICES */}
           {tab === "sales" && (
             <div className="space-y-4">
@@ -2076,10 +2103,10 @@ export function BackOffice({
 
                 <div className="flex flex-wrap gap-2">
                   {[
+                    "Fais une facture sac Louis Vuitton vendu 420€ à Marie Lyon",
                     "Quel est mon ROI et mon seuil TVA ?",
                     "J'ai combien en attente de finalisation ?",
                     "Quels articles dorment depuis +14 jours ?",
-                    "Que reste-t-il à crosslister sur Leboncoin ?",
                   ].map((q) => (
                     <button
                       key={q}
@@ -2124,7 +2151,10 @@ export function BackOffice({
                           <Button
                             size="sm"
                             onClick={() =>
-                              handleExecuteAiAction(turn.proposedAction!.id)
+                              handleExecuteAiAction(
+                                turn.proposedAction!.id,
+                                turn.proposedAction!.saleId,
+                              )
                             }
                             className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs h-8"
                           >
@@ -2560,10 +2590,10 @@ export function BackOffice({
           {(
             [
               { id: "overview", label: "Accueil" },
+              { id: "invoices", label: "Factures" },
+              { id: "tools", label: "IA" },
               { id: "dressing", label: "Stock" },
-              { id: "tools", label: "Outils IA" },
               { id: "sales", label: "Ventes" },
-              { id: "accounts", label: "Réglages" },
             ] as const satisfies ReadonlyArray<{ id: TabId; label: string }>
           ).map((item) => {
             const full = navItems.find((n) => n.id === item.id);
