@@ -144,9 +144,12 @@ export function drawBrandMark(
       doc.circle(cx + Math.cos(a) * 3.2, cy + Math.sin(a) * 3.2, r, "F");
     }
     doc.setFont("times", "bold");
-    doc.setFontSize(11);
+    doc.setFontSize(13);
     doc.setTextColor(style.accent[0], style.accent[1], style.accent[2]);
-    doc.text("LOUIS VUITTON", x + 18, y + 8);
+    doc.text("L O U I S  V U I T T O N", x + 18, y + 8);
+    doc.setFont("times", "normal");
+    doc.setFontSize(6.5);
+    doc.text("PARIS", x + 18, y + 12);
   } else if (t === "chanel") {
     doc.setLineWidth(0.45);
     doc.circle(x + 6, y + 6, 5, "S");

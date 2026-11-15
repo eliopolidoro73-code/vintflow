@@ -64,8 +64,18 @@ import {
   type SaleRecord,
 } from "@/components/DocumentPrintModal";
 import { NewListingDialog } from "@/components/NewListingDialog";
-import { ResellerToolsStudio } from "@/components/ResellerToolsStudio";
-import { InvoiceAiStudio } from "@/components/InvoiceAiStudio";
+import dynamic from "next/dynamic";
+import { StudioPanelSkeleton } from "@/components/StudioPanelSkeleton";
+
+const ResellerToolsStudio = dynamic(
+  () =>
+    import("@/components/ResellerToolsStudio").then((m) => m.ResellerToolsStudio),
+  { loading: () => <StudioPanelSkeleton />, ssr: false },
+);
+const InvoiceAiStudio = dynamic(
+  () => import("@/components/InvoiceAiStudio").then((m) => m.InvoiceAiStudio),
+  { loading: () => <StudioPanelSkeleton />, ssr: false },
+);
 import { VintflowLogo } from "@/components/VintflowLogo";
 
 interface ConnectedAccount {

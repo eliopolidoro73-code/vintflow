@@ -175,6 +175,11 @@
   animation: vf-tab-switch 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+.vf-panel {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 520px;
+}
+
 .vf-shimmer-btn {
   position: relative;
   overflow: hidden;
