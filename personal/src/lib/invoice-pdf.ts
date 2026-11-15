@@ -8,12 +8,8 @@ import {
   drawLuxuryInvoiceHeader,
 } from "@/lib/invoice-brand-styles";
 import { isRetailPurchasePlatform } from "@/lib/invoice-kind";
-import {
-  drawBoutiqueTicketHeader,
-  drawLegalFooter,
-  drawRetailBarcode,
-  drawTotalsBlock,
-} from "@/lib/invoice-pdf-render";
+import { drawTotalsBlock, drawRetailBarcode } from "@/lib/invoice-pdf-render";
+import { renderLuxuryRetailPdf } from "@/lib/invoice-pdf-maisons";
 
 export interface InvoicePdfSale {
   invoice_number: string;
@@ -37,98 +33,18 @@ function isRetailSale(sale: InvoicePdfSale): boolean {
   return (
     isRetailPurchasePlatform(sale.platform) ||
     sale.invoice_number.startsWith("ACHAT-") ||
-    sale.sku.startsWith("LV-ACHAT")
+    /^[A-Z]+-ACHAT/i.test(sale.sku)
   );
 }
 
 function buildRetailBoutiquePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const margin = 16;
   const luxury = luxuryMetaFromTitle(sale.item_title, sale.sku);
   const template = detectInvoiceBrandTemplate(
     sale.item_title,
     sale.sku,
     luxury.brand ?? "Louis Vuitton",
   );
-  const style = brandStyleFor(template);
-  const accent = style.accent;
-  const label = style.retailLabel ?? "FACTURE D'ACHAT · BOUTIQUE";
-  const ref = sale.sku.replace(/^LV-ACHAT-/, "") || "M41113";
-
-  let y = drawBoutiqueTicketHeader(doc, style, {
-    margin,
-    invoiceNumber: sale.invoice_number,
-    dateLabel: `Date : ${formatDateFr(sale.sold_at)}`,
-    storeCity: sale.buyer_city || "Paris",
-    retailLabel: label,
-  });
-
-  doc.setFont("times", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(70, 70, 70);
-  doc.text(
-    "101 Avenue des Champs-Élysées · 75008 Paris · FR",
-    margin,
-    y,
-  );
-  y += 10;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
-  doc.setTextColor(120, 120, 120);
-  doc.text("CLIENT", margin, y);
-  doc.text("MODE DE RÈGLEMENT", 108, y);
-  doc.text("CAISSE", 165, y);
-  y += 4;
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  doc.text(sale.buyer_name, margin, y);
-  doc.text("Carte bancaire (chip)", 108, y);
-  doc.text("N° 03", 165, y);
-
-  y += 12;
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(accent[0], accent[1], accent[2]);
-  doc.setLineWidth(0.3);
-  doc.rect(margin, y - 2, 178, 44, "FD");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.text("DÉSIGNATION", margin + 3, y + 3);
-  doc.text("QTÉ", 132, y + 3);
-  doc.text("PRIX TTC", 192, y + 3, { align: "right" });
-  y += 8;
-  doc.setFont("times", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(accent[0], accent[1], accent[2]);
-  const titleLines = doc.splitTextToSize(sale.item_title, 118);
-  doc.text(titleLines, margin + 3, y);
-  y += titleLines.length * 5 + 1;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(55, 55, 55);
-  doc.text(`Réf. article : ${ref}`, margin + 3, y);
-  doc.text("Couleur : Monogram", margin + 3, y + 4);
-  doc.text("État : Neuf — emballage d'origine", margin + 3, y + 8);
-  doc.text("1", 135, y + 4);
-  doc.setFont("helvetica", "bold");
-  doc.text(formatEuro(sale.gross_amount), 192, y + 4, { align: "right" });
-
-  y += 22;
-  y = drawTotalsBlock(doc, sale.gross_amount, 118, 193, y, accent);
-
-  drawRetailBarcode(doc, sale.tracking_code, margin, y, 70);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.text(`Ticket : ${sale.tracking_code}`, 95, y + 6);
-
-  y += 22;
-  drawLegalFooter(doc, margin, y, [
-    style.retailFooter ?? "Conservez ce document pour toute demande SAV.",
-    "Document de traçabilité VintFlow — mise en page inspirée ticket boutique, identité typographique maison.",
-    `Archivé pour : ${user.company_name || user.name}${user.siret ? ` · SIRET ${user.siret}` : ""}`,
-  ]);
-
-  return doc;
+  return renderLuxuryRetailPdf(template, sale, user);
 }
 
 function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {

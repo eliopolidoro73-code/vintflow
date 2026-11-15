@@ -1,6 +1,53 @@
 import type { InvoiceAiDraft } from "@/lib/invoice-ai-prompt";
 import { isLouisVuitton } from "@/lib/invoice-luxury";
 
+const LUXE_RETAIL: Array<{
+  re: RegExp;
+  brand: string;
+  platform: string;
+  skuPrefix: string;
+  store: string;
+  defaultPrice: number;
+  title: (model: string) => string;
+}> = [
+  {
+    re: /chanel/i,
+    brand: "Chanel",
+    platform: "boutique_chanel",
+    skuPrefix: "CH-ACHAT",
+    store: "Chanel France",
+    defaultPrice: 5200,
+    title: (m) => `Sac Chanel ${m} · neuf boutique`,
+  },
+  {
+    re: /herm[eè]s/i,
+    brand: "Hermès",
+    platform: "boutique_hermes",
+    skuPrefix: "HER-ACHAT",
+    store: "Hermès Sellier",
+    defaultPrice: 6800,
+    title: () => "Article maroquinerie Hermès · neuf",
+  },
+  {
+    re: /\bdior\b/i,
+    brand: "Dior",
+    platform: "boutique_dior",
+    skuPrefix: "DIOR-ACHAT",
+    store: "Christian Dior",
+    defaultPrice: 3200,
+    title: () => "Sac Dior · neuf boutique",
+  },
+  {
+    re: /\bgucci\b/i,
+    brand: "Gucci",
+    platform: "boutique_gucci",
+    skuPrefix: "GUCCI-ACHAT",
+    store: "Gucci Italia",
+    defaultPrice: 2100,
+    title: () => "Sac Gucci · neuf",
+  },
+];
+
 const LV_RETAIL_REFS: Array<{ match: RegExp; model: string; ref: string; canvas: string; defaultPrice: number }> = [
   {
     match: /neverfull/i,
@@ -88,6 +135,26 @@ export function enrichRetailPurchaseDraft(
       `Achat en boutique Louis Vuitton — ${spec.model} (réf. ${spec.ref}), TTC, TVA incluse. Pièce neuve avec dustbag et reçu d'origine.`;
     d.luxury_brand = true;
   } else {
+    const other = LUXE_RETAIL.find((b) => b.re.test(`${prompt} ${d.brand} ${d.item_title}`));
+    if (other) {
+      const price = extractPrice(prompt, other.defaultPrice);
+      d.invoice_kind = "retail_purchase";
+      d.brand = other.brand;
+      d.platform = other.platform;
+      d.account_handle = `Boutique ${other.brand}`;
+      d.carrier = "Retrait boutique";
+      d.item_title = other.title(d.product_line ?? "classique");
+      d.sku = `${other.skuPrefix}-${String(Math.round(price))}`;
+      d.gross_amount = price;
+      d.purchase_cost = price;
+      d.platform_fees = 0;
+      d.store_name = other.store;
+      d.store_city = extractStoreCity(prompt);
+      d.buyer_name = d.buyer_name?.length > 2 ? d.buyer_name : extractCustomerName(prompt);
+      d.condition_label = "Neuf — emballage d'origine";
+      d.luxury_brand = true;
+      return d;
+    }
     d.invoice_kind = "retail_purchase";
     d.platform = d.platform.startsWith("boutique") ? d.platform : "boutique";
     d.carrier = "Retrait magasin";

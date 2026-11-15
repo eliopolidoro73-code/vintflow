@@ -107,6 +107,58 @@ const STUDIO_BACKGROUNDS = [
   { id: "dark", label: "Dark Luxe", color: "#111827" },
 ];
 
+/** Réglages testés pour limiter l’empreinte photo Vinted (anti-duplication). */
+const PHOTO_ANTI_BAN_PRESETS = [
+  {
+    id: "vinted_safe",
+    label: "Vinted sûr",
+    hint: "Fond clair, léger padding",
+    bgId: "cream" as const,
+    brightness: 108,
+    contrast: 106,
+    saturation: 102,
+    paddingPct: 9,
+    removeBg: true,
+    bgTolerance: 42,
+  },
+  {
+    id: "luxe_dark",
+    label: "Luxe sombre",
+    hint: "Sacs / montres premium",
+    bgId: "dark" as const,
+    brightness: 112,
+    contrast: 114,
+    saturation: 98,
+    paddingPct: 8,
+    removeBg: true,
+    bgTolerance: 36,
+  },
+  {
+    id: "repost",
+    label: "Re-post",
+    hint: "Rotation visuelle max",
+    bgId: "slate" as const,
+    brightness: 104,
+    contrast: 110,
+    saturation: 106,
+    paddingPct: 11,
+    removeBg: false,
+    bgTolerance: 34,
+  },
+  {
+    id: "lbc_wide",
+    label: "Leboncoin",
+    hint: "Format large + fond neutre",
+    bgId: "white" as const,
+    brightness: 110,
+    contrast: 108,
+    saturation: 100,
+    paddingPct: 6,
+    removeBg: true,
+    bgTolerance: 40,
+  },
+] as const;
+
 function detectColorName(r: number, g: number, b: number): string {
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
@@ -259,6 +311,7 @@ export function ResellerToolsStudio({
   const [visionLoading, setVisionLoading] = useState(false);
   const [photoSafetyLoading, setPhotoSafetyLoading] = useState(false);
   const [fullSafetyLoading, setFullSafetyLoading] = useState(false);
+  const [powerPipelineLoading, setPowerPipelineLoading] = useState(false);
   const [descSafetyLoading, setDescSafetyLoading] = useState(false);
   const [listingSafetyResult, setListingSafetyResult] = useState<{
     engine: string;
@@ -426,6 +479,36 @@ export function ResellerToolsStudio({
     setPaddingPct(7);
     setShowOriginal(false);
     onToast("Auto-éclairage Studio appliqué !");
+  }
+
+  function applyPhotoPreset(presetId: (typeof PHOTO_ANTI_BAN_PRESETS)[number]["id"]) {
+    const preset = PHOTO_ANTI_BAN_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+    const bg =
+      STUDIO_BACKGROUNDS.find((b) => b.id === preset.bgId) ??
+      STUDIO_BACKGROUNDS[0];
+    setStudioBg(bg);
+    setBrightness(preset.brightness);
+    setContrast(preset.contrast);
+    setSaturation(preset.saturation);
+    setPaddingPct(preset.paddingPct);
+    setRemoveBg(preset.removeBg);
+    setBgTolerance(preset.bgTolerance);
+    if (presetId === "lbc_wide") setPhotoFormat("leboncoin");
+    else if (presetId !== "repost") setPhotoFormat("vinted");
+    setShowOriginal(false);
+    onStudioPresetsChange?.({
+      ...(studioPresets ?? {}),
+      studioBgId: bg.id,
+      brightness: preset.brightness,
+      contrast: preset.contrast,
+      saturation: preset.saturation,
+      paddingPct: preset.paddingPct,
+      removeBg: preset.removeBg,
+      bgTolerance: preset.bgTolerance,
+      photoFormat: presetId === "lbc_wide" ? "leboncoin" : "vinted",
+    });
+    onToast(`Preset « ${preset.label} » — lance l’analyse IA ensuite.`);
   }
 
   useEffect(() => {
@@ -944,6 +1027,125 @@ export function ResellerToolsStudio({
     }
   }
 
+  async function handleMaxPowerPipeline() {
+    if (!photoSrc) {
+      onToast("Importe une photo pour lancer le pipeline max.");
+      return;
+    }
+    setPowerPipelineLoading(true);
+    try {
+      applyPhotoPreset("vinted_safe");
+      const imageDataUrl = await buildAiImageDataUrl({
+        canvas: canvasRef.current,
+        originalSrc: photoSrc,
+      });
+      const photoOut = (await postToolsGenerate({
+        mode: "photo_safety",
+        imageDataUrl,
+        power: true,
+      })) as typeof photoSafetyResult & {
+        recommendedBrightness: number;
+        recommendedContrast: number;
+        recommendedPaddingPct: number;
+        shouldRemoveBackground: boolean;
+      };
+      if (photoOut) {
+        setPhotoSafetyResult(photoOut);
+        setBrightness(photoOut.recommendedBrightness);
+        setContrast(photoOut.recommendedContrast);
+        setPaddingPct(photoOut.recommendedPaddingPct);
+        if (photoOut.shouldRemoveBackground) setRemoveBg(true);
+      }
+
+      let title = shadowTitle.trim() || genTitle.trim();
+      let desc = shadowText.trim() || genResult?.vinted?.trim() || "";
+      if (!title && genBrand.trim()) title = `${genBrand} ${genCategory || "article"}`.trim();
+      if (!desc && (genBrand || genTitle)) {
+        setGenLoading(true);
+        try {
+          const listRes = await fetch("/api/tools/generate", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({
+              mode: "listing",
+              title: title || genTitle || "Article",
+              brand: genBrand,
+              category: genCategory,
+              size: genSize,
+              condition: genCondition,
+              defects: genDefects,
+              purchasePrice: Number(genBuyPrice) || 0,
+              targetPrice: Number(genTargetPrice) || 30,
+              power: true,
+            }),
+          });
+          const listing = await listRes.json();
+          if (listRes.ok) {
+            setGenResult(listing);
+            title = String(listing.seoTitle ?? title);
+            desc = String(listing.vinted ?? desc);
+            setShadowTitle(title);
+            setShadowText(desc);
+          }
+        } finally {
+          setGenLoading(false);
+        }
+      }
+
+      const image2 = await buildAiImageDataUrl({
+        canvas: canvasRef.current,
+        originalSrc: photoSrc,
+      });
+      const out = (await postToolsGenerate({
+        mode: "listing_safety",
+        imageDataUrl: image2,
+        title: title || "Article mode",
+        originalText: desc || title,
+        category: shadowCategory || genCategory,
+        isRepost: shadowIsRepost,
+        power: true,
+      })) as typeof listingSafetyResult & {
+        recommendedBrightness: number;
+        recommendedContrast: number;
+        recommendedPaddingPct: number;
+        shouldRemoveBackground: boolean;
+        titleAlternatives?: string[];
+      };
+      setListingSafetyResult(out);
+      if (out.recommendedBrightness) setBrightness(out.recommendedBrightness);
+      if (out.recommendedContrast) setContrast(out.recommendedContrast);
+      if (out.recommendedPaddingPct) setPaddingPct(out.recommendedPaddingPct);
+      if (out.shouldRemoveBackground) setRemoveBg(true);
+      setShadowTitle(out.reorderedTitle);
+      setShadowText(out.refreshedDescription);
+      setShadowResult({
+        engine: out.engine,
+        reorderedTitle: out.reorderedTitle,
+        titleAlternatives: out.titleAlternatives,
+        refreshedDescription: out.refreshedDescription,
+        bestSlots: [],
+        checklist: [
+          ...(out.photoChecklist ?? []).map((t) => `[Photo] ${t}`),
+          ...(out.descriptionChecklist ?? []).map((t) => `[Texte] ${t}`),
+        ],
+        riskLevel: out.globalRisk,
+        descriptionRisk: out.descriptionRisk,
+        riskReasons: [out.summary],
+        safeToPostNow: out.globalRisk === "low",
+      });
+      setSubTab("antishadowban");
+      onItemCreated();
+      onToast(
+        `Pipeline max — ${aiEngineBadge(out.engine)} · risque global ${out.globalRisk}.`,
+      );
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : "Pipeline max interrompu.");
+    } finally {
+      setPowerPipelineLoading(false);
+    }
+  }
+
   async function handleLoadVisibility() {
     setVisibilityLoading(true);
     try {
@@ -1105,6 +1307,30 @@ export function ResellerToolsStudio({
         ))}
       </div>
 
+      <div className="rounded-2xl border border-amber-500/35 bg-gradient-to-r from-amber-500/10 via-violet-500/8 to-emerald-500/10 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-amber-200 uppercase tracking-wide">
+            Pipeline anti-ban max
+          </p>
+          <p className="text-[11px] text-zinc-400 mt-0.5">
+            Photo IA → annonce (si besoin) → contrôle photo + texte en une passe.
+          </p>
+        </div>
+        <Button
+          type="button"
+          disabled={powerPipelineLoading || !photoSrc}
+          onClick={handleMaxPowerPipeline}
+          className="h-11 shrink-0 bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold text-sm touch-manipulation w-full sm:w-auto"
+        >
+          {powerPipelineLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <ShieldAlert className="h-4 w-4 mr-2" />
+          )}
+          Lancer pipeline max
+        </Button>
+      </div>
+
       {/* TOOL 1: STUDIO PHOTO */}
       {subTab === "photo" && (
         <div key="photo" className="vf-tab-enter flex flex-col-reverse gap-5 lg:grid lg:grid-cols-12 lg:gap-6 rounded-2xl border border-white/10 bg-[#0e111a] p-4 sm:p-5">
@@ -1128,6 +1354,27 @@ export function ResellerToolsStudio({
                 <Wand2 className="h-3.5 w-3.5 mr-1" />
                 Auto
               </Button>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                Presets photo anti-ban
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {PHOTO_ANTI_BAN_PRESETS.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => applyPhotoPreset(p.id)}
+                    className="rounded-xl border border-white/10 bg-[#131722] px-3 py-2 text-left hover:border-emerald-500/40 transition touch-manipulation"
+                  >
+                    <span className="block text-[11px] font-bold text-white">
+                      {p.label}
+                    </span>
+                    <span className="block text-[10px] text-zinc-500">{p.hint}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-500/40 bg-emerald-500/[0.06] px-4 py-4 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/10 transition touch-manipulation">

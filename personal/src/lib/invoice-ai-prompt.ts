@@ -49,7 +49,10 @@ export type InvoiceAiDraft = {
 };
 
 export const INVOICE_EXAMPLE_PROMPTS = [
-  "Facture d'achat sac Louis Vuitton Neverfull MM neuf acheté en boutique Paris 1890€",
+  "Facture d'achat sac Louis Vuitton Neverfull MM neuf acheté boutique Champs-Élysées Paris 1890€",
+  "Facture d'achat Chanel Classic Flap medium noir neuf boutique Rue Cambon 9200€",
+  "Facture achat Hermès Birkin 30 gold Togo neuve boutique Faubourg Saint-Honoré 8800€",
+  "Sac Dior Saddle medium neuf acheté Avenue Montaigne 3200€",
   "Fais une facture de ce sac Louis Vuitton Neverfull MM vendu 420€ à Sophie Martin à Lyon, Vinted",
   "Facture Nike Air Jordan 1 taille 42 vendue 95€ à Lucas Paris Leboncoin",
 ];

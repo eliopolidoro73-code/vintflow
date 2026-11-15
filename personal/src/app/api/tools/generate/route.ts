@@ -107,7 +107,7 @@ Disponible tant que l'annonce est en ligne.`;
       systemPrompt: LISTING_JSON_SYSTEM,
       userPrompt: `Article: ${title}, Marque: ${brand}, Catégorie: ${category}, Taille: ${size}, État: ${condition}, Défauts: ${defects || "Aucun"}, Prix achat: ${purchasePrice} €, Prix vente: ${targetPrice} €.`,
       jsonMode: true,
-      maxTokens: 2400,
+      maxTokens: 3600,
       power: true,
     });
     if (aiOut) {
@@ -422,7 +422,7 @@ export async function POST(request: Request) {
           "Évalue l'empreinte de cette photo Vinted et donne les réglages studio exacts.",
         imageDataUrl,
         jsonMode: true,
-        maxTokens: 800,
+        maxTokens: 1200,
         power: true,
       });
       if (aiOut) {
@@ -494,7 +494,7 @@ Republication: ${body.isRepost ? "oui" : "non"}
 Catégorie: ${body.category ?? "—"}
 Analyse locale: risque ${local.descriptionRisk}, score dup ${local.duplicateScore}`,
         jsonMode: true,
-        maxTokens: 2200,
+        maxTokens: 3200,
         power: true,
       });
       if (aiOut) {
@@ -594,7 +594,7 @@ ${description || "(vide)"}
 Republication: ${body.isRepost ? "oui" : "non"}`,
         imageDataUrl,
         jsonMode: true,
-        maxTokens: 2600,
+        maxTokens: 3800,
         power: true,
       });
       if (aiOut) {
@@ -781,7 +781,7 @@ Republication: ${body.isRepost ? "oui" : "non"}
 Catégorie: ${body.category ?? "non précisée"}
 Analyse locale risque: ${riskLevel} — ${riskReasons.join("; ")}`,
         jsonMode: true,
-        maxTokens: 2600,
+        maxTokens: 3800,
         power: true,
       });
       if (aiOut) {
