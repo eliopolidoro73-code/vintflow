@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-/** Racine → cockpit (session via Cursor sur app privée). */
+/** Racine → écran de connexion / cockpit. */
 export default function PersonalHomePage() {
   redirect("/app");
 }

@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { BackOffice } from "@/components/BackOffice";
 import { PersoAccessGate } from "@/components/PersoAccessGate";
+import { PersoLoginPage } from "@/components/PersoLoginPage";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,7 @@ export default async function PersonalAppPage({
     if (params.session === "failed") {
       return <PersoAccessGate reason={params.reason} />;
     }
-    redirect("/api/auth/enter");
+    return <PersoLoginPage />;
   }
 
   return <BackOffice initialTab={params.tab} />;

@@ -26,15 +26,15 @@ export function PersoAccessGate({ reason }: { reason?: string | null }) {
         <h1 className="text-xl font-extrabold text-white">Accès à ton cockpit</h1>
         <p className="text-sm text-zinc-400 leading-relaxed">{message}</p>
         <p className="text-xs text-zinc-500">
-          Pas de mot de passe : publie l&apos;app en <strong className="text-zinc-300">privé</strong>{" "}
-          et ouvre le lien depuis Cursor, connecté avec le bon compte.
+          Utilise l&apos;e-mail autorisé et le mot de passe défini dans{" "}
+          <strong className="text-zinc-300">PERSO_PASSWORD</strong> (secrets Cursor).
         </p>
         <div className="flex flex-col gap-2 pt-2">
           <Link
-            href="/api/auth/enter"
+            href="/app"
             className="inline-flex h-11 items-center justify-center rounded-xl bg-violet-600 font-bold text-white hover:bg-violet-500 transition-colors"
           >
-            Réessayer la connexion
+            Connexion e-mail / mot de passe
           </Link>
           <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-300">
             Retour

@@ -1,30 +1,29 @@
-# VintFlow Édition perso (`personal/`)
+# VintFlow Édition perso
 
-Cockpit **Pro Scale** pour **toi seul** : pas de Stripe, pas de landing SaaS publique.  
-Deux modes d’accès :
+Cockpit **Pro Scale** (toutes fonctionnalités) pour toi seul, sans Stripe.
 
-| Mode | Usage |
-|------|--------|
-| **App Cursor privée** (recommandé) | Publication **Private** : connexion via ton compte Cursor → `/api/auth/enter` |
-| **Local** | `npm install && npm run dev` — sans `PERSO_ALLOWED_EMAILS`, tout e-mail simulé autorisé |
+## Accès partout (sans Cursor)
 
-## Secrets (app publiée `personal/`)
+1. **Publie** ce dossier `personal/` en app Cursor **Public** (ou partage le lien).
+2. Secrets obligatoires :
+   - **`PERSO_ALLOWED_EMAILS`** : ton e-mail (ex. `toi@proton.me`)
+   - **`PERSO_PASSWORD`** : mot de passe de connexion (≥ 8 caractères)
+   - **`SESSION_SECRET`** : session sécurisée
+   - **`OPENAI_API_KEY`** + **`PERSO_ENABLE_CLOUD_AI=true`** (optionnel, Nova)
+3. Ouvre l’URL → `/app` → **e-mail + mot de passe**.
 
-| Secret | Rôle |
-|--------|------|
-| `PERSO_ALLOWED_EMAILS` | E-mails Cursor autorisés (ex. `toi@proton.me`) |
-| `SESSION_SECRET` | Cookies de session |
-| `OPENAI_API_KEY` | Assistant Nova (optionnel) |
-| `PERSO_ENABLE_CLOUD_AI` | `true` pour activer l’IA cloud |
+Sur téléphone, tablette ou PC : même lien, pas besoin de Cursor.
 
-## Publier
+## Connexion Cursor (optionnel)
 
-1. Dossier : **`personal/`** (pas la racine SaaS).
-2. Visibilité : **Private**.
-3. Après publish : ouvre l’URL de l’app → `/app` → bouton connexion → `/api/auth/enter`.
+`/api/auth/enter` reste disponible si l’app est **Private** et ouverte depuis Cursor.
 
-## Différences avec la racine `/`
+## Local
 
-- Pas de facturation Stripe, statut `personal_free` / quotas Pro Scale.
-- Pas de SEO Vercel (surtout usage privé).
-- Auth orientée **Cursor Identity** + liste d’e-mails autorisés.
+```bash
+cd personal
+npm install
+npm run dev
+```
+
+Sans secrets, seul le dev local autorise les e-mails (pas en production).
