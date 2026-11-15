@@ -20,7 +20,8 @@ function applySecurityHeaders(res: NextResponse): NextResponse {
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self'",
+      // Next/Turbopack hydration nécessite les scripts inline (sinon boutons inactifs).
+      "script-src 'self' 'unsafe-inline'",
       "object-src 'none'",
       "base-uri 'self'",
       "style-src 'self' 'unsafe-inline'",

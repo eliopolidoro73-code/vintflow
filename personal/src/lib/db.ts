@@ -41,7 +41,7 @@ export async function sql<T = Record<string, unknown>>(
   const db = await globalForDb.__vintflowPglite;
   const res = await db.query<T>(text, params);
   if (process.env.VERCEL && isWriteQuery(text)) {
-    await persistPersoDatabaseToBlob(db).catch(() => undefined);
+    void persistPersoDatabaseToBlob(db).catch(() => undefined);
   }
   return res.rows;
 }

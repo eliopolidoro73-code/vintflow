@@ -279,7 +279,11 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     crosslist_used: Number(row.crosslist_used ?? 0),
     referral_code: row.referral_code ?? "VF-PERSO",
     is_demo: Boolean(row.is_demo),
-    preferences: parsePreferences(row.preferences),
+    preferences: Object.fromEntries(
+      Object.entries(parsePreferences(row.preferences)).filter(
+        ([, v]) => v !== undefined,
+      ),
+    ) as import("@/lib/user-preferences").PersoPreferences,
   };
 }
 
