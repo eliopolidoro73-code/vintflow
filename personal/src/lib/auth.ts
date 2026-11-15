@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { sql } from "./db";
 import { isPersoOwnerEmail } from "./perso-access";
-import { normalizePlanId, type BillingCycle, type PlanId } from "./plans";
+import type { BillingCycle, PlanId } from "./plans";
 
 export const SESSION_COOKIE_NAME = "vintflow_perso_session";
 
@@ -203,9 +203,7 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     return null;
   }
 
-  const personalOwner =
-    row.subscription_status === "personal_free" &&
-    normalizePlanId(row.plan) === "pro";
+  const personalOwner = row.subscription_status === "personal_free";
 
   return {
     id: row.id,

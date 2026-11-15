@@ -1,3 +1,5 @@
+import { sql } from "./db";
+
 /** Emails autorisés sur l'édition perso (variable d'environnement obligatoire en production). */
 export function getPersoAllowedEmails(): string[] {
   const raw = process.env.PERSO_ALLOWED_EMAILS?.trim();
@@ -16,4 +18,15 @@ export function isPersoOwnerEmail(email: string): boolean {
 
 export function persoRegistrationConfigured(): boolean {
   return getPersoAllowedEmails().length > 0;
+}
+
+/** Une seule inscription par adresse autorisée. */
+export async function persoOwnerSlotsAvailable(): Promise<boolean> {
+  const allowed = getPersoAllowedEmails();
+  if (allowed.length === 0) return false;
+  const rows = await sql<{ cnt: number }>(
+    `select count(*)::int as cnt from users where lower(email) = any($1::text[])`,
+    [allowed],
+  );
+  return Number(rows[0]?.cnt ?? 0) < allowed.length;
 }

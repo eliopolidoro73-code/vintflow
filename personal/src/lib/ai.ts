@@ -13,6 +13,11 @@ function parseDataUrl(
   return { mimeType: match[1], base64: match[2] };
 }
 
+/** Désactivé par défaut : évite les appels API facturés tant que le propriétaire n'active pas. */
+export function isPersoCloudAiEnabled(): boolean {
+  return process.env.PERSO_ENABLE_CLOUD_AI === "true";
+}
+
 export async function callCloudAi(params: {
   systemPrompt: string;
   userPrompt: string;
@@ -20,6 +25,10 @@ export async function callCloudAi(params: {
   jsonMode?: boolean;
   maxTokens?: number;
 }): Promise<AiCallResult | null> {
+  if (!isPersoCloudAiEnabled()) {
+    return null;
+  }
+
   const geminiKey = process.env.GEMINI_API_KEY?.trim();
   if (geminiKey) {
     try {

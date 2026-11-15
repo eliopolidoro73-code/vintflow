@@ -9,6 +9,7 @@ import {
 import { sql } from "@/lib/db";
 import {
   isPersoOwnerEmail,
+  persoOwnerSlotsAvailable,
   persoRegistrationConfigured,
 } from "@/lib/perso-access";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -16,6 +17,13 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
   if (originError) return originError;
+
+  if (!(await persoOwnerSlotsAvailable())) {
+    return NextResponse.json(
+      { error: "L'inscription est fermée sur cette édition." },
+      { status: 403 },
+    );
+  }
 
   if (!persoRegistrationConfigured()) {
     return NextResponse.json(
@@ -97,10 +105,11 @@ export async function POST(request: Request) {
     [email],
   );
   if (existing.length > 0) {
+    await hashPassword(password);
     return NextResponse.json(
       {
         error:
-          "Impossible de finaliser l'inscription. Essaie de te connecter ou utilise une autre adresse.",
+          "Impossible de créer le compte avec ces informations. Vérifie les champs saisis.",
       },
       { status: 400 },
     );
@@ -115,7 +124,7 @@ export async function POST(request: Request) {
        id, email, name, password_hash, plan, billing_cycle, subscription_status,
        company_name, siret, referral_code, is_demo
      )
-     values ($1, $2, $3, $4, 'pro', 'monthly', 'personal_free', $5, '000 000 000 00000', $6, false)`,
+     values ($1, $2, $3, $4, 'essentiel', 'monthly', 'personal_free', $5, '000 000 000 00000', $6, false)`,
     [userId, email, name, passwordHash, `${name} · Perso`, referralCode],
   );
 

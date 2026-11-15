@@ -7,10 +7,10 @@ import {
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { isPersoOwnerEmail } from "@/lib/perso-access";
-import { checkRateLimit, getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
-const ACCOUNT_FAILURE_LIMIT = 10;
-const ACCOUNT_FAILURE_WINDOW_SECONDS = 900;
+const LOGIN_FAIL_LIMIT = 20;
+const LOGIN_FAIL_WINDOW_SECONDS = 900;
 
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
@@ -53,13 +53,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const accountBucket = { scope: "login_fail_account", key: email };
-  if (await isRateLimited({ ...accountBucket, limit: ACCOUNT_FAILURE_LIMIT })) {
-    return NextResponse.json(
-      { error: "Trop de tentatives sur ce compte. Réessaie dans 15 minutes." },
-      { status: 429 },
-    );
-  }
+  const failBucket = { scope: "login_fail", key: `${ip}:${email}` };
 
   const rows = await sql<{ id: string; password_hash: string }>(
     "select id, password_hash from users where email = $1",
@@ -68,9 +62,9 @@ export async function POST(request: Request) {
   const user = rows[0];
   if (!user || !verifyPassword(password, user.password_hash)) {
     await checkRateLimit({
-      ...accountBucket,
-      limit: ACCOUNT_FAILURE_LIMIT,
-      windowSeconds: ACCOUNT_FAILURE_WINDOW_SECONDS,
+      ...failBucket,
+      limit: LOGIN_FAIL_LIMIT,
+      windowSeconds: LOGIN_FAIL_WINDOW_SECONDS,
     });
     return NextResponse.json(
       { error: "Identifiants incorrects" },

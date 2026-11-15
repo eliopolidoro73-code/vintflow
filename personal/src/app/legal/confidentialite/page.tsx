@@ -37,12 +37,12 @@ export default function ConfidentialitePage() {
         <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0e111a] p-6">
           <h2 className="text-base font-bold text-white">2. Sécurité &amp; Traitement des photos</h2>
           <p>
-            Lorsque vous activez la Vision IA ou le Studio Photo avec une clé Google Gemini ou
-            OpenAI configurée sur le serveur, vos photos peuvent être envoyées de façon chiffrée
-            (HTTPS) à ces prestataires pour analyse — elles ne restent pas uniquement dans le
-            navigateur dans ce cas. Sans clé API configurée, le traitement reste simulé ou
-            local. Vos mots de passe sont chiffrés via scrypt et vos sessions protégées par
-            cookies HttpOnly signés.
+            Les fonctions Vision IA, Studio Photo et l&apos;assistant Nova peuvent transmettre
+            vos photos ou textes de questions à Google Gemini ou OpenAI lorsque vous activez
+            explicitement PERSO_ENABLE_CLOUD_AI et qu&apos;une clé API est configurée sur le
+            serveur. Les échanges passent en HTTPS ; sans cette activation, les réponses restent
+            simulées localement. Vos mots de passe sont chiffrés via scrypt et vos sessions
+            protégées par cookies HttpOnly signés.
           </p>
         </section>
 
