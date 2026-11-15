@@ -3,6 +3,7 @@ import {
   assertSameOrigin,
   buildSessionCookieHeader,
   createSessionToken,
+  hashPassword,
   verifyPassword,
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
@@ -47,7 +48,8 @@ export async function POST(request: Request) {
     [email],
   );
   const user = rows[0];
-  if (!user || !verifyPassword(password, user.password_hash)) {
+  const hashToCheck = user?.password_hash ?? hashPassword("__no_such_user__");
+  if (!user || !verifyPassword(password, hashToCheck)) {
     return NextResponse.json(
       { error: "Identifiants incorrects" },
       { status: 401 },

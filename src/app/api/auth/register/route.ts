@@ -9,6 +9,7 @@ import {
 import { sql } from "@/lib/db";
 import { normalizePlanId, type PlanId } from "@/lib/plans";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { REGISTER_GENERIC_ERROR } from "@/lib/register-response";
 import { seedUserWorkspace } from "@/lib/seed";
 
 export async function POST(request: Request) {
@@ -63,32 +64,29 @@ export async function POST(request: Request) {
   const billingCycle = body.billing_cycle === "annual" ? "annual" : "monthly";
   const withSampleData = body.withSampleData === true;
 
-  if (!email || !email.includes("@") || email.length > 160) {
-    return NextResponse.json({ error: "Email invalide" }, { status: 400 });
-  }
-  if (password.length < 6 || password.length > 128) {
-    return NextResponse.json(
-      { error: "Le mot de passe doit contenir au moins 6 caractères" },
-      { status: 400 },
-    );
-  }
-  if (!name || name.length > 80) {
-    return NextResponse.json({ error: "Nom requis" }, { status: 400 });
-  }
+  const passwordForHash =
+    password.length >= 6 && password.length <= 128
+      ? password
+      : "000000";
+  const passwordHash = hashPassword(passwordForHash);
 
-  const passwordHash = hashPassword(password);
-  const existing = await sql<{ id: string }>(
-    "select id from users where email = $1",
-    [email],
-  );
-  if (existing.length > 0) {
-    return NextResponse.json(
-      {
-        error:
-          "Impossible de créer le compte. Vérifie tes informations ou connecte-toi.",
-      },
-      { status: 400 },
-    );
+  const invalidForm =
+    !email ||
+    !email.includes("@") ||
+    email.length > 160 ||
+    password.length < 6 ||
+    password.length > 128 ||
+    !name ||
+    name.length > 80;
+
+  const existing = invalidForm
+    ? []
+    : await sql<{ id: string }>("select id from users where email = $1", [
+        email,
+      ]);
+
+  if (invalidForm || existing.length > 0) {
+    return NextResponse.json({ error: REGISTER_GENERIC_ERROR }, { status: 400 });
   }
 
   const userId = crypto.randomUUID();

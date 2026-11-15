@@ -3,6 +3,7 @@ import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { normalizePlanId } from "@/lib/plans";
 import {
+  checkoutSessionTooOld,
   fetchStripeSubscription,
   stripeSubscriptionGrantsAccess,
 } from "@/lib/stripe-subscription";
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
     status?: string;
     payment_status?: string;
     mode?: string;
+    created?: number;
     client_reference_id?: string;
     customer?: string;
     subscription?: string;
@@ -67,6 +69,16 @@ export async function POST(request: Request) {
       billing_cycle?: string;
     };
   };
+
+  if (checkoutSessionTooOld(session.created)) {
+    return NextResponse.json(
+      {
+        error:
+          "Cette session de paiement a expiré. Relance un nouveau paiement depuis l'onglet Abonnement.",
+      },
+      { status: 402 },
+    );
+  }
 
   if (
     session.status !== "complete" ||
@@ -103,7 +115,28 @@ export async function POST(request: Request) {
     );
   }
 
-  const verifiedPlan = normalizePlanId(session.metadata?.plan);
+  if (
+    session.customer &&
+    liveSub.customer &&
+    session.customer !== liveSub.customer
+  ) {
+    return NextResponse.json(
+      { error: "La session ne correspond pas à cet abonnement." },
+      { status: 403 },
+    );
+  }
+
+  const subUserId = liveSub.metadata?.user_id?.trim();
+  if (subUserId && subUserId !== auth.user.id) {
+    return NextResponse.json(
+      { error: "Cet abonnement est rattaché à un autre compte." },
+      { status: 403 },
+    );
+  }
+
+  const verifiedPlan = normalizePlanId(
+    liveSub.metadata?.plan ?? session.metadata?.plan,
+  );
   const verifiedCycle =
     session.metadata?.billing_cycle === "annual" ? "annual" : "monthly";
 
