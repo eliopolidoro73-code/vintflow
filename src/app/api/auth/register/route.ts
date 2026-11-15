@@ -105,13 +105,12 @@ export async function POST(request: Request) {
     }
   }
 
-  // The requested plan only runs for the 14-day trial window; past trial_ends_at,
-  // getAuthenticatedUser downgrades it unless Stripe verified a subscription.
+  // Sans paiement Stripe : cockpit verrouillé (onglet Abonnement uniquement).
   const initialPlan: PlanId = "essentiel";
 
   await sql(
-    `insert into users (id, email, name, password_hash, plan, billing_cycle, subscription_status, company_name, siret, referral_code, referred_by, is_demo)
-     values ($1, $2, $3, $4, $5, $6, 'trialing', $7, '000 000 000 00000', $8, $9, false)`,
+    `insert into users (id, email, name, password_hash, plan, billing_cycle, subscription_status, trial_ends_at, company_name, siret, referral_code, referred_by, is_demo)
+     values ($1, $2, $3, $4, $5, $6, 'trial_expired', now(), $7, '000 000 000 00000', $8, $9, false)`,
     [
       userId,
       email,

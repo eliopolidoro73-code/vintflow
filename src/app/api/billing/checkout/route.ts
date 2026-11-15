@@ -79,7 +79,6 @@ export async function POST(request: Request) {
   params.set("metadata[user_id]", auth.user.id);
   params.set("metadata[plan]", planId);
   params.set("metadata[billing_cycle]", billingCycle);
-  params.set("subscription_data[trial_period_days]", "14");
   params.set("subscription_data[metadata][user_id]", auth.user.id);
   params.set("subscription_data[metadata][plan]", planId);
   params.set("subscription_data[metadata][billing_cycle]", billingCycle);

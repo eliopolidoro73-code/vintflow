@@ -123,8 +123,8 @@ const REVIEWS = [
 
 const FAQS = [
   {
-    q: "Comment fonctionne l'essai gratuit de 14 jours ?",
-    a: "Comme sur Vinteer, tu profites de 14 jours d'essai gratuit sur le plan de ton choix, sans engagement. Tu peux changer de formule ou annuler à tout moment en 1 clic.",
+    q: "Comment fonctionne l'abonnement ?",
+    a: "Tu choisis Essentiel, Vendeur Plus ou Pro Scale, tu paies via Stripe Checkout, et le cockpit se débloque tout de suite. Les outils premium (IA, crosslisting, Nova) restent inaccessibles tant que le paiement n'est pas actif.",
   },
   {
     q: "Quelle différence entre Essentiel (9 €), Vendeur Plus (29 €) et Pro Scale (49 €) ?",
@@ -236,7 +236,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   onClick={() => openSignup("plus")}
                   className="vf-shimmer-btn bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 font-bold rounded-xl shadow-[0_0_20px_rgba(139,92,246,0.32)]"
                 >
-                  Active ton essai gratuit 14 jours
+                  Voir les forfaits et payer
                 </Button>
               </>
             )}
@@ -961,7 +961,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
         <section id="tarifs" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
             <Badge className="mb-3 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-              Essai gratuit 14 jours · 0 € aujourd&apos;hui
+              Paiement Stripe · cockpit débloqué après validation
             </Badge>
             <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
               Un plan pour chaque étape de ton business
@@ -1079,7 +1079,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                           : "bg-white/10 text-white hover:bg-white/15"
                     }`}
                   >
-                    Démarrer 14j gratuits ({p.name})
+                    S&apos;abonner ({p.name})
                   </Button>
                 </div>
               );
@@ -1093,7 +1093,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
             </span>
             <span className="flex items-center gap-1.5">
               <Check className="h-4 w-4 text-emerald-400" />
-              14 jours gratuits · 0 € débité aujourd&apos;hui
+              Facturation mensuelle ou annuelle via Stripe
             </span>
             <span className="flex items-center gap-1.5">
               <Zap className="h-4 w-4 text-emerald-400" />

@@ -29,10 +29,14 @@ export function getSubscriptionAccess(user: AuthUser): SubscriptionAccess {
   return "expired";
 }
 
-/** Full cockpit (hors facturation) : abonnement Stripe actif ou essai encore valide. */
+/**
+ * Cockpit complet : abonnement Stripe payé uniquement.
+ * Exception : bac à sable démo (6 h, plan Essentiel, quotas limités).
+ */
 export function canUseCockpit(user: AuthUser): boolean {
-  const access = getSubscriptionAccess(user);
-  return access === "active" || access === "trialing";
+  if (user.subscription_status === "active") return true;
+  if (user.is_demo && getSubscriptionAccess(user) === "trialing") return true;
+  return false;
 }
 
 /**
@@ -40,24 +44,21 @@ export function canUseCockpit(user: AuthUser): boolean {
  * Plus / Pro Scale exigent un abonnement payé (Stripe `active`).
  */
 export function canUsePlanTier(user: AuthUser, required: PlanId): boolean {
-  const access = getSubscriptionAccess(user);
-  if (access === "expired") return false;
+  if (!canUseCockpit(user)) return false;
 
   const order: PlanId[] = ["essentiel", "plus", "pro"];
   const userLevel = order.indexOf(user.plan);
   const needLevel = order.indexOf(required);
   if (userLevel < needLevel) return false;
 
-  if (required === "essentiel") {
-    return access === "active" || access === "trialing";
+  if (user.is_demo) {
+    return required === "essentiel";
   }
 
-  return access === "active";
+  return user.subscription_status === "active";
 }
 
 export function subscriptionBlockedMessage(user: AuthUser): string {
-  if (getSubscriptionAccess(user) !== "expired") return "";
-  return `Ton essai est terminé (échéance ${new Date(
-    user.trial_ends_at,
-  ).toLocaleDateString("fr-FR")}). Active l'abonnement ${PLANS[user.plan].name} pour rouvrir tes outils.`;
+  if (canUseCockpit(user)) return "";
+  return `Choisis un forfait et paie via Stripe pour débloquer Vintflow (à partir de ${PLANS.essentiel.monthlyPrice} €/mois).`;
 }

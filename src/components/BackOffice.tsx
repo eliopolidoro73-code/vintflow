@@ -329,8 +329,12 @@ export function BackOffice({
       }
       if (res.status === 402) {
         const meRes = await fetch("/api/auth/me", { cache: "no-store" });
-        const mePayload = (await meRes.json()) as { user?: AuthUser };
+        const mePayload = (await meRes.json()) as {
+          user?: AuthUser;
+          integrations?: { stripeConfigured?: boolean };
+        };
         if (mePayload.user) {
+          const stripeOk = Boolean(mePayload.integrations?.stripeConfigured);
           setData({
             user: mePayload.user,
             accounts: [],
@@ -356,7 +360,10 @@ export function BackOffice({
               dormantCount: 0,
               crosslistedCount: 0,
             },
-            integrations: { stripeConfigured: false, openaiConfigured: false },
+            integrations: {
+              stripeConfigured: stripeOk,
+              openaiConfigured: false,
+            },
           });
           setTab("billing");
         }
@@ -2433,18 +2440,25 @@ export function BackOffice({
                 <div className="flex flex-wrap items-center justify-between gap-6">
                   <div className="space-y-2 max-w-2xl">
                     <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/35 bg-violet-500/15 px-3.5 py-1 text-[11px] font-bold text-violet-200">
-                      <span className="vf-live-dot h-2 w-2 rounded-full bg-violet-400" />
-                      0,00 € débité aujourd&apos;hui · Essai complet 14 jours
+                      <CreditCard className="h-3.5 w-3.5" />
+                      Paiement sécurisé Stripe · accès après carte
                     </div>
                     <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                      Débloque toute la puissance de Vintflow sans aucun risque
+                      Choisis ton forfait et paie pour activer Vintflow
                     </h2>
                     <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-                      Plan actuel :{" "}
-                      <strong className="text-white">{activePlan.name}</strong> ({user.billing_cycle}) ·{" "}
-                      Essai actif jusqu&apos;au{" "}
-                      <strong className="text-violet-300">{formatDateFr(user.trial_ends_at)}</strong>.
-                      Rentabilisé dès 2 ventes supplémentaires sur Vinted &amp; Leboncoin.
+                      Statut :{" "}
+                      {subscriptionOpen ? (
+                        <>
+                          <strong className="text-emerald-300">Abonnement actif</strong> ·{" "}
+                          {activePlan.name} ({user.billing_cycle})
+                        </>
+                      ) : (
+                        <>
+                          <strong className="text-amber-300">Accès restreint</strong> — le
+                          cockpit se débloque après validation de ton paiement Stripe.
+                        </>
+                      )}
                     </p>
                   </div>
 
@@ -2484,24 +2498,30 @@ export function BackOffice({
                   </div>
                 </div>
 
-                {/* 3-Step Zero-Risk Trial Timeline */}
+                {!integrations.stripeConfigured && (
+                  <div className="mt-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
+                    Les paiements en ligne ne sont pas encore branchés sur ce déploiement. Ajoute
+                    la clé secrète <strong>STRIPE_SECRET_KEY</strong> dans les secrets Cursor de
+                    l&apos;app, puis republie — les boutons ouvriront alors Stripe Checkout.
+                  </div>
+                )}
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-white/10 pt-5 text-xs">
                   <div className="rounded-2xl border border-white/10 bg-[#07080d]/70 p-3.5">
-                    <p className="font-bold text-violet-300">1. Aujourd&apos;hui · 0,00 €</p>
+                    <p className="font-bold text-violet-300">1. Choisis un forfait</p>
                     <p className="mt-1 text-zinc-400">
-                      Accès immédiat au Studio Photo IA, Crosslisting et Factures PDF.
+                      Essentiel, Vendeur Plus ou Pro Scale selon ton volume.
                     </p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-[#07080d]/70 p-3.5">
-                    <p className="font-bold text-white">2. Jour 12 · Rappel avant fin</p>
+                    <p className="font-bold text-white">2. Paiement Stripe</p>
                     <p className="mt-1 text-zinc-400">
-                      Tu reçois un email de rappel 48 h avant la fin de tes 14 jours.
+                      Carte ou portefeuille · facturation claire, annulable depuis Stripe.
                     </p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-[#07080d]/70 p-3.5">
-                    <p className="font-bold text-emerald-400">3. Jour 14 · 100 % libre</p>
+                    <p className="font-bold text-emerald-400">3. Cockpit débloqué</p>
                     <p className="mt-1 text-zinc-400">
-                      Annulable en 1 clic à tout moment depuis ton espace client Stripe.
+                      Outils IA, crosslisting et messagerie selon le palier payé.
                     </p>
                   </div>
                 </div>
@@ -2714,12 +2734,12 @@ export function BackOffice({
                           )}
                           {isCurrent
                             ? `Gérer / Renouveler (${p.name})`
-                            : `Activer ${p.name} · 14j gratuits`}
+                            : `Payer et activer ${p.name}`}
                         </Button>
                         <p className="text-center text-[10px] text-zinc-500">
                           {integrations.stripeConfigured
                             ? "Redirection sécurisée vers Stripe Checkout"
-                            : "Paiement par carte sécurisé Stripe (activer STRIPE_SECRET_KEY)"}
+                            : "Branche STRIPE_SECRET_KEY pour activer le paiement"}
                         </p>
                       </div>
                     </div>

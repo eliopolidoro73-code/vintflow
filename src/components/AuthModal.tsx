@@ -117,7 +117,7 @@ export function AuthModal({
         );
       }
       onOpenChange(false);
-      router.push("/app");
+      router.push(mode === "register" ? "/app?tab=billing" : "/app");
       router.refresh();
     } catch {
       setError("Impossible de joindre le serveur");

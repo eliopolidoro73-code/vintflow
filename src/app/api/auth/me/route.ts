@@ -10,7 +10,12 @@ import { PLANS } from "@/lib/plans";
 export async function GET() {
   const user = await getAuthenticatedUser();
   return NextResponse.json(
-    { user },
+    {
+      user,
+      integrations: {
+        stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY?.trim()),
+      },
+    },
     { headers: { "cache-control": "private, no-store" } },
   );
 }
