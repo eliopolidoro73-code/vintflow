@@ -8,23 +8,30 @@ export function SeoJsonLd() {
     "@graph": [
       {
         "@type": "WebSite",
-        name: "Vintflow",
+        name: "VintFlow",
+        alternateName: ["Vintflow", "Vint Flow"],
         url: siteUrl,
         inLanguage: "fr-FR",
         description:
-          "Logiciel de gestion Vinted, Leboncoin, TikTok Shop et eBay pour revendeurs.",
+          "VintFlow — logiciel de gestion Vinted, Leboncoin, TikTok Shop et eBay pour revendeurs.",
+        potentialAction: {
+          "@type": "SearchAction",
+          target: `${siteUrl}/guide-revente-vinted?q={search_term_string}`,
+          "query-input": "required name=search_term_string",
+        },
       },
       {
         "@type": "Organization",
-        name: "Vintflow",
+        name: "VintFlow",
+        alternateName: "Vintflow",
         url: siteUrl,
         logo: `${siteUrl}/icon.svg`,
         description:
-          "Logiciel français de gestion et crosslisting pour revendeurs Vinted, Leboncoin, TikTok Shop et eBay.",
+          "VintFlow, logiciel français de gestion et crosslisting pour revendeurs.",
       },
       {
         "@type": "SoftwareApplication",
-        name: "Vintflow",
+        name: "VintFlow",
         applicationCategory: "BusinessApplication",
         operatingSystem: "Web",
         offers: {

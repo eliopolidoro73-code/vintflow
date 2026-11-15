@@ -1,8 +1,9 @@
-Site Vintflow (public, comptes, cockpit) :
+VintFlow — site (comptes, cockpit) :
 https://https-vintflow-io.apps.grok.bot
 
-Google / SEO gratuit (indexable) :
-https://turbo-sitar-4pw2aia.tmp.now
+VintFlow — Google / SEO (gratuit) :
+https://vintflow.vercel.app
 
-Ne pas utiliser (écran de connexion Grok) :
+Ne pas utiliser (login Grok) :
 https://vintflow-io.apps.grok.bot
+https://vintflow.apps.grok.bot

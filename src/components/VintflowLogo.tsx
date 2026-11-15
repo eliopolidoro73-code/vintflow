@@ -52,7 +52,7 @@ export function VintflowLogo({
 
       {showText && (
         <span className={`font-extrabold tracking-tight text-white ${textSize}`}>
-          Vint<span className="text-violet-400">flow</span>
+          Vint<span className="text-violet-400">Flow</span>
         </span>
       )}
     </span>

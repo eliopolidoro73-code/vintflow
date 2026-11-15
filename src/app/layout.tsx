@@ -20,14 +20,18 @@ const siteUrl = getPublicSiteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  applicationName: "VintFlow",
   title: {
     default:
-      "Vintflow — Logiciel de Gestion Vinted, Leboncoin, TikTok Shop & eBay",
-    template: "%s · Vintflow",
+      "VintFlow — Logiciel Vinted, Leboncoin, crosslisting & gestion revendeur",
+    template: "%s · VintFlow",
   },
   description:
-    "Centralise tout ton business de revente : ventes, marge commerciale, crosslisting Vinted ↔ Leboncoin, studio photo IA, stock SKU, bordereaux 10×15 et factures PDF.",
+    "VintFlow centralise la revente Vinted, Leboncoin, TikTok Shop et eBay : marge commerciale, crosslisting, stock SKU, factures PDF et assistant IA.",
   keywords: [
+    "VintFlow",
+    "vintflow",
+    "Vint Flow",
     "logiciel vinted",
     "crosslisting vinted leboncoin",
     "gestion stock revendeur",
@@ -40,14 +44,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "fr_FR",
     url: siteUrl,
-    siteName: "Vintflow",
-    title: "Vintflow — Back-office multi-plateformes pour revendeurs",
+    siteName: "VintFlow",
+    title: "VintFlow — Back-office multi-plateformes pour revendeurs",
     description:
       "Stock SKU, crosslisting, trésorerie et IA pour Vinted, Leboncoin, TikTok Shop et eBay.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vintflow — Gestion Vinted & Leboncoin",
+    title: "VintFlow — Gestion Vinted & Leboncoin",
     description:
       "Le cockpit des revendeurs pro : marge, crosslist, factures PDF et assistant Nova.",
   },
