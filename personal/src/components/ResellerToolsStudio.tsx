@@ -42,7 +42,26 @@ interface ResellerToolsStudioProps {
   onToast: (msg: string) => void;
 }
 
-type ToolSubTab = "photo" | "listing" | "antishadowban" | "negotiation";
+type ToolSubTab =
+  | "photo"
+  | "listing"
+  | "antishadowban"
+  | "negotiation"
+  | "visibility";
+
+type PublishSlot = {
+  day: string;
+  window: string;
+  score: string;
+  reason?: string;
+};
+
+function aiEngineBadge(engine?: string) {
+  if (!engine) return "Assistant";
+  if (engine.includes("gemini")) return "Gemini cloud";
+  if (engine.includes("openai")) return "OpenAI cloud";
+  return "Assistant local";
+}
 
 const PHOTO_FORMATS = {
   vinted: { label: "Vinted (1080×1080)", w: 1080, h: 1080 },
@@ -207,6 +226,17 @@ export function ResellerToolsStudio({
   const [bgTolerance, setBgTolerance] = useState(studioPresets?.bgTolerance ?? 38);
   const [showOriginal, setShowOriginal] = useState(false);
   const [visionLoading, setVisionLoading] = useState(false);
+  const [photoSafetyLoading, setPhotoSafetyLoading] = useState(false);
+  const [photoSafetyResult, setPhotoSafetyResult] = useState<{
+    engine: string;
+    fingerprintRisk: string;
+    recommendedBrightness: number;
+    recommendedContrast: number;
+    recommendedPaddingPct: number;
+    shouldRemoveBackground: boolean;
+    checklist: string[];
+    summary: string;
+  } | null>(null);
 
   const [genTitle, setGenTitle] = useState("");
   const [genBrand, setGenBrand] = useState(studioPresets?.genBrand ?? "");
@@ -220,10 +250,16 @@ export function ResellerToolsStudio({
   const [genTargetPrice, setGenTargetPrice] = useState("");
   const [genLoading, setGenLoading] = useState(false);
   const [genResult, setGenResult] = useState<{
+    engine?: string;
     seoTitle: string;
     vinted: string;
     leboncoin: string;
     tiktokScript: string;
+    publishAdvice?: string;
+    publishNow?: boolean;
+    publishSlots?: PublishSlot[];
+    avoidWords?: string[];
+    hashtags?: string[];
     pricingTiers: Array<{
       label: string;
       price: number;
@@ -235,10 +271,28 @@ export function ResellerToolsStudio({
   const [shadowText, setShadowText] = useState("");
   const [shadowLoading, setShadowLoading] = useState(false);
   const [shadowResult, setShadowResult] = useState<{
+    engine?: string;
     reorderedTitle: string;
     refreshedDescription: string;
-    bestSlots: Array<{ day: string; window: string; score: string }>;
+    bestSlots: PublishSlot[];
     checklist: string[];
+    riskLevel?: string;
+    riskReasons?: string[];
+    photoFingerprintTips?: string[];
+  } | null>(null);
+
+  const [visCategory, setVisCategory] = useState(
+    studioPresets?.genCategory || "Vêtements",
+  );
+  const [visibilityLoading, setVisibilityLoading] = useState(false);
+  const [visibilityResult, setVisibilityResult] = useState<{
+    engine: string;
+    publishNow: boolean;
+    headline: string;
+    bestSlots: PublishSlot[];
+    weeklyPlan: Record<string, string>;
+    categoryTip: string;
+    avoidTimes: string[];
   } | null>(null);
 
   const [lotTotalCost, setLotTotalCost] = useState("");
@@ -665,6 +719,73 @@ export function ResellerToolsStudio({
     }
   }
 
+  async function handlePhotoSafetyAi() {
+    if (!photoSrc) {
+      onToast("Importe une photo avant l'analyse anti-ban.");
+      return;
+    }
+    setPhotoSafetyLoading(true);
+    try {
+      const res = await fetch("/api/tools/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          mode: "photo_safety",
+          imageDataUrl: photoSrc,
+        }),
+      });
+      const out = (await res.json()) as {
+        error?: string;
+        engine: string;
+        fingerprintRisk: string;
+        recommendedBrightness: number;
+        recommendedContrast: number;
+        recommendedPaddingPct: number;
+        shouldRemoveBackground: boolean;
+        checklist: string[];
+        summary: string;
+      };
+      if (!res.ok) {
+        onToast(out.error ?? "Quota IA atteint");
+        return;
+      }
+      setPhotoSafetyResult(out);
+      setBrightness(out.recommendedBrightness);
+      setContrast(out.recommendedContrast);
+      setPaddingPct(out.recommendedPaddingPct);
+      if (out.shouldRemoveBackground) setRemoveBg(true);
+      onItemCreated();
+      onToast(
+        `${aiEngineBadge(out.engine)} — réglages appliqués (${out.fingerprintRisk}).`,
+      );
+    } finally {
+      setPhotoSafetyLoading(false);
+    }
+  }
+
+  async function handleLoadVisibility() {
+    setVisibilityLoading(true);
+    try {
+      const res = await fetch("/api/tools/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          mode: "visibility",
+          category: visCategory || genCategory || "Vêtements",
+        }),
+      });
+      const out = await res.json();
+      if (!res.ok) {
+        onToast(out.error ?? "Quota IA atteint");
+        return;
+      }
+      setVisibilityResult(out);
+      onItemCreated();
+    } finally {
+      setVisibilityLoading(false);
+    }
+  }
+
   async function handleNegotiation(e: React.FormEvent) {
     e.preventDefault();
     setNegLoading(true);
@@ -745,19 +866,25 @@ export function ResellerToolsStudio({
       </div>
 
       {/* Sub-navigation */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
         {[
           {
             id: "photo" as ToolSubTab,
             title: "Studio Photo & Détourage",
-            sub: "Format 1080px + Scan IA",
+            sub: "Anti-ban + Scan IA",
             icon: <Camera className="h-4 w-4 text-emerald-400" />,
           },
           {
             id: "listing" as ToolSubTab,
             title: "Générateur IA 3-en-1",
-            sub: "Vinted + LBC + TikTok",
+            sub: "Titres & desc anti-ban",
             icon: <Sparkles className="h-4 w-4 text-cyan-400" />,
+          },
+          {
+            id: "visibility" as ToolSubTab,
+            title: "Quand publier ?",
+            sub: "Créneaux Vinted IA",
+            icon: <Clock className="h-4 w-4 text-violet-400" />,
           },
           {
             id: "antishadowban" as ToolSubTab,
@@ -955,7 +1082,7 @@ export function ResellerToolsStudio({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <Button
                 type="button"
                 onClick={handleDownloadCanvas}
@@ -964,6 +1091,19 @@ export function ResellerToolsStudio({
               >
                 <Download className="h-4 w-4 mr-1.5" />
                 Télécharger (.png)
+              </Button>
+              <Button
+                type="button"
+                disabled={photoSafetyLoading || !photoSrc}
+                onClick={handlePhotoSafetyAi}
+                className="bg-amber-500/90 text-amber-950 hover:bg-amber-400 font-bold text-xs h-10"
+              >
+                {photoSafetyLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                ) : (
+                  <ShieldAlert className="h-4 w-4 mr-1.5" />
+                )}
+                Photo anti-ban IA
               </Button>
               <Button
                 type="button"
@@ -976,9 +1116,28 @@ export function ResellerToolsStudio({
                 ) : (
                   <ScanSearch className="h-4 w-4 mr-1.5" />
                 )}
-                Scanner IA → Annonce
+                Scanner → Annonce
               </Button>
             </div>
+
+            {photoSafetyResult && (
+              <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3 text-[11px] space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="bg-amber-500/20 text-amber-200 border-amber-500/30">
+                    Risque empreinte : {photoSafetyResult.fingerprintRisk}
+                  </Badge>
+                  <Badge variant="outline" className="border-white/15 text-zinc-300">
+                    {aiEngineBadge(photoSafetyResult.engine)}
+                  </Badge>
+                </div>
+                <p className="text-zinc-200">{photoSafetyResult.summary}</p>
+                <ul className="list-disc pl-4 text-zinc-400 space-y-0.5">
+                  {photoSafetyResult.checklist.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <div className="lg:col-span-7 flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#07080d] p-4 gap-3">
@@ -1122,6 +1281,46 @@ export function ResellerToolsStudio({
               </div>
             ) : (
               <>
+                {(genResult.publishAdvice || genResult.engine) && (
+                  <div className="rounded-xl border border-violet-500/25 bg-violet-500/[0.07] p-3 text-xs space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-semibold text-white flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-violet-300" />
+                        {genResult.publishNow
+                          ? "Bon moment pour publier maintenant"
+                          : "Attends le prochain créneau fort"}
+                      </p>
+                      {genResult.engine && (
+                        <Badge variant="outline" className="border-white/15 text-zinc-300">
+                          {aiEngineBadge(genResult.engine)}
+                        </Badge>
+                      )}
+                    </div>
+                    {genResult.publishAdvice && (
+                      <p className="text-zinc-300">{genResult.publishAdvice}</p>
+                    )}
+                    {genResult.publishSlots && genResult.publishSlots.length > 0 && (
+                      <div className="grid sm:grid-cols-3 gap-2">
+                        {genResult.publishSlots.map((slot) => (
+                          <div
+                            key={`${slot.day}-${slot.window}`}
+                            className="rounded-lg border border-white/10 bg-[#07080d] p-2"
+                          >
+                            <p className="font-bold text-white">{slot.day}</p>
+                            <p className="text-violet-300">{slot.window}</p>
+                            <p className="text-emerald-400 text-[10px]">{slot.score}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {genResult.avoidWords && genResult.avoidWords.length > 0 && (
+                      <p className="text-zinc-500 text-[10px]">
+                        Mots à éviter : {genResult.avoidWords.join(", ")}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-3 gap-2.5">
                   {genResult.pricingTiers.map((tier) => (
                     <div
@@ -1216,6 +1415,100 @@ export function ResellerToolsStudio({
         </div>
       )}
 
+      {subTab === "visibility" && (
+        <div key="visibility" className="vf-tab-enter grid gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-3 text-xs">
+            <h2 className="text-sm font-bold text-white">
+              Radar visibilité Vinted (heure Paris)
+            </h2>
+            <p className="text-zinc-400">
+              L&apos;IA te dit si tu publies maintenant ou si tu attends le créneau qui
+              maximise les vues — sans spam ni shadowban.
+            </p>
+            <div className="space-y-1">
+              <Label className="text-zinc-400">Catégorie principale</Label>
+              <Input
+                value={visCategory}
+                onChange={(e) => setVisCategory(e.target.value)}
+                placeholder="Ex : Vestes, Sneakers, Pulls…"
+                className="bg-white/5 border-white/10 text-white"
+              />
+            </div>
+            <Button
+              type="button"
+              disabled={visibilityLoading}
+              onClick={handleLoadVisibility}
+              className="w-full bg-violet-600 text-white hover:bg-violet-500 font-bold h-10"
+            >
+              {visibilityLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+              ) : (
+                <Clock className="h-4 w-4 mr-1.5" />
+              )}
+              Analyser mes créneaux IA
+            </Button>
+          </div>
+
+          <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4 text-xs">
+            {!visibilityResult ? (
+              <div className="flex min-h-[280px] flex-col items-center justify-center text-center text-zinc-400">
+                <Clock className="h-9 w-9 text-violet-400/70 mb-2" />
+                Lance l&apos;analyse pour obtenir tes créneaux personnalisés (heure Paris).
+              </div>
+            ) : (
+              <>
+                <div className="rounded-xl border border-violet-500/30 bg-violet-500/[0.08] p-4 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-extrabold text-white">
+                      {visibilityResult.publishNow
+                        ? "C’est le bon moment — publie maintenant"
+                        : "Patiente — meilleur impact aux créneaux ci-dessous"}
+                    </p>
+                    <Badge variant="outline" className="border-white/15 text-zinc-300">
+                      {aiEngineBadge(visibilityResult.engine)}
+                    </Badge>
+                  </div>
+                  <p className="text-zinc-200">{visibilityResult.headline}</p>
+                  <p className="text-zinc-500">{visibilityResult.categoryTip}</p>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-2.5">
+                  {visibilityResult.bestSlots.map((slot) => (
+                    <div
+                      key={`${slot.day}-${slot.window}`}
+                      className="rounded-xl border border-white/10 bg-[#07080d] p-3"
+                    >
+                      <p className="font-bold text-white">{slot.day}</p>
+                      <p className="text-violet-300">{slot.window}</p>
+                      <p className="text-emerald-400 font-semibold">{slot.score}</p>
+                      {slot.reason && (
+                        <p className="text-zinc-500 text-[10px] mt-1">{slot.reason}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-[#07080d] p-3">
+                  <p className="font-semibold text-white mb-2">Plan de la semaine</p>
+                  <div className="grid sm:grid-cols-2 gap-1.5 text-zinc-300 text-[11px]">
+                    {Object.entries(visibilityResult.weeklyPlan).map(([day, tip]) => (
+                      <p key={day}>
+                        <span className="text-white font-medium capitalize">{day}</span> —{" "}
+                        {tip}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+
+                <p className="text-zinc-500 text-[10px]">
+                  À éviter : {visibilityResult.avoidTimes.join(" · ")}
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* TOOL 3: ANTI-SHADOWBAN */}
       {subTab === "antishadowban" && (
         <div key="antishadowban" className="vf-tab-enter grid gap-6 lg:grid-cols-12">
@@ -1289,6 +1582,28 @@ export function ResellerToolsStudio({
               </div>
             ) : (
               <div className="space-y-4">
+                {(shadowResult.riskLevel || shadowResult.engine) && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {shadowResult.riskLevel && (
+                      <Badge
+                        className={
+                          shadowResult.riskLevel === "high"
+                            ? "bg-rose-500/20 text-rose-200 border-rose-500/30"
+                            : shadowResult.riskLevel === "low"
+                              ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                              : "bg-amber-500/15 text-amber-200 border-amber-500/30"
+                        }
+                      >
+                        Risque shadowban : {shadowResult.riskLevel}
+                      </Badge>
+                    )}
+                    {shadowResult.engine && (
+                      <Badge variant="outline" className="border-white/15 text-zinc-300">
+                        {aiEngineBadge(shadowResult.engine)}
+                      </Badge>
+                    )}
+                  </div>
+                )}
                 <div className="rounded-xl border border-emerald-500/30 bg-[#07080d] p-3.5 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-emerald-300">
@@ -1336,6 +1651,19 @@ export function ResellerToolsStudio({
                     </p>
                   ))}
                 </div>
+
+                {shadowResult.photoFingerprintTips &&
+                  shadowResult.photoFingerprintTips.length > 0 && (
+                    <div className="rounded-xl border border-white/10 bg-[#07080d] p-3 space-y-1.5">
+                      <p className="font-bold text-white">Photos — éviter la duplication</p>
+                      {shadowResult.photoFingerprintTips.map((tip) => (
+                        <p key={tip} className="text-zinc-400 flex items-start gap-2">
+                          <Camera className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          {tip}
+                        </p>
+                      ))}
+                    </div>
+                  )}
               </div>
             )}
           </div>

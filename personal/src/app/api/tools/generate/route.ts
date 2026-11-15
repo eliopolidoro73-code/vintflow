@@ -1,10 +1,32 @@
 import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
-import { callCloudAi } from "@/lib/ai";
+import { callCloudAi, isPersoCloudAiEnabled } from "@/lib/ai";
 import { sql } from "@/lib/db";
 import { computeNetMargin, generateListingCopy } from "@/lib/format";
 import { getEffectivePlan } from "@/lib/perso-plan";
 import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  ANTISHADOWBAN_JSON_SYSTEM,
+  defaultVintedSlots,
+  LISTING_JSON_SYSTEM,
+  PHOTO_SAFETY_JSON_SYSTEM,
+  VISION_JSON_SYSTEM,
+  VISIBILITY_JSON_SYSTEM,
+} from "@/lib/vinted-ai-prompts";
+
+function parseAiJson<T extends Record<string, unknown>>(text: string): T | null {
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
+function cloudEngineTag(provider?: "gemini" | "openai") {
+  if (provider === "gemini") return "gemini_cloud";
+  if (provider === "openai") return "openai_cloud";
+  return "local_smart";
+}
 
 const BRAND_CATALOG = [
   { key: "carhartt", brand: "Carhartt", cat: "Vestes & Manteaux", avgPrice: 85 },
@@ -68,7 +90,13 @@ export async function POST(request: Request) {
   }
 
   let body: {
-    mode?: "listing" | "antishadowban" | "negotiation" | "vision_analyze";
+    mode?:
+      | "listing"
+      | "antishadowban"
+      | "negotiation"
+      | "vision_analyze"
+      | "visibility"
+      | "photo_safety";
     title?: string;
     brand?: string;
     category?: string;
@@ -100,19 +128,18 @@ export async function POST(request: Request) {
 
     if (allowCloudAi && imageDataUrl.startsWith("data:image/")) {
       const aiOut = await callCloudAi({
-        systemPrompt:
-          "Tu es un expert revente seconde main (Vinted, Leboncoin, TikTok Shop). Analyse l'image et retourne uniquement un JSON valide avec les clés: title (string, titre vendeur FR), brand (string), category (string), size (string), condition (string: 'Neuf avec étiquette' | 'Neuf sans étiquette' | 'Très bon état' | 'Bon état'), defects (string, vide si aucun visible), estimatedPrice (number, prix de revente réaliste en EUR), seoKeywords (string[]).",
+        systemPrompt: VISION_JSON_SYSTEM,
         userPrompt: `Analyse cet article pour préparer la fiche de vente (couleur détectée: ${dominantColor}).`,
         imageDataUrl,
         jsonMode: true,
-        maxTokens: 320,
+        maxTokens: 520,
       });
       if (aiOut) {
-        try {
-          const parsed = JSON.parse(aiOut.text) as Record<string, unknown>;
+        const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
+        if (parsed) {
           return NextResponse.json({
-            engine:
-              aiOut.provider === "gemini" ? "gemini_vision" : "openai_vision",
+            engine: cloudEngineTag(aiOut.provider),
+            cloudAiActive: isPersoCloudAiEnabled(),
             title: String(parsed.title ?? "Pièce Seconde Main"),
             brand: String(parsed.brand ?? "Vintage"),
             category: String(parsed.category ?? "Vêtements"),
@@ -123,9 +150,10 @@ export async function POST(request: Request) {
             seoKeywords: Array.isArray(parsed.seoKeywords)
               ? parsed.seoKeywords.slice(0, 6)
               : [],
+            photoAntiBanTips: Array.isArray(parsed.photoAntiBanTips)
+              ? parsed.photoAntiBanTips.slice(0, 5)
+              : [],
           });
-        } catch {
-          // Fall back to deterministic analyzer
         }
       }
     }
@@ -166,6 +194,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       engine: "local_smart_vision",
+      cloudAiActive: isPersoCloudAiEnabled(),
       title: guessedTitle,
       brand: guessedBrand,
       category: guessedCategory,
@@ -179,6 +208,130 @@ export async function POST(request: Request) {
         guessedCategory.toLowerCase(),
         "secondemain",
       ],
+      photoAntiBanTips: [
+        "Ajoute 5–8 % de marge blanche autour de l'article.",
+        "Change légèrement luminosité (+5 %) avant re-upload.",
+        "Utilise un fond studio différent (lin ou gris).",
+      ],
+    });
+  }
+
+  if (mode === "photo_safety") {
+    const imageDataUrl = (body.imageDataUrl ?? "").trim();
+    if (!imageDataUrl.startsWith("data:image/")) {
+      return NextResponse.json(
+        { error: "Importe une photo depuis le Studio pour l'analyse anti-ban." },
+        { status: 400 },
+      );
+    }
+
+    const fallback = {
+      engine: "local_photo_rules",
+      cloudAiActive: isPersoCloudAiEnabled(),
+      fingerprintRisk: "medium",
+      recommendedBrightness: 108,
+      recommendedContrast: 112,
+      recommendedPaddingPct: 8,
+      shouldRemoveBackground: true,
+      shouldRotateSlight: false,
+      checklist: [
+        "Détourer ou changer le fond (empreinte unique).",
+        "Régler luminosité entre 100 et 115 %.",
+        "Exporter en PNG depuis Vintflow (pas la photo brute du téléphone).",
+        "Ne pas re-uploader la même image pixel à pixel.",
+        "Attendre 3 min entre deux publications.",
+      ],
+      safeToPublishAfterEdits: true,
+      summary:
+        "Risque moyen — applique détourage + marge + luminosité avant Vinted.",
+    };
+
+    if (allowCloudAi) {
+      const aiOut = await callCloudAi({
+        systemPrompt: PHOTO_SAFETY_JSON_SYSTEM,
+        userPrompt:
+          "Évalue l'empreinte de cette photo Vinted et donne les réglages studio exacts.",
+        imageDataUrl,
+        jsonMode: true,
+        maxTokens: 480,
+      });
+      if (aiOut) {
+        const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
+        if (parsed) {
+          return NextResponse.json({
+            engine: cloudEngineTag(aiOut.provider),
+            cloudAiActive: true,
+            fingerprintRisk: String(parsed.fingerprintRisk ?? "medium"),
+            recommendedBrightness: Math.min(
+              135,
+              Math.max(80, Number(parsed.recommendedBrightness ?? 108)),
+            ),
+            recommendedContrast: Math.min(
+              135,
+              Math.max(80, Number(parsed.recommendedContrast ?? 112)),
+            ),
+            recommendedPaddingPct: Math.min(
+              16,
+              Math.max(3, Number(parsed.recommendedPaddingPct ?? 8)),
+            ),
+            shouldRemoveBackground: Boolean(parsed.shouldRemoveBackground ?? true),
+            shouldRotateSlight: Boolean(parsed.shouldRotateSlight ?? false),
+            checklist: Array.isArray(parsed.checklist)
+              ? parsed.checklist.slice(0, 8)
+              : fallback.checklist,
+            safeToPublishAfterEdits: Boolean(
+              parsed.safeToPublishAfterEdits ?? true,
+            ),
+            summary: String(
+              parsed.summary ?? "Photo prête après les réglages suggérés.",
+            ),
+          });
+        }
+      }
+    }
+
+    return NextResponse.json(fallback);
+  }
+
+  if (mode === "visibility") {
+    const category = (body.category ?? "Vêtements").trim().slice(0, 60);
+    const slots = defaultVintedSlots();
+
+    if (allowCloudAi) {
+      const aiOut = await callCloudAi({
+        systemPrompt: VISIBILITY_JSON_SYSTEM,
+        userPrompt: `Catégorie principale du vendeur : ${category}. Donne le plan pour maximiser les vues Vinted cette semaine (heure Europe/Paris).`,
+        jsonMode: true,
+        maxTokens: 700,
+      });
+      if (aiOut) {
+        const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
+        if (parsed) {
+          return NextResponse.json({
+            engine: cloudEngineTag(aiOut.provider),
+            cloudAiActive: true,
+            publishNow: Boolean(parsed.publishNow ?? slots.publishNow),
+            headline: String(parsed.headline ?? slots.headline),
+            bestSlots: Array.isArray(parsed.bestSlots)
+              ? parsed.bestSlots.slice(0, 6)
+              : slots.bestSlots,
+            weeklyPlan:
+              parsed.weeklyPlan && typeof parsed.weeklyPlan === "object"
+                ? parsed.weeklyPlan
+                : slots.weeklyPlan,
+            categoryTip: String(parsed.categoryTip ?? slots.categoryTip),
+            avoidTimes: Array.isArray(parsed.avoidTimes)
+              ? parsed.avoidTimes
+              : slots.avoidTimes,
+          });
+        }
+      }
+    }
+
+    return NextResponse.json({
+      engine: "local_visibility",
+      cloudAiActive: isPersoCloudAiEnabled(),
+      ...slots,
     });
   }
 
@@ -196,7 +349,7 @@ export async function POST(request: Request) {
     const baseTitle =
       title || raw.split("\n")[0]?.slice(0, 65) || "Pièce seconde main";
     const words = baseTitle.split(/\s+/).filter(Boolean);
-    const reorderedTitle =
+    let reorderedTitle =
       words.length >= 3
         ? `${words[words.length - 1]} · ${words.slice(0, -1).join(" ")}`.slice(
             0,
@@ -219,32 +372,80 @@ ${cleanedBody ? `\nDétails : ${cleanedBody}\n` : ""}
 
 Tu peux demander les mesures exactes en message avant achat.`;
 
+    let bestSlots = [
+      {
+        day: "Dimanche",
+        window: "18h00 – 21h30",
+        score: "+42 %",
+        reason: "Pic trafic soirée",
+      },
+      {
+        day: "Mercredi",
+        window: "19h00 – 21h00",
+        score: "+28 %",
+        reason: "Milieu de semaine",
+      },
+      {
+        day: "Vendredi",
+        window: "17h30 – 20h30",
+        score: "+31 %",
+        reason: "Pré-week-end",
+      },
+    ];
+    let checklist = [
+      "Passe la photo dans le Studio Photo Vintflow (détourage + luminosité) avant republication.",
+      "Supprime les blocs de hashtags copiés-collés.",
+      "Espace les republications de 3–5 minutes.",
+      "Varie le titre (synonymes, ordre des mots).",
+      "Max 3 hashtags en fin de description.",
+    ];
+    let riskLevel = "medium";
+    let riskReasons = ["Texte potentiellement dupliqué — variante locale appliquée."];
+    let photoFingerprintTips = [
+      "Change le fond ou le cadrage avant re-upload.",
+      "Ajoute 6–10 % de marge autour du produit.",
+      "Exporte depuis Vintflow, pas la photo d'origine.",
+    ];
+    let engine = "local_antishadowban";
+
     if (allowCloudAi) {
       const aiOut = await callCloudAi({
-        systemPrompt:
-          "Réécris cette annonce Vinted/Leboncoin en français pour éviter les filtres anti-duplication (sans spam de hashtags, ton humain, clair et rassurant). Retourne uniquement le nouveau texte.",
-        userPrompt: `Titre: ${baseTitle}\nDescription: ${cleanedBody}`,
-        maxTokens: 240,
+        systemPrompt: ANTISHADOWBAN_JSON_SYSTEM,
+        userPrompt: `Titre actuel: ${baseTitle}\nDescription: ${cleanedBody || raw}`,
+        jsonMode: true,
+        maxTokens: 720,
       });
-      if (aiOut?.text) {
-        refreshedDescription = aiOut.text;
+      if (aiOut) {
+        const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
+        if (parsed) {
+          engine = cloudEngineTag(aiOut.provider);
+          if (parsed.reorderedTitle)
+            reorderedTitle = String(parsed.reorderedTitle).slice(0, 72);
+          if (parsed.refreshedDescription)
+            refreshedDescription = String(parsed.refreshedDescription);
+          if (Array.isArray(parsed.bestSlots))
+            bestSlots = parsed.bestSlots.slice(0, 5) as typeof bestSlots;
+          if (Array.isArray(parsed.checklist))
+            checklist = parsed.checklist.slice(0, 8) as string[];
+          if (parsed.riskLevel) riskLevel = String(parsed.riskLevel);
+          if (Array.isArray(parsed.riskReasons))
+            riskReasons = parsed.riskReasons.slice(0, 6) as string[];
+          if (Array.isArray(parsed.photoFingerprintTips))
+            photoFingerprintTips = parsed.photoFingerprintTips.slice(0, 5) as string[];
+        }
       }
     }
 
     return NextResponse.json({
+      engine,
+      cloudAiActive: isPersoCloudAiEnabled(),
       reorderedTitle,
       refreshedDescription,
-      bestSlots: [
-        { day: "Dimanche", window: "18h00 – 21h30", score: "Pic trafic +42 %" },
-        { day: "Mercredi", window: "18h30 – 21h00", score: "Pic trafic +28 %" },
-        { day: "Vendredi", window: "17h00 – 20h00", score: "Pic weekend +31 %" },
-      ],
-      checklist: [
-        "Passe la photo dans le Studio Photo Vintflow (Détourage IA ou légère retouche) pour changer son empreinte numérique avant republication.",
-        "Supprime les séries de hashtags copiés-collés en bas d'annonce qui déclenchent la vérification 24h.",
-        "Espace les republications d'au moins 3–5 minutes entre chaque article.",
-        "Évite les mots-clés de marques non liées (spam de marques) qui provoquent un shadowban immédiat.",
-      ],
+      bestSlots,
+      checklist,
+      riskLevel,
+      riskReasons,
+      photoFingerprintTips,
     });
   }
 
@@ -345,22 +546,37 @@ Disponible tant que l'annonce est en ligne.`;
 [3–10s PREUVE] "Taille ${size}, ${condition.toLowerCase()}${defects ? ` (${defects})` : ", zéro défaut"}. Je montre les coutures et l'étiquette de près."
 [10–15s CTA] "Dispo maintenant à ${targetPrice} € dans ma boutique TikTok Shop / lien Vinted en bio. Envoi en 24h !"`;
 
+  let engine = "local_listing";
+  let publishAdvice = defaultVintedSlots().headline;
+  let publishNow = defaultVintedSlots().publishNow;
+  let publishSlots = defaultVintedSlots().bestSlots.slice(0, 3);
+  let avoidWords: string[] = [];
+  let hashtags: string[] = [];
+  let antiBanTitle = baseCopy.seoTitle;
+
   if (allowCloudAi) {
     const aiOut = await callCloudAi({
-      systemPrompt:
-        "Tu es copywriter e-commerce seconde main. Retourne uniquement un JSON avec les clés: vinted (annonce Vinted structurée avec mesures et hashtags pertinents), leboncoin (annonce Leboncoin claire et rassurante), tiktokScript (script vidéo court 15s Hook/Preuve/CTA).",
-      userPrompt: `Article: ${title}, Marque: ${brand}, Catégorie: ${category}, Taille: ${size}, État: ${condition}, Défauts: ${defects || "Aucun"}, Prix: ${targetPrice} €.`,
+      systemPrompt: LISTING_JSON_SYSTEM,
+      userPrompt: `Article: ${title}, Marque: ${brand}, Catégorie: ${category}, Taille: ${size}, État: ${condition}, Défauts: ${defects || "Aucun"}, Prix achat: ${purchasePrice} €, Prix vente: ${targetPrice} €.`,
       jsonMode: true,
-      maxTokens: 450,
+      maxTokens: 1100,
     });
-    if (aiOut?.text) {
-      try {
-        const parsed = JSON.parse(aiOut.text) as Record<string, string>;
-        if (parsed.vinted) vintedFull = parsed.vinted;
-        if (parsed.leboncoin) leboncoinFull = parsed.leboncoin;
-        if (parsed.tiktokScript) tiktokScript = parsed.tiktokScript;
-      } catch {
-        // Keep deterministic templates
+    if (aiOut) {
+      const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
+      if (parsed) {
+        engine = cloudEngineTag(aiOut.provider);
+        if (parsed.seoTitle) antiBanTitle = String(parsed.seoTitle).slice(0, 80);
+        if (parsed.vinted) vintedFull = String(parsed.vinted);
+        if (parsed.leboncoin) leboncoinFull = String(parsed.leboncoin);
+        if (parsed.tiktokScript) tiktokScript = String(parsed.tiktokScript);
+        if (parsed.publishAdvice) publishAdvice = String(parsed.publishAdvice);
+        if (typeof parsed.publishNow === "boolean") publishNow = parsed.publishNow;
+        if (Array.isArray(parsed.publishSlots))
+          publishSlots = parsed.publishSlots.slice(0, 5) as typeof publishSlots;
+        if (Array.isArray(parsed.avoidWords))
+          avoidWords = parsed.avoidWords.slice(0, 12) as string[];
+        if (Array.isArray(parsed.hashtags))
+          hashtags = parsed.hashtags.slice(0, 3) as string[];
       }
     }
   }
@@ -406,10 +622,17 @@ Disponible tant que l'annonce est en ligne.`;
   ];
 
   return NextResponse.json({
-    seoTitle: baseCopy.seoTitle,
+    engine,
+    cloudAiActive: isPersoCloudAiEnabled(),
+    seoTitle: antiBanTitle,
     vinted: vintedFull,
     leboncoin: leboncoinFull,
     tiktokScript,
     pricingTiers,
+    publishAdvice,
+    publishNow,
+    publishSlots,
+    avoidWords,
+    hashtags,
   });
 }

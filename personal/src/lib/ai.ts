@@ -13,9 +13,14 @@ function parseDataUrl(
   return { mimeType: match[1], base64: match[2] };
 }
 
-/** Désactivé par défaut : évite les appels API facturés tant que le propriétaire n'active pas. */
+/** Actif si clé cloud présente (édition perso Vercel) ou flag explicite. */
 export function isPersoCloudAiEnabled(): boolean {
-  return process.env.PERSO_ENABLE_CLOUD_AI === "true";
+  if (process.env.PERSO_ENABLE_CLOUD_AI === "true") return true;
+  if (process.env.PERSO_ENABLE_CLOUD_AI === "false") return false;
+  const hasKey = Boolean(
+    process.env.GEMINI_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim(),
+  );
+  return hasKey;
 }
 
 export async function callCloudAi(params: {
@@ -50,7 +55,7 @@ export async function callCloudAi(params: {
       }
 
       const res = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
         {
           method: "POST",
           headers: {
@@ -116,7 +121,7 @@ export async function callCloudAi(params: {
           authorization: `Bearer ${openaiKey}`,
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "gpt-4o",
           ...(params.jsonMode ? { response_format: { type: "json_object" } } : {}),
           messages: [
             { role: "system", content: params.systemPrompt },

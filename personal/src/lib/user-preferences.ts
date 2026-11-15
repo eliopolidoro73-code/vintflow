@@ -1,5 +1,10 @@
 export type StudioPresets = {
-  subTab?: "photo" | "listing" | "antishadowban" | "negotiation";
+  subTab?:
+    | "photo"
+    | "listing"
+    | "antishadowban"
+    | "negotiation"
+    | "visibility";
   photoFormat?: string;
   studioBgId?: string;
   brightness?: number;
