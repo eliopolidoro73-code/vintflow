@@ -3,7 +3,7 @@ import { sql } from "./db";
 
 /**
  * Ne fait pas confiance aux en-têtes IP que le client peut forger (x-real-ip, etc.).
- * Utilise uniquement la dernière entrée de X-Forwarded-For (ajoutée par le proxy).
+ * Utilise la première entrée de X-Forwarded-For (adresse client).
  */
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -12,8 +12,8 @@ export function getClientIp(request: Request): string {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    const proxyAppended = parts[parts.length - 1];
-    if (proxyAppended) return proxyAppended.slice(0, 64);
+    const client = parts[0];
+    if (client) return client.slice(0, 64);
   }
 
   const host = request.headers.get("host")?.trim();

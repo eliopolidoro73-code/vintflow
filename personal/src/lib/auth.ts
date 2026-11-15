@@ -14,6 +14,10 @@ async function getSessionSecret(): Promise<string> {
   if (envSecret && envSecret.length >= 16) {
     return envSecret;
   }
+  const isHosted = Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production";
+  if (isHosted) {
+    throw new Error("SESSION_SECRET manquant ou trop court.");
+  }
   if (globalForSecret.__vintflowPersoSecret) {
     return globalForSecret.__vintflowPersoSecret;
   }
@@ -239,13 +243,19 @@ export async function requireAuthenticatedUser(): Promise<
 }
 
 export function assertSameOrigin(request: Request): Response | null {
+  const mutating = ["POST", "PUT", "PATCH", "DELETE"].includes(request.method);
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite) {
     if (fetchSite === "same-origin" || fetchSite === "none") return null;
     return Response.json({ error: "Origine invalide" }, { status: 403 });
   }
   const origin = request.headers.get("origin");
-  if (!origin) return null;
+  if (!origin) {
+    if (mutating) {
+      return Response.json({ error: "Origine invalide" }, { status: 403 });
+    }
+    return null;
+  }
   const candidates = [
     request.headers.get("x-forwarded-host")?.split(",")[0]?.trim(),
     request.headers.get("host")?.trim(),

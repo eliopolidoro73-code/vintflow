@@ -8,8 +8,8 @@ export function getClientIp(request: Request): string {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    const proxyAppended = parts[parts.length - 1];
-    if (proxyAppended) return proxyAppended.slice(0, 64);
+    const client = parts[0];
+    if (client) return client.slice(0, 64);
   }
 
   const host = request.headers.get("host")?.trim();

@@ -12,6 +12,12 @@ function resolveSafeBaseUrl(request: Request): string {
   if (configured && /^https?:\/\/[a-zA-Z0-9.-]+(:\d+)?$/.test(configured)) {
     return configured;
   }
+  const isHosted = Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production";
+  if (isHosted) {
+    return configured && /^https?:\/\/[a-zA-Z0-9.-]+(:\d+)?$/.test(configured)
+      ? configured
+      : "https://vintflow.apps.grok.bot";
+  }
   const rawHost =
     request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "";
   const rawProto = request.headers.get("x-forwarded-proto") ?? "https";
