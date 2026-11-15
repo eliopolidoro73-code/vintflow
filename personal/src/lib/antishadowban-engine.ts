@@ -131,9 +131,17 @@ export function localAntiShadowbanRewrite(
   const variants = titleVariants(cleanTitle || title);
   const reorderedTitle = applySynonymVariation(variants[0] ?? cleanTitle);
 
+  const luxeHint =
+    /louis\s*vuitton|chanel|herm[eè]s|dior|gucci|prada|celine/i.test(
+      `${title} ${description} ${opts?.category ?? ""}`,
+    )
+      ? "Photos sans filtre, étiquettes et fermoirs visibles sur demande.\n"
+      : "";
+
   const refreshedDescription = `${reorderedTitle}
 
 Article contrôlé avant envoi (seconde main, vendeur particulier).
+${luxeHint}
 ${cleanDesc ? `Détails : ${cleanDesc.slice(0, 600)}\n` : ""}
 Envoi sous 24–48h · emballage soigné · non-fumeur.
 Questions bienvenues en message privé (sans spam).

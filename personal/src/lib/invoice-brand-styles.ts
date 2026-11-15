@@ -70,6 +70,8 @@ export function brandStyleFor(template: InvoiceBrandTemplate): BrandStyle {
         accent: [245, 245, 245],
         muted: [160, 160, 165],
         invoiceLabel: "FACTURE BOUTIQUE · COUTURE",
+        retailLabel: "TICKET D'ACHAT · BOUTIQUE",
+        retailFooter: "Article neuf — pièce facturée en boutique officielle.",
         footerTagline: "Pièce seconde main — état décrit sur la fiche Vinted.",
       };
     case "hermes":
@@ -80,6 +82,8 @@ export function brandStyleFor(template: InvoiceBrandTemplate): BrandStyle {
         accent: [37, 90, 74],
         muted: [100, 120, 108],
         invoiceLabel: "BORDEREAU · MAROQUINERIE",
+        retailLabel: "FACTURE SELLIER · NEUF",
+        retailFooter: "Maroquinerie neuve — document à conserver pour l'entretien.",
         footerTagline: "Vente particulière — article d'occasion contrôlé.",
       };
     case "dior":
@@ -90,6 +94,8 @@ export function brandStyleFor(template: InvoiceBrandTemplate): BrandStyle {
         accent: [45, 35, 75],
         muted: [110, 100, 130],
         invoiceLabel: "FACTURE · MAISON DIOR",
+        retailLabel: "FACTURE BOUTIQUE · NEUF",
+        retailFooter: "Achat direct boutique — garantie fabricant selon conditions maison.",
         footerTagline: "Occasion authentique — photos à jour sur l'annonce.",
       };
     case "gucci":
@@ -100,6 +106,8 @@ export function brandStyleFor(template: InvoiceBrandTemplate): BrandStyle {
         accent: [26, 92, 56],
         muted: [90, 115, 95],
         invoiceLabel: "REÇU · LUXE ITALIEN",
+        retailLabel: "REÇU D'ACHAT · BOUTIQUE",
+        retailFooter: "Article neuf — conservez pour retours en boutique.",
         footerTagline: "Seconde main — conforme à l'état annoncé.",
       };
     case "generic_luxe":

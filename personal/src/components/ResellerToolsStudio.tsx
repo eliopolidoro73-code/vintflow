@@ -663,6 +663,24 @@ export function ResellerToolsStudio({
     reader.readAsDataURL(file);
   }
 
+  async function handleExportAllPlatforms() {
+    if (!photoSrc) {
+      onToast("Importe une photo d'abord.");
+      return;
+    }
+    const original = photoFormat;
+    const keys = Object.keys(PHOTO_FORMATS) as (keyof typeof PHOTO_FORMATS)[];
+    onToast(`Export ${keys.length} formats — patiente quelques secondes…`);
+    for (const key of keys) {
+      setPhotoFormat(key);
+      await new Promise((r) => setTimeout(r, 280));
+      handleDownloadCanvas("jpeg");
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    setPhotoFormat(original);
+    onToast("Pack Vinted + Leboncoin + TikTok exporté (JPEG).");
+  }
+
   function handleDownloadCanvas(fmt: "png" | "jpeg" = "png") {
     if (!photoSrc) {
       onToast("Importe d'abord une photo avant d'exporter.");
@@ -1787,6 +1805,16 @@ export function ResellerToolsStudio({
               Export haute résolution {PHOTO_FORMATS[photoFormat].w}×
               {PHOTO_FORMATS[photoFormat].h} px
             </p>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!photoSrc}
+              onClick={() => void handleExportAllPlatforms()}
+              className="w-full border-cyan-500/30 text-cyan-200 h-10 text-xs"
+            >
+              <Download className="h-3.5 w-3.5 mr-1.5" />
+              Exporter les 3 formats (Vinted · LBC · TikTok)
+            </Button>
           </div>
         </div>
       )}
@@ -1805,6 +1833,27 @@ export function ResellerToolsStudio({
               Rédige en 1 clic pour Vinted, Leboncoin et TikTok avec stratégie de prix
               et mention anti-litige.
             </p>
+
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { b: "Louis Vuitton", c: "Sacs" },
+                { b: "Chanel", c: "Sacs luxe" },
+                { b: "Nike", c: "Sneakers" },
+                { b: "Zara", c: "Vêtements" },
+              ].map((chip) => (
+                <button
+                  key={chip.b}
+                  type="button"
+                  onClick={() => {
+                    setGenBrand(chip.b);
+                    setGenCategory(chip.c);
+                  }}
+                  className="rounded-lg border border-white/10 px-2 py-1 text-[10px] text-zinc-400 hover:border-violet-500/40 hover:text-white"
+                >
+                  {chip.b}
+                </button>
+              ))}
+            </div>
 
             <div className="space-y-1">
               <Label className="text-zinc-400">Article</Label>
