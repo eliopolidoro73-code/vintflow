@@ -538,6 +538,9 @@ export function ResellerToolsStudio({
     if (studioPresets?.genTargetPrice) {
       setGenTargetPrice(String(studioPresets.genTargetPrice));
     }
+    if (studioPresets?.genPurchasePrice !== undefined) {
+      setGenBuyPrice(String(studioPresets.genPurchasePrice));
+    }
     onToast("Article chargé depuis le Dressing — lance le pipeline anti-ban.");
   }, [studioPresets, onToast]);
 

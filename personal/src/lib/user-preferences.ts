@@ -24,6 +24,7 @@ export type StudioPresets = {
   /** Incrémenté pour recharger le studio depuis le Dressing */
   focusKick?: number;
   genTargetPrice?: number;
+  genPurchasePrice?: number;
 };
 
 export type PersoPreferences = {

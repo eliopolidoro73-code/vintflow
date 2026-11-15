@@ -380,6 +380,7 @@ export function BackOffice({
         genSize: item.size,
         genCondition: item.condition,
         genTargetPrice: Math.round(item.listing_price),
+        genPurchasePrice: Math.round(item.purchase_price + item.extra_costs),
         genTargetListingDesc: item.description_vinted,
         studioImageThumb: item.studio_image_thumb || undefined,
         focusKick: Date.now(),
