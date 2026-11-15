@@ -14,9 +14,10 @@ Site prêt : **https://vintflow-vint4.vercel.app/**
 1. [Ouvrir Search Console](https://search.google.com/search-console)
 2. **Ajouter une propriété** → préfixe d’URL : `https://vintflow-vint4.vercel.app/`
 3. **Vérifier** : méthode **Balise HTML** (déjà dans la page) ou **Fichier HTML**
-4. **Sitemaps** → envoyer : `sitemap.xml`
-5. **Inspection d’URL** → `https://vintflow-vint4.vercel.app/` → **Demander l’indexation**
-6. Idem : `/guide-revente-vinted`
+4. **Sitemaps** → envoyer : `sitemap.xml` (pas l’URL complète, juste `sitemap.xml`)
+5. Si **« 5 erreurs »** (ancien sitemap `grok.bot`) : clique la ligne → **Supprimer le sitemap**, puis renvoie `sitemap.xml`. Attends **24–48 h** que l’état passe au vert.
+6. **Inspection d’URL** → **Tester l’URL en direct** → **Demander l’indexation**  
+   Limite Google : **quota quotidien** (~10–15 demandes/jour) → message *Quota dépassé* = **réessayer demain** (pas un bug du site).
 
 L’indexation peut prendre **plusieurs jours** ; Google décide seul.
 
