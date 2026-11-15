@@ -1,3 +1,10 @@
+import {
+  callGeminiGenerate,
+  readGeminiApiKey,
+  GEMINI_FAST_MODELS,
+  GEMINI_POWER_MODELS,
+} from "@/lib/gemini-api";
+
 export interface AiCallResult {
   provider: "gemini" | "openai";
   text: string;
@@ -18,7 +25,7 @@ export function isPersoCloudAiEnabled(): boolean {
   if (process.env.PERSO_ENABLE_CLOUD_AI === "true") return true;
   if (process.env.PERSO_ENABLE_CLOUD_AI === "false") return false;
   const hasKey = Boolean(
-    process.env.GEMINI_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim(),
+    readGeminiApiKey() || process.env.OPENAI_API_KEY?.trim(),
   );
   return hasKey;
 }
@@ -46,7 +53,7 @@ export async function callCloudAi(params: {
     return null;
   }
 
-  const geminiKey = process.env.GEMINI_API_KEY?.trim();
+  const geminiKey = readGeminiApiKey();
   if (geminiKey) {
     try {
       const parts: Array<
@@ -66,50 +73,29 @@ export async function callCloudAi(params: {
         }
       }
 
-      const geminiModels = power
-        ? [
-            "gemini-2.5-pro",
-            "gemini-2.5-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-pro",
-          ]
-        : ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+      const geminiModels = power ? GEMINI_POWER_MODELS : GEMINI_FAST_MODELS;
 
       for (const model of geminiModels) {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-          {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-              "x-goog-api-key": geminiKey,
+        const result = await callGeminiGenerate({
+          apiKey: geminiKey,
+          model,
+          body: {
+            systemInstruction: {
+              parts: [{ text: params.systemPrompt }],
             },
-            body: JSON.stringify({
-              systemInstruction: {
-                parts: [{ text: params.systemPrompt }],
-              },
-              contents: [{ role: "user", parts }],
-              generationConfig: {
-                maxOutputTokens: maxTokens,
-                temperature: power ? 0.45 : 0.65,
-                ...(params.jsonMode
-                  ? { responseMimeType: "application/json" }
-                  : {}),
-              },
-            }),
+            contents: [{ role: "user", parts }],
+            generationConfig: {
+              maxOutputTokens: maxTokens,
+              temperature: power ? 0.45 : 0.65,
+              ...(params.jsonMode
+                ? { responseMimeType: "application/json" }
+                : {}),
+            },
           },
-        );
+        });
 
-        if (res.ok) {
-          const data = (await res.json()) as {
-            candidates?: Array<{
-              content?: { parts?: Array<{ text?: string }> };
-            }>;
-          };
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-          if (text) {
-            return { provider: "gemini", text };
-          }
+        if (result.ok && result.text) {
+          return { provider: "gemini", text: result.text };
         }
       }
     } catch {

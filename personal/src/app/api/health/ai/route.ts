@@ -1,41 +1,8 @@
 import { NextResponse } from "next/server";
 import { callCloudAi, isPersoCloudAiEnabled } from "@/lib/ai";
+import { probeGeminiKey, readGeminiApiKey } from "@/lib/gemini-api";
 
 export const maxDuration = 30;
-
-async function probeGemini(key: string): Promise<{ status: string; model?: string }> {
-  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
-  for (const model of models) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "x-goog-api-key": key,
-          },
-          body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: 'Réponds uniquement {"ok":true}' }] }],
-            generationConfig: {
-              maxOutputTokens: 16,
-              responseMimeType: "application/json",
-            },
-          }),
-        },
-      );
-      if (res.ok) return { status: "ok", model };
-      const err = await res.text();
-      if (res.status === 400 && err.includes("API_KEY_INVALID")) {
-        return { status: "invalid_key" };
-      }
-      if (res.status === 403) return { status: "forbidden", model };
-    } catch {
-      continue;
-    }
-  }
-  return { status: "unreachable" };
-}
 
 async function probeOpenai(key: string): Promise<{ status: string }> {
   try {
@@ -43,7 +10,7 @@ async function probeOpenai(key: string): Promise<{ status: string }> {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${key}`,
+        authorization: `Bearer ${key.replace(/^["']|["']$/g, "").trim()}`,
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
@@ -64,13 +31,21 @@ async function probeOpenai(key: string): Promise<{ status: string }> {
 
 /** Diagnostic clés IA (aucune clé exposée dans la réponse). */
 export async function GET() {
-  const geminiKey = process.env.GEMINI_API_KEY?.trim();
+  const geminiKey = readGeminiApiKey();
   const openaiKey = process.env.OPENAI_API_KEY?.trim();
   const powerFlag = process.env.PERSO_AI_POWER?.trim();
+  const keyFormat = geminiKey
+    ? geminiKey.startsWith("AQ.")
+      ? "auth_aq"
+      : geminiKey.startsWith("AIza")
+        ? "standard_aiza"
+        : "unknown_prefix"
+    : undefined;
 
   const gemini = geminiKey
-    ? await probeGemini(geminiKey)
+    ? { ...(await probeGeminiKey(geminiKey)), keyFormat }
     : { status: "not_configured" as const };
+
   const openai = openaiKey
     ? await probeOpenai(openaiKey)
     : { status: "not_configured" as const };
