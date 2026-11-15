@@ -1,4 +1,0 @@
-# Optionnel : après import GitHub, ajoute VERCEL_TOKEN / ORG_ID / PROJECT_ID dans GitHub Secrets.
-name: Deploy to Vercel
-on:
-  workflow_dispatch:
