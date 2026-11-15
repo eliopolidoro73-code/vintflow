@@ -9,5 +9,5 @@ export function getPublicSiteUrl(): string {
     }
     return `https://${fromEnv.replace(/\/$/, "")}`;
   }
-  return "https://vintflow.apps.grok.bot";
+  return "https://vintflow.io";
 }

@@ -16,7 +16,7 @@ function resolveSafeBaseUrl(request: Request): string {
   if (isHosted) {
     return configured && /^https?:\/\/[a-zA-Z0-9.-]+(:\d+)?$/.test(configured)
       ? configured
-      : "https://vintflow.apps.grok.bot";
+      : "https://vintflow.io";
   }
   const rawHost =
     request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "";
