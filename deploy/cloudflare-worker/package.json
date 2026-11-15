@@ -1,0 +1,11 @@
+{
+  "name": "vintflow-cloudflare-proxy",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.14.0"
+  }
+}

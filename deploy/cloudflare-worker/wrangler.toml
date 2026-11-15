@@ -1,0 +1,8 @@
+name = "vintflow-public"
+main = "worker.mjs"
+compatibility_date = "2024-11-01"
+
+routes = [
+  { pattern = "vintflow.io/*", zone_name = "vintflow.io" },
+  { pattern = "www.vintflow.io/*", zone_name = "vintflow.io" },
+]
