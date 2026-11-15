@@ -29,6 +29,7 @@ import {
   Search,
   Send,
   Settings,
+  ShieldAlert,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
@@ -58,7 +59,11 @@ import {
   type PlanId,
 } from "@/lib/plans";
 import type { AuthUser } from "@/lib/auth";
-import type { PersoPreferences, StudioPresets } from "@/lib/user-preferences";
+import {
+  mergePreferences,
+  type PersoPreferences,
+  type StudioPresets,
+} from "@/lib/user-preferences";
 import {
   DocumentPrintModal,
   type SaleRecord,
@@ -363,6 +368,42 @@ export function BackOffice({
       savePreferences({ ui: { lastTab: next } });
     },
     [savePreferences],
+  );
+
+  const launchDressingAntiBan = useCallback(
+    (item: InventoryItem) => {
+      const studio: StudioPresets = {
+        subTab: item.studio_image_thumb ? "photo" : "listing",
+        genTitle: item.title,
+        genBrand: item.brand,
+        genCategory: item.category,
+        genSize: item.size,
+        genCondition: item.condition,
+        genTargetPrice: Math.round(item.listing_price),
+        genTargetListingDesc: item.description_vinted,
+        studioImageThumb: item.studio_image_thumb || undefined,
+        focusKick: Date.now(),
+      };
+      saveStudioPresets(studio);
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              user: {
+                ...prev.user,
+                preferences: mergePreferences(prev.user.preferences ?? {}, { studio }),
+              },
+            }
+          : prev,
+      );
+      selectTab("tools");
+      showToast(
+        item.studio_image_thumb
+          ? "Studio photo chargé — pipeline max ou anti-ban."
+          : "Fiche chargée — génère ou optimise l’annonce.",
+      );
+    },
+    [saveStudioPresets, selectTab, showToast],
   );
 
   const fetchWorkspace = useCallback(async () => {
@@ -1456,6 +1497,15 @@ export function BackOffice({
 
                           {item.status === "active" && (
                             <div className="flex flex-wrap items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => launchDressingAntiBan(item)}
+                                className="border-amber-500/35 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20 text-xs h-8 font-semibold"
+                              >
+                                <ShieldAlert className="h-3.5 w-3.5 mr-1" />
+                                Anti-ban
+                              </Button>
                               <Button
                                 size="sm"
                                 variant="outline"

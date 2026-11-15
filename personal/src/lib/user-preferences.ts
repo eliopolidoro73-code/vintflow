@@ -18,6 +18,12 @@ export type StudioPresets = {
   genCategory?: string;
   genSize?: string;
   genCondition?: string;
+  genTitle?: string;
+  genTargetListingDesc?: string;
+  studioImageThumb?: string;
+  /** Incrémenté pour recharger le studio depuis le Dressing */
+  focusKick?: number;
+  genTargetPrice?: number;
 };
 
 export type PersoPreferences = {

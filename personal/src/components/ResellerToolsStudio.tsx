@@ -311,6 +311,7 @@ export function ResellerToolsStudio({
   const [removeBg, setRemoveBg] = useState(studioPresets?.removeBg ?? false);
   const [bgTolerance, setBgTolerance] = useState(studioPresets?.bgTolerance ?? 38);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [photoRotationDeg, setPhotoRotationDeg] = useState(0);
   const [visionLoading, setVisionLoading] = useState(false);
   const [photoSafetyLoading, setPhotoSafetyLoading] = useState(false);
   const [fullSafetyLoading, setFullSafetyLoading] = useState(false);
@@ -342,7 +343,7 @@ export function ResellerToolsStudio({
     summary: string;
   } | null>(null);
 
-  const [genTitle, setGenTitle] = useState("");
+  const [genTitle, setGenTitle] = useState(studioPresets?.genTitle ?? "");
   const [genBrand, setGenBrand] = useState(studioPresets?.genBrand ?? "");
   const [genCategory, setGenCategory] = useState(studioPresets?.genCategory ?? "");
   const [genSize, setGenSize] = useState(studioPresets?.genSize ?? "");
@@ -514,6 +515,32 @@ export function ResellerToolsStudio({
     onToast(`Preset « ${preset.label} » — lance l’analyse IA ensuite.`);
   }
 
+  const lastFocusKick = useRef(0);
+
+  useEffect(() => {
+    const kick = studioPresets?.focusKick ?? 0;
+    if (!kick || kick === lastFocusKick.current) return;
+    lastFocusKick.current = kick;
+    if (studioPresets?.subTab) setSubTab(studioPresets.subTab);
+    if (studioPresets?.genTitle) setGenTitle(studioPresets.genTitle);
+    if (studioPresets?.genBrand) setGenBrand(studioPresets.genBrand);
+    if (studioPresets?.genCategory) setGenCategory(studioPresets.genCategory);
+    if (studioPresets?.genSize) setGenSize(studioPresets.genSize);
+    if (studioPresets?.genCondition) setGenCondition(studioPresets.genCondition);
+    if (studioPresets?.genTargetListingDesc) {
+      setShadowText(studioPresets.genTargetListingDesc);
+      setShadowTitle(studioPresets.genTitle ?? "");
+    }
+    if (studioPresets?.studioImageThumb?.startsWith("data:image/")) {
+      setPhotoSrc(studioPresets.studioImageThumb);
+      setShowOriginal(false);
+    }
+    if (studioPresets?.genTargetPrice) {
+      setGenTargetPrice(String(studioPresets.genTargetPrice));
+    }
+    onToast("Article chargé depuis le Dressing — lance le pipeline anti-ban.");
+  }, [studioPresets, onToast]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -566,6 +593,14 @@ export function ResellerToolsStudio({
         ctx.shadowColor = "rgba(0,0,0,0.22)";
         ctx.shadowBlur = 30;
         ctx.shadowOffsetY = 14;
+
+        if (Math.abs(photoRotationDeg) > 0.05) {
+          const rcx = dx + drawW / 2;
+          const rcy = dy + drawH / 2;
+          ctx.translate(rcx, rcy);
+          ctx.rotate((photoRotationDeg * Math.PI) / 180);
+          ctx.translate(-rcx, -rcy);
+        }
 
         ctx.drawImage(sourceToDraw, dx, dy, drawW, drawH);
         ctx.restore();
@@ -648,6 +683,7 @@ export function ResellerToolsStudio({
     removeBg,
     bgTolerance,
     showOriginal,
+    photoRotationDeg,
   ]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -960,6 +996,7 @@ export function ResellerToolsStudio({
         recommendedContrast: number;
         recommendedPaddingPct: number;
         shouldRemoveBackground: boolean;
+        shouldRotateSlight?: boolean;
         checklist: string[];
         summary: string;
       };
@@ -968,6 +1005,8 @@ export function ResellerToolsStudio({
       setContrast(out.recommendedContrast);
       setPaddingPct(out.recommendedPaddingPct);
       if (out.shouldRemoveBackground) setRemoveBg(true);
+      if (out.shouldRotateSlight) setPhotoRotationDeg(0.85);
+      else if (!out.shouldRotateSlight) setPhotoRotationDeg(0);
       onItemCreated();
       onToast(
         `${aiEngineBadge(out.engine, out.usedLocalFallback)} — réglages appliqués (${out.fingerprintRisk}).`,
@@ -1074,6 +1113,7 @@ export function ResellerToolsStudio({
       if (out.recommendedContrast) setContrast(out.recommendedContrast);
       if (out.recommendedPaddingPct) setPaddingPct(out.recommendedPaddingPct);
       if (out.shouldRemoveBackground) setRemoveBg(true);
+      if ("shouldRotateSlight" in out && out.shouldRotateSlight) setPhotoRotationDeg(0.85);
       setShadowTitle(out.reorderedTitle);
       setShadowText(out.refreshedDescription);
       const slots = mergeShadowSlots(
@@ -1199,6 +1239,7 @@ export function ResellerToolsStudio({
       if (out.recommendedContrast) setContrast(out.recommendedContrast);
       if (out.recommendedPaddingPct) setPaddingPct(out.recommendedPaddingPct);
       if (out.shouldRemoveBackground) setRemoveBg(true);
+      if ("shouldRotateSlight" in out && out.shouldRotateSlight) setPhotoRotationDeg(0.85);
       setShadowTitle(out.reorderedTitle);
       setShadowText(out.refreshedDescription);
       const slots = mergeShadowSlots(
@@ -1674,6 +1715,20 @@ export function ResellerToolsStudio({
                   max={16}
                   value={paddingPct}
                   onChange={(e) => setPaddingPct(Number(e.target.value))}
+                  className="w-full accent-emerald-500"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-zinc-400">
+                  Rotation anti-empreinte ({photoRotationDeg.toFixed(1)}°)
+                </span>
+                <input
+                  type="range"
+                  min={-1.5}
+                  max={1.5}
+                  step={0.1}
+                  value={photoRotationDeg}
+                  onChange={(e) => setPhotoRotationDeg(Number(e.target.value))}
                   className="w-full accent-emerald-500"
                 />
               </label>

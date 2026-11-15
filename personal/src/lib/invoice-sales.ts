@@ -39,8 +39,17 @@ export async function createSaleFromInvoiceDraft(
   );
   const isRetail = draft.invoice_kind === "retail_purchase" || /^boutique_/i.test(draft.platform);
   const nextNum = Number(salesCountRows[0]?.count ?? 0) + 42;
+  const retailTag = (() => {
+    const p = draft.platform.toLowerCase();
+    if (p.includes("chanel")) return "CHANEL";
+    if (p.includes("hermes")) return "HERMES";
+    if (p.includes("dior")) return "DIOR";
+    if (p.includes("gucci")) return "GUCCI";
+    if (p.includes("lv") || draft.brand?.toLowerCase().includes("louis")) return "LV";
+    return "LUXE";
+  })();
   const invoiceNumber = isRetail
-    ? `ACHAT-LV-2026-${String(nextNum).padStart(3, "0")}`
+    ? `ACHAT-${retailTag}-2026-${String(nextNum).padStart(3, "0")}`
   : `FAC-2026-${String(nextNum).padStart(3, "0")}`;
   const trackingCode = isRetail
     ? `BOUTIQUE-${draft.boutique_ref ?? "LV"}-${String(Math.floor(1000 + Math.random() * 8999))}`
@@ -141,9 +150,14 @@ function parseDraftLocal(prompt: string): InvoiceAiDraft {
   const price = euros[0] ?? 49;
   const lower = prompt.toLowerCase();
   let brand = "Sélection";
-  if (lower.includes("louis vuitton") || lower.includes(" lv ")) brand = "Louis Vuitton";
+  if (lower.includes("louis vuitton") || /\blv\b/.test(lower)) brand = "Louis Vuitton";
+  else if (/\bchanel\b/.test(lower)) brand = "Chanel";
+  else if (/herm[eè]s/.test(lower)) brand = "Hermès";
+  else if (/\bdior\b/.test(lower)) brand = "Dior";
+  else if (/\bgucci\b/.test(lower)) brand = "Gucci";
   else if (lower.includes("nike")) brand = "Nike";
   else if (lower.includes("carhartt")) brand = "Carhartt";
+  else if (lower.includes("prada")) brand = "Prada";
 
   const platform = lower.includes("leboncoin")
     ? "leboncoin"
@@ -154,13 +168,17 @@ function parseDraftLocal(prompt: string): InvoiceAiDraft {
         : "vinted";
 
   const buyerMatch =
-    /(?:à|pour)\s+([A-Za-zÀ-ÿ\s-]+?)(?:\s+(?:à|sur|pour|,|€))/i.exec(prompt) ??
-    /acheteur\s+([A-Za-zÀ-ÿ\s-]+)/i.exec(prompt);
+    /(?:vendu|vendue)\s+(?:à|a)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s'-]{1,48})/i.exec(prompt) ??
+    /(?:à|pour)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s'-]{1,48})(?:\s+(?:à|sur|pour|,|€|sur))/i.exec(
+      prompt,
+    ) ??
+    /acheteur\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s'-]+)/i.exec(prompt);
   const buyer_name = buyerMatch?.[1]?.trim().slice(0, 80) || "Client Vinted";
 
-  const cityMatch = /(?:à|sur)\s+([A-Za-zÀ-ÿ\s-]+?)(?:\s+vinted|\s+leboncoin|,|$)/i.exec(
-    prompt,
-  );
+  const cityMatch =
+    /(?:à|sur)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s'-]{2,40})\s*(?:sur\s+vinted|vinted|leboncoin|,|$)/i.exec(
+      prompt,
+    ) ?? /(?:à|sur)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s'-]{2,40})(?:\s+€|,|$)/i.exec(prompt);
   const buyer_city = cityMatch?.[1]?.trim().slice(0, 40) || "Paris";
 
   let item_title = prompt
@@ -170,6 +188,14 @@ function parseDraftLocal(prompt: string): InvoiceAiDraft {
     .slice(0, 120);
 
   let productLine: string | undefined;
+  const luxeBrand =
+    brand === "Chanel" ||
+    brand === "Hermès" ||
+    brand === "Dior" ||
+    brand === "Gucci" ||
+    brand === "Prada" ||
+    isLouisVuitton(prompt);
+
   if (isLouisVuitton(prompt)) {
     brand = "Louis Vuitton";
     const model = /neverfull/i.test(prompt)
@@ -179,6 +205,9 @@ function parseDraftLocal(prompt: string): InvoiceAiDraft {
         : "Sac à main";
     productLine = model;
     item_title = `Sac Louis Vuitton ${model} — toile Monogram · occasion authentique`;
+  } else if (luxeBrand) {
+    productLine = brand;
+    item_title = `${brand} — pièce seconde main authentique`;
   }
 
   const sku =
@@ -205,7 +234,7 @@ function parseDraftLocal(prompt: string): InvoiceAiDraft {
     condition_label: isLouisVuitton(prompt)
       ? "Très bon état — occasion authentique"
       : undefined,
-    luxury_brand: isLouisVuitton(prompt),
+    luxury_brand: luxeBrand,
     invoice_kind: "resale",
   }, prompt);
 }
