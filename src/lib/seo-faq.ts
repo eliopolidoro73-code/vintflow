@@ -9,7 +9,11 @@ export const PUBLIC_SEO_FAQ = [
     a: "Oui pour le suivi ventes, marge, stock SKU, lots et dépenses. Export CSV disponible pour ton comptable.",
   },
   {
-    q: "Quels articles dorment depuis +14 jours ?",
-    a: "Le tableau de bord signale les articles sans vente récente pour relancer prix, photo ou crosslisting.",
+    q: "Quelle différence entre Essentiel, Vendeur Plus et Pro Scale ?",
+    a: "Essentiel couvre stock et marge. Plus débloque IA, crosslisting et factures avec quotas. Pro Scale offre haute capacité, auto-crosslisting et l'assistant Nova.",
+  },
+  {
+    q: "Puis-je exporter mes chiffres pour ma comptabilité ?",
+    a: "Oui : marge par vente, seuil TVA, factures PDF (Plus et Pro) et export CSV du livre des recettes.",
   },
 ] as const;
