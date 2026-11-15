@@ -272,7 +272,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               onClick={() => (isLoggedIn ? router.push("/app") : openSignup("plus"))}
               className="vf-shimmer-btn w-full sm:w-auto h-12 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-8 text-base font-bold text-white hover:from-violet-500 hover:to-indigo-500 shadow-[0_0_36px_rgba(139,92,246,0.4)]"
             >
-              Active ton essai gratuit 14 jours
+              Voir les forfaits et payer
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <a
@@ -809,7 +809,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   onClick={() => openSignup("pro")}
                   className="vf-shimmer-btn w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 rounded-xl h-10 font-bold"
                 >
-                  Activer Pro Scale (14 jours d&apos;essai)
+                  S&apos;abonner à Pro Scale
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
