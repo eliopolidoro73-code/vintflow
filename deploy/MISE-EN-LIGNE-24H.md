@@ -2,8 +2,8 @@
 
 ## Pourquoi le sitemap affiche encore grok.bot ?
 
-Vercel déploie depuis **GitHub** (`charles-oliveira/vintflow`).  
-Le code à jour est sur **Cursor/Origin**. Tant que GitHub n’est pas synchronisé, Vercel ne reçoit pas le nouveau sitemap.
+Vercel déploie depuis **GitHub** (`eliopolidoro73-code/vintflow`).  
+Le code à jour est sur **Cursor/Origin**. Tant que GitHub est **vide**, Vercel garde l’**ancien** build (sitemap `*.apps.grok.bot`).
 
 ## À faire une fois (10 min) — sync GitHub → Vercel
 
