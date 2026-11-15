@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
-import { getAuthenticatedUser } from "@/lib/auth";
 import { BackOffice } from "@/components/BackOffice";
+import { ensurePersoServerSession } from "@/lib/perso-session";
+import { loadWorkspaceForUser } from "@/lib/workspace-data";
 
 export const dynamic = "force-dynamic";
 
@@ -10,11 +10,10 @@ export default async function PersonalAppPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const params = await searchParams;
-  const user = await getAuthenticatedUser();
+  const user = await ensurePersoServerSession();
+  const initialWorkspace = user ? await loadWorkspaceForUser(user) : undefined;
 
-  if (!user) {
-    redirect("/api/auth/bootstrap");
-  }
-
-  return <BackOffice initialTab={params.tab} />;
+  return (
+    <BackOffice initialTab={params.tab} initialWorkspace={initialWorkspace} />
+  );
 }

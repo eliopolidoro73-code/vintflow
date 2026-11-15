@@ -172,6 +172,29 @@ export interface AuthUser {
   is_demo: boolean;
 }
 
+function buildSyntheticPersoUser(userId: string, email: string): AuthUser {
+  const name = email.split("@")[0] ?? "Perso";
+  return {
+    id: userId,
+    email,
+    name,
+    plan: "pro",
+    billing_cycle: "monthly",
+    subscription_status: "personal_free",
+    trial_ends_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString(),
+    company_name: `${name} · Perso`,
+    siret: "000 000 000 00000",
+    fiscal_regime: "micro_bic",
+    vat_threshold: 85000,
+    auto_crosslist: false,
+    auto_delist: true,
+    ai_credits_used: 0,
+    crosslist_used: 0,
+    referral_code: `VF-${userId.slice(0, 6).toUpperCase()}`,
+    is_demo: false,
+  };
+}
+
 export async function getAuthenticatedUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
@@ -205,18 +228,25 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
   );
 
   let row = rows[0];
-  if (!row && process.env.VERCEL) {
+  if (!row) {
     const owner = getPrimaryOwnerEmail();
     if (owner && userId === stablePersoUserId(owner)) {
-      await ensurePersoUserForEmail(owner, owner.split("@")[0] ?? "Perso");
-      const retry = await sql<typeof rows[0]>(
-        `select id, email, name, plan, billing_cycle, subscription_status, trial_ends_at,
-                company_name, siret, fiscal_regime, vat_threshold,
-                auto_crosslist, auto_delist, ai_credits_used, crosslist_used, referral_code, is_demo
-         from users where id = $1`,
-        [userId],
-      );
-      row = retry[0];
+      try {
+        await ensurePersoUserForEmail(owner, owner.split("@")[0] ?? "Perso");
+        const retry = await sql<typeof rows[0]>(
+          `select id, email, name, plan, billing_cycle, subscription_status, trial_ends_at,
+                  company_name, siret, fiscal_regime, vat_threshold,
+                  auto_crosslist, auto_delist, ai_credits_used, crosslist_used, referral_code, is_demo
+           from users where id = $1`,
+          [userId],
+        );
+        row = retry[0];
+      } catch {
+        return buildSyntheticPersoUser(userId, owner);
+      }
+      if (!row) {
+        return buildSyntheticPersoUser(userId, owner);
+      }
     }
   }
   if (!row) return null;

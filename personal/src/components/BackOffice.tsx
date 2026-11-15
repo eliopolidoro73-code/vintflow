@@ -224,14 +224,18 @@ export function BackOffice({
   initialTab,
   initialCheckout,
   initialStripeSessionId,
+  initialWorkspace,
 }: {
   initialTab?: string;
   initialCheckout?: string;
   initialStripeSessionId?: string;
+  initialWorkspace?: WorkspacePayload | null;
 }) {
   const router = useRouter();
-  const [data, setData] = useState<WorkspacePayload | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<WorkspacePayload | null>(
+    initialWorkspace ?? null,
+  );
+  const [loading, setLoading] = useState(!initialWorkspace);
   const [tab, setTab] = useState<TabId>(
     initialTab && VALID_TABS.includes(initialTab as TabId)
       ? (initialTab as TabId)
@@ -283,10 +287,10 @@ export function BackOffice({
   const [newAccPlatform, setNewAccPlatform] = useState("vinted");
   const [newAccHandle, setNewAccHandle] = useState("");
   const [settingsForm, setSettingsForm] = useState({
-    company_name: "",
-    siret: "",
-    fiscal_regime: "micro_bic",
-    vat_threshold: "85000",
+    company_name: initialWorkspace?.user.company_name ?? "",
+    siret: initialWorkspace?.user.siret ?? "",
+    fiscal_regime: initialWorkspace?.user.fiscal_regime ?? "micro_bic",
+    vat_threshold: String(initialWorkspace?.user.vat_threshold ?? 85000),
   });
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [lotForm, setLotForm] = useState({
@@ -317,7 +321,7 @@ export function BackOffice({
     try {
       const res = await fetch("/api/workspace", { cache: "no-store" });
       if (res.status === 401) {
-        router.push("/");
+        router.refresh();
         return;
       }
       if (!res.ok) return;
@@ -336,8 +340,9 @@ export function BackOffice({
   }, [router]);
 
   useEffect(() => {
+    if (initialWorkspace) return;
     void fetchWorkspace();
-  }, [fetchWorkspace]);
+  }, [fetchWorkspace, initialWorkspace]);
 
   const filteredItems = useMemo(() => {
     if (!data) return [];
@@ -671,11 +676,31 @@ export function BackOffice({
     showToast("Dépense supprimée.");
   }
 
-  if (loading || !data) {
+  if (loading && !data) {
     return (
       <div className="min-h-screen bg-[#07080d] flex items-center justify-center text-zinc-400">
         <Loader2 className="h-5 w-5 animate-spin text-emerald-400 mr-2" />
         Chargement de ton espace Vintflow...
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-[#07080d] flex flex-col items-center justify-center gap-4 text-zinc-300 px-4">
+        <p className="text-sm text-zinc-400 text-center">
+          Impossible de charger le cockpit pour le moment.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setLoading(true);
+            void fetchWorkspace();
+          }}
+          className="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-violet-500"
+        >
+          Réessayer
+        </button>
       </div>
     );
   }
