@@ -50,6 +50,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { computeNetMargin, formatDateFr, formatEuro } from "@/lib/format";
+import { downloadInvoicePdf, downloadShippingLabelPdf } from "@/lib/invoice-pdf";
 import {
   comparePlans,
   PLANS,
@@ -1595,13 +1596,23 @@ export function BackOffice({
                           size="sm"
                           variant="outline"
                           disabled={!activePlan.pdfInvoicesAllowed}
+                          onClick={() => downloadInvoicePdf(sale, user)}
+                          className="border-violet-500/30 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20 text-xs h-8 disabled:opacity-40"
+                        >
+                          <Download className="h-3.5 w-3.5 mr-1.5" />
+                          Télécharger PDF
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!activePlan.pdfInvoicesAllowed}
                           onClick={() =>
                             setPrintModal({ open: true, mode: "invoice", sale })
                           }
                           className="border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 text-xs h-8 disabled:opacity-40"
                         >
                           <FileText className="h-3.5 w-3.5 mr-1.5" />
-                          Facture PDF
+                          Aperçu
                         </Button>
                       </div>
                     </div>

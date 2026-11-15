@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   const rl = await checkRateLimit({
     scope: "ai_assistant",
     key: user.id,
-    limit: 20,
+    limit: 40,
     windowSeconds: 600,
   });
   if (!rl.allowed) {
@@ -209,11 +209,22 @@ export async function POST(request: Request) {
     null,
   );
 
-  if (!user.is_demo) {
+  if (!user.is_demo || persoUnlimited) {
     const aiOut = await callCloudAi({
-      systemPrompt: `Tu es Nova, l'assistant IA stratégique de Vintflow pour revendeurs Vinted, Leboncoin, TikTok Shop et eBay. Réponds en français de façon directe, chiffrée et actionnable avec ces vraies données : Chiffre d'affaires total=${formatEuro(totalCa)}, Marge commerciale=${formatEuro(totalNet)}, ROI sur coût de revient=${roiPct}%, Seuil TVA=${formatEuro(user.vat_threshold)}, Meilleure vente=${bestSale ? `${bestSale.item_title} (+${formatEuro(Number(bestSale.net_margin))})` : "Aucune"}, Colis à expédier=${pendingShip.length}, En transit=${pendingTransit.length} (${formatEuro(pendingAmount)} en attente), Messages non lus=${unreadCount}, Articles actifs=${items.length}, Dormants +14j=${dormant.length}, Non crosslistés Leboncoin=${notCrosslisted.length}.`,
+      systemPrompt: `Tu es Nova, l'assistant IA stratégique expert Vinted, Leboncoin, TikTok Shop et eBay (France). Tu combines chiffres réels et conseils terrain (créneaux de publication, anti-shadowban, pricing, lots).
+
+Données cockpit en temps réel :
+- CA=${formatEuro(totalCa)}, Marge=${formatEuro(totalNet)}, ROI=${roiPct}%
+- Seuil TVA=${formatEuro(user.vat_threshold)} · Régime=${user.fiscal_regime}
+- Meilleure vente=${bestSale ? `${bestSale.item_title} (+${formatEuro(Number(bestSale.net_margin))})` : "—"}
+- Colis à expédier=${pendingShip.length}, En transit=${pendingTransit.length} (${formatEuro(pendingAmount)} en attente)
+- Messages non lus=${unreadCount}
+- Stock actif=${items.length}, Dormants 14j+ =${dormant.length}, Hors Leboncoin=${notCrosslisted.length}
+
+Règles : réponses structurées (3–6 phrases + puces si utile), français direct, jamais de blabla marketing.`,
       userPrompt: question,
-      maxTokens: 300,
+      maxTokens: 1600,
+      power: true,
     });
     if (aiOut?.text) {
       return NextResponse.json({

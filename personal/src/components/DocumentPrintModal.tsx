@@ -1,6 +1,10 @@
 "use client";
 
-import { Printer } from "lucide-react";
+import { Download, Printer } from "lucide-react";
+import {
+  downloadInvoicePdf,
+  downloadShippingLabelPdf,
+} from "@/lib/invoice-pdf";
 import {
   Dialog,
   DialogContent,
@@ -61,14 +65,28 @@ export function DocumentPrintModal({
                 ? `Facture ${sale.invoice_number}`
                 : `Bordereau 10×15 · ${sale.carrier}`}
             </span>
-            <Button
-              size="sm"
-              onClick={() => window.print()}
-              className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold"
-            >
-              <Printer className="h-4 w-4 mr-1.5" />
-              Imprimer / PDF
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  if (mode === "invoice") downloadInvoicePdf(sale, user);
+                  else downloadShippingLabelPdf(sale, user);
+                }}
+                className="border-violet-500/40 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20 font-bold"
+              >
+                <Download className="h-4 w-4 mr-1.5" />
+                Télécharger PDF
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => window.print()}
+                className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold"
+              >
+                <Printer className="h-4 w-4 mr-1.5" />
+                Imprimer
+              </Button>
+            </div>
           </DialogTitle>
         </DialogHeader>
 

@@ -23,13 +23,25 @@ export function isPersoCloudAiEnabled(): boolean {
   return hasKey;
 }
 
+function isPersoPowerAi(): boolean {
+  if (process.env.PERSO_AI_POWER === "false") return false;
+  return (
+    process.env.PERSO_AI_POWER === "true" || isPersoCloudAiEnabled()
+  );
+}
+
 export async function callCloudAi(params: {
   systemPrompt: string;
   userPrompt: string;
   imageDataUrl?: string;
   jsonMode?: boolean;
   maxTokens?: number;
+  /** Modèles pro (Gemini 2.5 Pro / GPT-4o) et budget tokens plus large. */
+  power?: boolean;
 }): Promise<AiCallResult | null> {
+  const power = params.power ?? isPersoPowerAi();
+  const defaultTokens = power ? 1200 : 450;
+  const maxTokens = Math.min(4096, params.maxTokens ?? defaultTokens);
   if (!isPersoCloudAiEnabled()) {
     return null;
   }
@@ -54,11 +66,14 @@ export async function callCloudAi(params: {
         }
       }
 
-      const geminiModels = [
-        "gemini-2.0-flash",
-        "gemini-2.5-flash",
-        "gemini-1.5-flash",
-      ];
+      const geminiModels = power
+        ? [
+            "gemini-2.5-pro",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-pro",
+          ]
+        : ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
 
       for (const model of geminiModels) {
         const res = await fetch(
@@ -75,7 +90,8 @@ export async function callCloudAi(params: {
               },
               contents: [{ role: "user", parts }],
               generationConfig: {
-                maxOutputTokens: params.maxTokens ?? 400,
+                maxOutputTokens: maxTokens,
+                temperature: power ? 0.45 : 0.65,
                 ...(params.jsonMode
                   ? { responseMimeType: "application/json" }
                   : {}),
@@ -129,13 +145,14 @@ export async function callCloudAi(params: {
           authorization: `Bearer ${openaiKey}`,
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: power ? "gpt-4o" : "gpt-4o-mini",
           ...(params.jsonMode ? { response_format: { type: "json_object" } } : {}),
           messages: [
             { role: "system", content: params.systemPrompt },
             { role: "user", content: userContent },
           ],
-          max_tokens: params.maxTokens ?? 400,
+          max_tokens: maxTokens,
+          temperature: power ? 0.45 : 0.65,
         }),
       });
 

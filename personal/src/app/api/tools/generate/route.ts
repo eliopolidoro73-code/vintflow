@@ -103,7 +103,8 @@ Disponible tant que l'annonce est en ligne.`;
       systemPrompt: LISTING_JSON_SYSTEM,
       userPrompt: `Article: ${title}, Marque: ${brand}, Catégorie: ${category}, Taille: ${size}, État: ${condition}, Défauts: ${defects || "Aucun"}, Prix achat: ${purchasePrice} €, Prix vente: ${targetPrice} €.`,
       jsonMode: true,
-      maxTokens: 1100,
+      maxTokens: 2400,
+      power: true,
     });
     if (aiOut) {
       const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
@@ -191,7 +192,7 @@ export async function POST(request: Request) {
   const rl = await checkRateLimit({
     scope: "ai_tools",
     key: auth.user.id,
-    limit: 20,
+    limit: 40,
     windowSeconds: 600,
   });
   if (!rl.allowed) {
@@ -290,7 +291,8 @@ export async function POST(request: Request) {
         userPrompt: `Analyse cet article pour préparer la fiche de vente (couleur détectée: ${dominantColor}).`,
         imageDataUrl,
         jsonMode: true,
-        maxTokens: 520,
+        maxTokens: 900,
+        power: true,
       });
       if (aiOut) {
         const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
@@ -413,7 +415,8 @@ export async function POST(request: Request) {
           "Évalue l'empreinte de cette photo Vinted et donne les réglages studio exacts.",
         imageDataUrl,
         jsonMode: true,
-        maxTokens: 480,
+        maxTokens: 800,
+        power: true,
       });
       if (aiOut) {
         const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
@@ -462,7 +465,8 @@ export async function POST(request: Request) {
         systemPrompt: VISIBILITY_JSON_SYSTEM,
         userPrompt: `Catégorie principale du vendeur : ${category}. Donne le plan pour maximiser les vues Vinted cette semaine (heure Europe/Paris).`,
         jsonMode: true,
-        maxTokens: 700,
+        maxTokens: 1400,
+        power: true,
       });
       if (aiOut) {
         const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
@@ -573,7 +577,8 @@ Tu peux demander les mesures exactes en message avant achat.`;
         systemPrompt: ANTISHADOWBAN_JSON_SYSTEM,
         userPrompt: `Titre actuel: ${baseTitle}\nDescription: ${cleanedBody || raw}`,
         jsonMode: true,
-        maxTokens: 720,
+        maxTokens: 1800,
+        power: true,
       });
       if (aiOut) {
         const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
