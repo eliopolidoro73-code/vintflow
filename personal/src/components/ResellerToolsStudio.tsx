@@ -31,6 +31,7 @@ import { formatEuro } from "@/lib/format";
 import type { PlanId } from "@/lib/plans";
 import type { StudioPresets } from "@/lib/user-preferences";
 import { buildAiImageDataUrl } from "@/lib/client-ai-image";
+import { localAntiShadowbanRewrite } from "@/lib/antishadowban-engine";
 
 interface ResellerToolsStudioProps {
   planId: PlanId;
@@ -57,10 +58,11 @@ type PublishSlot = {
   reason?: string;
 };
 
-function aiEngineBadge(engine?: string) {
+function aiEngineBadge(engine?: string, usedLocalFallback?: boolean) {
   if (!engine) return "Assistant";
   if (engine.includes("gemini")) return "Gemini cloud";
   if (engine.includes("openai")) return "OpenAI cloud";
+  if (usedLocalFallback) return "Règles pro locales (cloud indisponible)";
   return "Assistant local";
 }
 
@@ -661,7 +663,7 @@ export function ResellerToolsStudio({
     reader.readAsDataURL(file);
   }
 
-  function handleDownloadCanvas() {
+  function handleDownloadCanvas(fmt: "png" | "jpeg" = "png") {
     if (!photoSrc) {
       onToast("Importe d'abord une photo avant d'exporter.");
       return;
@@ -669,10 +671,55 @@ export function ResellerToolsStudio({
     const canvas = canvasRef.current;
     if (!canvas) return;
     const link = document.createElement("a");
-    link.download = `vintflow-${photoFormat}-studio.png`;
-    link.href = canvas.toDataURL("image/png");
+    const ext = fmt === "jpeg" ? "jpg" : "png";
+    link.download = `vintflow-${photoFormat}-studio.${ext}`;
+    link.href =
+      fmt === "jpeg"
+        ? canvas.toDataURL("image/jpeg", 0.92)
+        : canvas.toDataURL("image/png");
     link.click();
-    onToast(`Photo exportée au format ${PHOTO_FORMATS[photoFormat].label} !`);
+    onToast(
+      fmt === "jpeg"
+        ? `JPEG léger exporté (${PHOTO_FORMATS[photoFormat].label}) — idéal si la photo est lourde.`
+        : `PNG haute qualité exporté (${PHOTO_FORMATS[photoFormat].label}).`,
+    );
+  }
+
+  function mergeShadowSlots(
+    title: string,
+    desc: string,
+    category: string,
+    isRepost: boolean,
+  ) {
+    return localAntiShadowbanRewrite(title, desc, {
+      category,
+      isRepost,
+    }).bestSlots;
+  }
+
+  function handleApplyShadowToListing() {
+    if (!shadowResult) {
+      onToast("Lance d’abord l’analyse anti-ban.");
+      return;
+    }
+    setGenTitle(shadowResult.reorderedTitle);
+    setGenResult((prev) =>
+      prev
+        ? {
+            ...prev,
+            seoTitle: shadowResult.reorderedTitle,
+            vinted: shadowResult.refreshedDescription,
+          }
+        : {
+            seoTitle: shadowResult.reorderedTitle,
+            vinted: shadowResult.refreshedDescription,
+            leboncoin: shadowResult.refreshedDescription.slice(0, 800),
+            tiktokScript: `Présentation : ${shadowResult.reorderedTitle}`,
+            pricingTiers: [],
+          },
+    );
+    setSubTab("listing");
+    onToast("Titre + description injectés dans le générateur d’annonces.");
   }
 
   async function handleAnalyzePhotoToListing() {
@@ -879,6 +926,7 @@ export function ResellerToolsStudio({
         imageDataUrl,
       })) as {
         engine: string;
+        usedLocalFallback?: boolean;
         fingerprintRisk: string;
         recommendedBrightness: number;
         recommendedContrast: number;
@@ -894,7 +942,7 @@ export function ResellerToolsStudio({
       if (out.shouldRemoveBackground) setRemoveBg(true);
       onItemCreated();
       onToast(
-        `${aiEngineBadge(out.engine)} — réglages appliqués (${out.fingerprintRisk}).`,
+        `${aiEngineBadge(out.engine, out.usedLocalFallback)} — réglages appliqués (${out.fingerprintRisk}).`,
       );
     } catch (err) {
       onToast(err instanceof Error ? err.message : "Analyse photo impossible.");
@@ -1000,12 +1048,18 @@ export function ResellerToolsStudio({
       if (out.shouldRemoveBackground) setRemoveBg(true);
       setShadowTitle(out.reorderedTitle);
       setShadowText(out.refreshedDescription);
+      const slots = mergeShadowSlots(
+        out.reorderedTitle,
+        out.refreshedDescription,
+        shadowCategory || genCategory,
+        shadowIsRepost,
+      );
       setShadowResult({
         engine: out.engine,
         reorderedTitle: out.reorderedTitle,
         titleAlternatives: out.titleAlternatives,
         refreshedDescription: out.refreshedDescription,
-        bestSlots: [],
+        bestSlots: slots,
         checklist: [
           ...(out.photoChecklist ?? []).map((t) => `[Photo] ${t}`),
           ...(out.descriptionChecklist ?? []).map((t) => `[Texte] ${t}`),
@@ -1119,12 +1173,18 @@ export function ResellerToolsStudio({
       if (out.shouldRemoveBackground) setRemoveBg(true);
       setShadowTitle(out.reorderedTitle);
       setShadowText(out.refreshedDescription);
+      const slots = mergeShadowSlots(
+        out.reorderedTitle,
+        out.refreshedDescription,
+        shadowCategory || genCategory,
+        shadowIsRepost,
+      );
       setShadowResult({
         engine: out.engine,
         reorderedTitle: out.reorderedTitle,
         titleAlternatives: out.titleAlternatives,
         refreshedDescription: out.refreshedDescription,
-        bestSlots: [],
+        bestSlots: slots,
         checklist: [
           ...(out.photoChecklist ?? []).map((t) => `[Photo] ${t}`),
           ...(out.descriptionChecklist ?? []).map((t) => `[Texte] ${t}`),
@@ -1313,7 +1373,9 @@ export function ResellerToolsStudio({
             Pipeline anti-ban max
           </p>
           <p className="text-[11px] text-zinc-400 mt-0.5">
-            Photo IA → annonce (si besoin) → contrôle photo + texte en une passe.
+            Photo IA → annonce (si besoin) → contrôle photo + texte. Consomme{" "}
+            <strong className="text-amber-200/90">2 à 3 crédits IA</strong> si le cloud
+            répond.
           </p>
         </div>
         <Button
@@ -1429,15 +1491,26 @@ export function ResellerToolsStudio({
                 )}
                 Scanner → annonce complète
               </Button>
-              <Button
-                type="button"
-                onClick={handleDownloadCanvas}
-                variant="outline"
-                className="h-11 border-white/15 bg-white/5 text-white text-sm touch-manipulation"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Télécharger la photo finale
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  onClick={() => handleDownloadCanvas("png")}
+                  variant="outline"
+                  className="h-11 border-white/15 bg-white/5 text-white text-xs touch-manipulation"
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  PNG pro
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => handleDownloadCanvas("jpeg")}
+                  variant="outline"
+                  className="h-11 border-white/15 bg-white/5 text-white text-xs touch-manipulation"
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  JPEG léger
+                </Button>
+              </div>
             </div>
 
             <div className="lg:hidden rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-2.5">
@@ -1445,6 +1518,21 @@ export function ResellerToolsStudio({
                 <span className="text-xs font-semibold text-white">Détourage rapide</span>
                 <Switch checked={removeBg} onCheckedChange={setRemoveBg} />
               </div>
+              {removeBg && (
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-zinc-500">
+                    Sensibilité fond ({bgTolerance})
+                  </Label>
+                  <Input
+                    type="range"
+                    min={18}
+                    max={72}
+                    value={bgTolerance}
+                    onChange={(e) => setBgTolerance(Number(e.target.value))}
+                    className="h-2"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-2.5 hidden lg:block">
@@ -1575,15 +1663,24 @@ export function ResellerToolsStudio({
               />
             </div>
 
-            <div className="hidden lg:grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="hidden lg:grid grid-cols-1 sm:grid-cols-3 gap-2">
               <Button
                 type="button"
-                onClick={handleDownloadCanvas}
+                onClick={() => handleDownloadCanvas("png")}
                 variant="outline"
                 className="border-white/15 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs h-10"
               >
                 <Download className="h-4 w-4 mr-1.5" />
-                Télécharger (.png)
+                PNG pro
+              </Button>
+              <Button
+                type="button"
+                onClick={() => handleDownloadCanvas("jpeg")}
+                variant="outline"
+                className="border-white/15 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs h-10"
+              >
+                <Download className="h-4 w-4 mr-1.5" />
+                JPEG léger
               </Button>
               <Button
                 type="button"
@@ -2259,6 +2356,15 @@ export function ResellerToolsStudio({
                     {shadowResult.refreshedDescription}
                   </pre>
                 </div>
+
+                <Button
+                  type="button"
+                  onClick={handleApplyShadowToListing}
+                  className="w-full h-11 bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Injecter dans l&apos;onglet Annonces
+                </Button>
 
                 <div className="space-y-1.5">
                   <p className="font-bold text-amber-300">Checklist anti-shadowban :</p>

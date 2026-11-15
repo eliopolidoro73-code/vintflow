@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import type { AuthUser } from "@/lib/auth";
 import { INVOICE_EXAMPLE_PROMPTS } from "@/lib/invoice-ai-prompt";
+import { isRetailPurchasePlatform } from "@/lib/invoice-kind";
 import {
   downloadInvoicePdf,
   downloadShippingLabelPdf,
@@ -96,12 +97,11 @@ export function InvoiceAiStudio({
       setLastSale(sale);
       setLastEngine(out.engine ?? "ia");
       onRefresh();
-      downloadInvoicePdf(sale, user);
       const kind = (out as { invoiceKind?: string }).invoiceKind;
       onToast(
         kind === "retail_purchase"
-          ? `Facture d'achat boutique ${sale.invoice_number} — PDF téléchargé.`
-          : `Facture revente ${sale.invoice_number} créée et PDF téléchargé !`,
+          ? `Facture boutique ${sale.invoice_number} prête — vérifie l’aperçu puis télécharge le PDF.`
+          : `Facture ${sale.invoice_number} enregistrée — aperçu mis à jour ci-dessous.`,
       );
     } catch {
       onToast("Connexion coupée — réessaie.");
@@ -227,6 +227,10 @@ function InvoiceDocumentPreview({
   const accent = style.accent;
   const bg = style.headerBg;
   const isLuxe = style.template !== "default";
+  const isRetail = isRetailPurchasePlatform(sale.platform);
+  const label = isRetail
+    ? (style.retailLabel ?? "FACTURE D'ACHAT · BOUTIQUE")
+    : style.invoiceLabel;
 
   return (
     <div
@@ -254,7 +258,7 @@ function InvoiceDocumentPreview({
             className="text-xs font-bold"
             style={{ color: `rgb(${accent.join(",")})` }}
           >
-            {style.invoiceLabel}
+            {label}
           </p>
           <p className="text-[11px] text-zinc-600 dark:text-zinc-300 mt-0.5">
             {sale.invoice_number}
@@ -264,10 +268,17 @@ function InvoiceDocumentPreview({
       </div>
       <div className="px-5 py-4 text-xs space-y-2 bg-[#0e111a]/90 text-zinc-300">
         <div className="grid sm:grid-cols-2 gap-3">
-          <PreviewField label="Acheteur" value={`${sale.buyer_name} · ${sale.buyer_city}`} />
           <PreviewField
-            label="Expédition"
-            value={`${sale.carrier} · ${sale.tracking_code}`}
+            label={isRetail ? "Client" : "Acheteur"}
+            value={`${sale.buyer_name} · ${sale.buyer_city}`}
+          />
+          <PreviewField
+            label={isRetail ? "Règlement" : "Expédition"}
+            value={
+              isRetail
+                ? `${sale.carrier}`
+                : `${sale.carrier} · ${sale.tracking_code}`
+            }
           />
         </div>
         <PreviewField label="Article" value={sale.item_title} emphasize />
@@ -278,6 +289,15 @@ function InvoiceDocumentPreview({
           {formatEuro(sale.gross_amount)}{" "}
           <span className="text-[10px] font-normal text-zinc-500">TTC</span>
         </p>
+        {(sale.purchase_cost > 0 || sale.net_margin !== 0) && !isRetail && (
+          <p className="text-[11px] text-zinc-400">
+            Coût {formatEuro(sale.purchase_cost)} · Frais plateforme{" "}
+            {formatEuro(sale.platform_fees)} · Marge{" "}
+            <span className="text-emerald-300 font-semibold">
+              {formatEuro(sale.net_margin)}
+            </span>
+          </p>
+        )}
         {style.footerTagline && (
           <p className="text-[10px] text-zinc-500 border-t border-white/5 pt-2">
             {style.footerTagline}

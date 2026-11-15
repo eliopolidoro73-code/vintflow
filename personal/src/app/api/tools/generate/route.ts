@@ -19,6 +19,7 @@ import {
 } from "@/lib/vinted-ai-prompts";
 import { localAntiShadowbanRewrite } from "@/lib/antishadowban-engine";
 import { localDescriptionSafety } from "@/lib/description-safety";
+import { localPhotoSafetyFromImageSeed } from "@/lib/local-photo-safety";
 
 function parseAiJson<T extends Record<string, unknown>>(text: string): T | null {
   try {
@@ -170,6 +171,17 @@ Disponible tant que l'annonce est en ligne.`;
     },
   ];
 
+  if (engine === "local_listing") {
+    const safe = localAntiShadowbanRewrite(antiBanTitle, vintedFull, {
+      category,
+      isRepost: false,
+    });
+    antiBanTitle = safe.reorderedTitle;
+    vintedFull = safe.refreshedDescription;
+    avoidWords = [...new Set([...avoidWords, ...safe.avoidWords])];
+    publishSlots = safe.bestSlots.slice(0, 3) as typeof publishSlots;
+  }
+
   return {
     engine,
     cloudAiActive: isPersoCloudAiEnabled(),
@@ -210,28 +222,6 @@ export async function POST(request: Request) {
   const monthlyCap =
     plan.aiCreditsMonthlyLimit === -1 ? 2_000_000 : plan.aiCreditsMonthlyLimit;
 
-  if (monthlyCap === 0) {
-    return NextResponse.json(
-      { error: "Outils IA non disponibles sur ce forfait." },
-      { status: 403 },
-    );
-  }
-  const reserved = await sql<{ ai_credits_used: number }>(
-    `update users
-     set ai_credits_used = ai_credits_used + 1
-     where id = $1 and ai_credits_used < $2
-     returning ai_credits_used`,
-    [auth.user.id, monthlyCap],
-  );
-  if (reserved.length === 0) {
-    return NextResponse.json(
-      {
-        error: `Quota de ${monthlyCap} crédits IA/mois atteint.`,
-      },
-      { status: 403 },
-    );
-  }
-
   let body: {
     mode?:
       | "listing"
@@ -266,6 +256,33 @@ export async function POST(request: Request) {
 
   const mode = body.mode ?? "listing";
   const allowCloudAi = !auth.user.is_demo;
+
+  if (monthlyCap === 0) {
+    return NextResponse.json(
+      { error: "Outils IA non disponibles sur ce forfait." },
+      { status: 403 },
+    );
+  }
+
+  const skipAiCredits = mode === "negotiation";
+
+  if (!skipAiCredits) {
+    const reserved = await sql<{ ai_credits_used: number }>(
+      `update users
+       set ai_credits_used = ai_credits_used + 1
+       where id = $1 and ai_credits_used < $2
+       returning ai_credits_used`,
+      [auth.user.id, monthlyCap],
+    );
+    if (reserved.length === 0) {
+      return NextResponse.json(
+        {
+          error: `Quota de ${monthlyCap} crédits IA/mois atteint.`,
+        },
+        { status: 403 },
+      );
+    }
+  }
 
   // MODE 0: AI VISION PHOTO -> STRUCTURED LISTING EXTRACTION
   if (mode === "vision_analyze") {
@@ -394,25 +411,12 @@ export async function POST(request: Request) {
       );
     }
 
+    const localPhoto = localPhotoSafetyFromImageSeed(imageDataUrl);
     const fallback = {
       engine: "local_photo_rules",
       cloudAiActive: isPersoCloudAiEnabled(),
-      fingerprintRisk: "medium",
-      recommendedBrightness: 108,
-      recommendedContrast: 112,
-      recommendedPaddingPct: 8,
-      shouldRemoveBackground: true,
-      shouldRotateSlight: false,
-      checklist: [
-        "Détourer ou changer le fond (empreinte unique).",
-        "Régler luminosité entre 100 et 115 %.",
-        "Exporter en PNG depuis Vintflow (pas la photo brute du téléphone).",
-        "Ne pas re-uploader la même image pixel à pixel.",
-        "Attendre 3 min entre deux publications.",
-      ],
-      safeToPublishAfterEdits: true,
-      summary:
-        "Risque moyen — applique détourage + marge + luminosité avant Vinted.",
+      usedLocalFallback: true,
+      ...localPhoto,
     };
 
     if (allowCloudAi) {

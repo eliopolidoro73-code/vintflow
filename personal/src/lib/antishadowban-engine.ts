@@ -1,15 +1,19 @@
-const BANNED_VINTED_PATTERNS = [
-  /\bURGENT\b/gi,
-  /\bPROMO\b/gi,
-  /\bLIQUIDATION\b/gi,
-  /🔥|💥|‼️/g,
-  /stock\s*limité/gi,
-  /dernier\s*article/gi,
-  /message\s*avant\s*achat/gi,
-  /paypal|western union|virement\s*direct/gi,
+const BANNED_VINTED_PATTERNS: RegExp[] = [
+  /\bURGENT\b/i,
+  /\bPROMO\b/i,
+  /\bLIQUIDATION\b/i,
+  /🔥|💥|‼️/,
+  /stock\s*limité/i,
+  /dernier\s*article/i,
+  /message\s*avant\s*achat/i,
+  /paypal|western union|virement\s*direct/i,
 ];
 
-const SPAM_HASHTAG = /(?:^|\s)(#\w+\s*){4,}/g;
+const SPAM_HASHTAG = /(?:^|\s)(#\w+\s*){4,}/;
+
+function textMatchesPattern(text: string, pattern: RegExp): boolean {
+  return pattern.test(text);
+}
 
 const SYNONYMS: Record<string, string[]> = {
   sac: ["sac", "cabas", "besace"],
@@ -35,12 +39,12 @@ export function scoreShadowbanRisk(
   let score = 0;
 
   for (const pattern of BANNED_VINTED_PATTERNS) {
-    if (pattern.test(title) || pattern.test(description)) {
+    if (textMatchesPattern(title, pattern) || textMatchesPattern(description, pattern)) {
       score += 2;
       flags.push(`Motif interdit : ${pattern.source.slice(0, 24)}`);
     }
   }
-  if (SPAM_HASHTAG.test(description)) {
+  if (textMatchesPattern(description, SPAM_HASHTAG)) {
     score += 3;
     reasons.push("Trop de hashtags (spam Vinted).");
   }
@@ -70,6 +74,18 @@ export function scoreShadowbanRisk(
   }
 
   return { riskLevel, riskReasons: [...new Set([...reasons, ...flags])], flags };
+}
+
+function applySynonymVariation(text: string): string {
+  let out = text;
+  for (const [word, alts] of Object.entries(SYNONYMS)) {
+    const re = new RegExp(`\\b${word}\\b`, "gi");
+    if (re.test(out)) {
+      const pick = alts[Math.floor(Math.random() * alts.length)];
+      out = out.replace(re, pick);
+    }
+  }
+  return out;
 }
 
 function shuffleTitleWords(title: string): string {
@@ -110,9 +126,10 @@ export function localAntiShadowbanRewrite(
     cleanTitle = cleanTitle.replace(pattern, "");
   }
   cleanDesc = stripHashtags(cleanDesc, 3);
+  cleanDesc = applySynonymVariation(cleanDesc);
 
   const variants = titleVariants(cleanTitle || title);
-  const reorderedTitle = variants[0] ?? cleanTitle;
+  const reorderedTitle = applySynonymVariation(variants[0] ?? cleanTitle);
 
   const refreshedDescription = `${reorderedTitle}
 

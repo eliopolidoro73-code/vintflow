@@ -22,6 +22,9 @@ export function daysSince(input: string | Date): number {
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
 
+const LUXE_BRANDS =
+  /louis\s*vuitton|chanel|herm[eè]s|dior|gucci|prada|celine|yves\s*saint\s*laurent|\bysl\b/i;
+
 export function generateListingCopy(params: {
   title: string;
   brand: string;
@@ -32,6 +35,7 @@ export function generateListingCopy(params: {
 }) {
   const cleanBrand = params.brand.trim() || "Sans marque";
   const cleanTitle = params.title.trim();
+  const isLuxe = LUXE_BRANDS.test(`${cleanBrand} ${cleanTitle}`);
 
   const seoTitle = [cleanTitle, cleanBrand !== "Sans marque" ? cleanBrand : "", `Taille ${params.size}`, params.condition]
     .filter(Boolean)
@@ -45,10 +49,14 @@ export function generateListingCopy(params: {
       .toLowerCase()
       .replace(/[^a-z0-9]/g, "");
 
+  const luxeLine = isLuxe
+    ? "Authentification visuelle effectuée (datecodes, coutures, quincaillerie). Photos détaillées sans filtres agressifs.\n"
+    : "";
+
   const vinted = `${cleanTitle} — ${cleanBrand}
 Taille : ${params.size} | État : ${params.condition}
 
-Article contrôlé et prêt à être expédié sous 24h (Mondial Relay, Vinted Go ou Chronopost).
+${luxeLine}Article contrôlé et prêt à être expédié sous 24h (Mondial Relay, Vinted Go ou Chronopost).
 Emballage soigné, maison non-fumeur.
 N'hésite pas si tu veux les mesures exactes ou faire un lot pour réduire les frais de port !
 

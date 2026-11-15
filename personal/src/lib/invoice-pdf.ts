@@ -23,6 +23,9 @@ export interface InvoicePdfSale {
   tracking_code: string;
   gross_amount: number;
   sold_at: string;
+  purchase_cost?: number;
+  platform_fees?: number;
+  net_margin?: number;
 }
 
 function safeFileName(invoiceNumber: string): string {
@@ -166,6 +169,39 @@ function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
 
   y += isLuxe ? 36 : 22;
   y = drawTotalsBlock(doc, sale.gross_amount, 118, 193, y, accent);
+
+  const hasEconomics =
+    (sale.purchase_cost ?? 0) > 0 || (sale.platform_fees ?? 0) > 0;
+  if (hasEconomics) {
+    y += 6;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 100, 100);
+    doc.text("SYNTHÈSE REVENDEUR", margin, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(55, 55, 55);
+    if ((sale.purchase_cost ?? 0) > 0) {
+      doc.text(`Coût d'achat : ${formatEuro(sale.purchase_cost!)}`, margin, y);
+      y += 4;
+    }
+    if ((sale.platform_fees ?? 0) > 0) {
+      doc.text(`Frais plateforme : ${formatEuro(sale.platform_fees!)}`, margin, y);
+      y += 4;
+    }
+    const marginVal =
+      sale.net_margin ??
+      sale.gross_amount -
+        (sale.purchase_cost ?? 0) -
+        (sale.platform_fees ?? 0);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(accent[0], accent[1], accent[2]);
+    doc.text(`Marge nette estimée : ${formatEuro(marginVal)}`, margin, y);
+    y += 6;
+    doc.setTextColor(90, 90, 90);
+  }
+
   if (isLuxe) {
     drawRetailBarcode(doc, sale.invoice_number, margin, y, 55);
     y += 18;

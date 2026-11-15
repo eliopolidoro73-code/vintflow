@@ -121,7 +121,22 @@ export function renderLuxuryRetailPdf(
   let y = baseRetailHeader(ctx, subtitles[template] ?? subtitles.generic_luxe!);
   y = retailItemBlock(ctx, y);
   y = drawTotalsBlock(doc, sale.gross_amount, 115, 193, y, style.accent);
-  drawRetailBarcode(doc, sale.tracking_code, margin, y, 72);
+
+  if (sale.sku) {
+    y += 8;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Code traçabilité interne : ${sale.tracking_code || sale.invoice_number}`,
+      margin,
+      y,
+    );
+    y += 4;
+    doc.text(`Référence boutique : ${ctx.ref}`, margin, y);
+  }
+
+  drawRetailBarcode(doc, sale.tracking_code || sale.invoice_number, margin, y + 6, 72);
 
   y += 20;
   drawLegalFooter(doc, margin, y, [
