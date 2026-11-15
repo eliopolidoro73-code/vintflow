@@ -191,6 +191,11 @@ interface WorkspacePayload {
     creditsRemaining: number;
     cloudAllowed: boolean;
     exhausted: boolean;
+    effectiveCap?: number;
+    usagePercent?: number;
+    thresholdPercent?: number;
+    thresholdReached?: boolean;
+    studioTasksBlocked?: boolean;
     strategy: "local_first";
   };
 }
@@ -1644,11 +1649,17 @@ export function BackOffice({
                 creditsLimit={aiQuota.creditsLimit}
                 creditsRemaining={aiQuota.creditsRemaining}
                 cloudAllowed={aiQuota.cloudAllowed}
+                usagePercent={aiQuota.usagePercent}
+                thresholdPercent={aiQuota.thresholdPercent ?? 90}
+                studioTasksBlocked={aiQuota.studioTasksBlocked}
               />
             <ResellerToolsStudio
               planId="pro"
               aiCreditsUsed={aiQuota.creditsUsed}
               aiCreditsLimit={aiQuota.creditsLimit}
+              studioTasksBlocked={aiQuota.studioTasksBlocked}
+              aiUsagePercent={aiQuota.usagePercent}
+              aiThresholdPercent={aiQuota.thresholdPercent}
               studioPresets={user.preferences?.studio}
               onStudioPresetsChange={saveStudioPresets}
               onItemCreated={fetchWorkspace}
@@ -1667,6 +1678,9 @@ export function BackOffice({
                 creditsLimit={aiQuota.creditsLimit}
                 creditsRemaining={aiQuota.creditsRemaining}
                 cloudAllowed={aiQuota.cloudAllowed}
+                usagePercent={aiQuota.usagePercent}
+                thresholdPercent={aiQuota.thresholdPercent ?? 90}
+                studioTasksBlocked={aiQuota.studioTasksBlocked}
               />
             <InvoiceAiStudio
               user={user}

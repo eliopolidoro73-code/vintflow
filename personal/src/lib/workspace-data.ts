@@ -263,7 +263,12 @@ export async function loadWorkspaceForUser(user: AuthUser) {
       return {
         creditsUsed: snap.used,
         creditsLimit: snap.limit,
-        creditsRemaining: snap.remaining,
+        creditsRemaining: snap.remainingBeforeBlock,
+        effectiveCap: snap.effectiveCap,
+        usagePercent: snap.usagePercent,
+        thresholdPercent: snap.thresholdPercent,
+        thresholdReached: snap.thresholdReached,
+        studioTasksBlocked: snap.studioTasksBlocked,
         cloudAllowed: snap.cloudAllowed,
         exhausted: snap.exhausted,
         strategy: "local_first" as const,

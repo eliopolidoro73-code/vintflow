@@ -38,6 +38,9 @@ interface ResellerToolsStudioProps {
   planId: PlanId;
   aiCreditsUsed: number;
   aiCreditsLimit: number; // 0 = disabled, -1 = unlimited
+  studioTasksBlocked?: boolean;
+  aiUsagePercent?: number;
+  aiThresholdPercent?: number;
   studioPresets?: StudioPresets;
   onStudioPresetsChange?: (patch: StudioPresets) => void;
   onItemCreated: () => void;
@@ -281,6 +284,9 @@ export function ResellerToolsStudio({
   planId,
   aiCreditsUsed,
   aiCreditsLimit,
+  studioTasksBlocked,
+  aiUsagePercent,
+  aiThresholdPercent = 90,
   studioPresets,
   onStudioPresetsChange,
   onItemCreated,
@@ -1405,11 +1411,13 @@ export function ResellerToolsStudio({
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-emerald-400" />
           <span className="font-semibold text-white">
-            {aiCreditsLimit === -1
-              ? "Suite IA Illimitée (Pro Scale)"
-              : aiCreditsUsed >= aiCreditsLimit
-                ? `Quota cloud épuisé — moteurs locaux (0 €) actifs`
-                : `Crédits cloud ce mois : ${aiCreditsUsed} / ${aiCreditsLimit} · local gratuit`}
+            {studioTasksBlocked
+              ? `Seuil ${aiThresholdPercent} % atteint (${aiUsagePercent ?? "—"} %) — Studio IA bloqué`
+              : aiCreditsLimit === -1
+                ? "Suite IA Illimitée (Pro Scale)"
+                : aiCreditsUsed >= aiCreditsLimit
+                  ? `Quota cloud épuisé — moteurs locaux (0 €) actifs`
+                  : `Crédits cloud : ${aiCreditsUsed} / ${aiCreditsLimit} (bloc à ${aiThresholdPercent} %) · local gratuit`}
           </span>
         </div>
         {aiCreditsLimit > 0 && (

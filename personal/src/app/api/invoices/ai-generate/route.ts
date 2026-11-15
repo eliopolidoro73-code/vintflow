@@ -6,6 +6,8 @@ import {
   getAiCreditSnapshot,
   getMonthlyCloudCap,
   reserveCloudAiCredit,
+  isInvoiceBlockedAtThreshold,
+  studioTasksBlockedJson,
 } from "@/lib/ai-credits";
 import {
   INVOICE_FROM_TEXT_SYSTEM,
@@ -76,6 +78,10 @@ export async function POST(request: Request) {
   const cloudCap = getMonthlyCloudCap(auth.user, plan);
   let aiCredits = await getAiCreditSnapshot(auth.user.id, cloudCap);
 
+  if (isInvoiceBlockedAtThreshold(aiCredits)) {
+    return NextResponse.json(studioTasksBlockedJson(aiCredits), { status: 403 });
+  }
+
   let body: { prompt?: string };
   try {
     body = await request.json();
@@ -129,7 +135,10 @@ export async function POST(request: Request) {
     aiCredits: {
       used: aiCredits.used,
       limit: aiCredits.limit,
-      remaining: aiCredits.remaining,
+      effectiveCap: aiCredits.effectiveCap,
+      thresholdPercent: aiCredits.thresholdPercent,
+      usagePercent: aiCredits.usagePercent,
+      remaining: aiCredits.remainingBeforeBlock,
     },
     powerAi: process.env.PERSO_AI_POWER !== "false",
     draft: finalized,

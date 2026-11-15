@@ -16,6 +16,9 @@ type CloudAiStatusBarProps = {
   creditsLimit?: number;
   creditsRemaining?: number;
   cloudAllowed?: boolean;
+  usagePercent?: number;
+  thresholdPercent?: number;
+  studioTasksBlocked?: boolean;
 };
 
 export function CloudAiStatusBar({
@@ -23,6 +26,9 @@ export function CloudAiStatusBar({
   creditsLimit,
   creditsRemaining,
   cloudAllowed,
+  usagePercent,
+  thresholdPercent = 90,
+  studioTasksBlocked,
 }: CloudAiStatusBarProps) {
   const [health, setHealth] = useState<AiHealth | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,9 +65,10 @@ export function CloudAiStatusBar({
   const openaiOk = health?.openai?.status === "ok";
   const cloudUp = geminiOk || openaiOk;
   const quotaBlocked =
-    typeof cloudAllowed === "boolean"
+    studioTasksBlocked ||
+    (typeof cloudAllowed === "boolean"
       ? !cloudAllowed
-      : typeof creditsRemaining === "number" && creditsRemaining <= 0;
+      : typeof creditsRemaining === "number" && creditsRemaining <= 0);
 
   return (
     <div
@@ -83,7 +90,9 @@ export function CloudAiStatusBar({
         )}
         <span className="font-semibold">
           {quotaBlocked
-            ? "Quota cloud épuisé — plus d'appels Gemini/OpenAI ce mois"
+            ? studioTasksBlocked
+              ? `Seuil ${thresholdPercent} % atteint — Studio IA bloqué (${usagePercent ?? "—"} % utilisé)`
+              : "Quota cloud épuisé — plus d'appels Gemini/OpenAI ce mois"
             : cloudUp
               ? `IA cloud : ${geminiOk ? "Gemini" : ""}${geminiOk && openaiOk ? " + " : ""}${openaiOk ? "OpenAI" : ""}`
               : "Mode local (0 €) — moteurs intégrés actifs"}

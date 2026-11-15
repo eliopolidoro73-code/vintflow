@@ -8,6 +8,7 @@ import {
   getMonthlyCloudCap,
   isHardAiBlockWhenExhausted,
   reserveCloudAiCredit,
+  studioTasksBlockedJson,
 } from "@/lib/ai-credits";
 import { sql } from "@/lib/db";
 import { computeNetMargin, generateListingCopy } from "@/lib/format";
@@ -300,6 +301,10 @@ export async function POST(request: Request) {
       { error: "Outils IA non disponibles sur ce forfait." },
       { status: 403 },
     );
+  }
+
+  if (aiCredits.studioTasksBlocked && mode !== "negotiation") {
+    return NextResponse.json(studioTasksBlockedJson(aiCredits), { status: 403 });
   }
 
   if (

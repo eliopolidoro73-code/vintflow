@@ -25,7 +25,10 @@ Lien mobile (Vercel) : `https://vintflow-perso.vercel.app/app` — ouverture dir
   - `GEMINI_API_KEY` — clé [AI Studio](https://aistudio.google.com/apikey) (`AQ.…` ou `AIza…`)
   - `OPENAI_API_KEY` — secours si Gemini échoue (recommandé)
   - `PERSO_ENABLE_CLOUD_AI` = `true`, `PERSO_AI_POWER` = `true`
-  - `PERSO_AI_MONTHLY_CLOUD_CAP` = `120` (appels Gemini/OpenAI max/mois ; au-delà = **blocage cloud**, factures/anti-ban **locaux gratuits**)
+  - `PERSO_AI_MONTHLY_CLOUD_CAP` = `120` (appels Gemini/OpenAI max/mois)
+  - `PERSO_AI_CLOUD_BLOCK_AT_PERCENT` = `90` (à 90 % : **plus de tâches Studio IA** ; cloud coupé)
+  - `PERSO_AI_BLOCK_STUDIO_AT_THRESHOLD` = `true` (403 sur `/api/tools/generate`)
+  - `PERSO_AI_BLOCK_INVOICES_AT_THRESHOLD` = `true` par défaut (factures **bloquées** à 90 % ; `false` pour garder les factures locales gratuites)
   - `PERSO_AI_OPENAI_FALLBACK` = `false` par défaut (0 € — pas d’OpenAI payant sans le demander)
   - `PERSO_AI_HARD_BLOCK_WHEN_EXHAUSTED` = `true` pour tout couper à 403 quand le cap est atteint (sinon local reste actif)
   - `SESSION_SECRET`, `PERSO_PASSWORD`, `PERSO_ALLOWED_EMAILS`, clés Blob si utilisées
