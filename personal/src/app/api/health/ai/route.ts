@@ -73,6 +73,9 @@ export async function GET() {
 
   return NextResponse.json({
     ok: anyOk,
+    buildSha:
+      process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
+      process.env.VERCEL_DEPLOYMENT_ID?.slice(0, 8),
     cloudAiEnabled: isPersoCloudAiEnabled(),
     persoAiPower: powerFlag === "true" || (powerFlag !== "false" && anyOk),
     persoEnableCloudAi: process.env.PERSO_ENABLE_CLOUD_AI === "true",
