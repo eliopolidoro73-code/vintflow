@@ -85,11 +85,42 @@ export function luxuryMetaFromTitle(
   itemTitle: string,
   sku: string,
 ): InvoiceLuxuryMeta {
-  if (isLouisVuitton(`${itemTitle} ${sku}`)) {
+  const blob = `${itemTitle} ${sku}`;
+  if (isLouisVuitton(blob)) {
     return {
       brand: "Louis Vuitton",
       productLine: detectLvModel(itemTitle),
       conditionLabel: "Occasion authentique — très bon état",
+      isLuxury: true,
+    };
+  }
+  if (/chanel/i.test(blob)) {
+    return {
+      brand: "Chanel",
+      productLine: "Maroquinerie",
+      conditionLabel: "Occasion authentique — très bon état",
+      isLuxury: true,
+    };
+  }
+  if (/herm[eè]s/i.test(blob)) {
+    return {
+      brand: "Hermès",
+      productLine: "Maroquinerie",
+      conditionLabel: "Occasion authentique — très bon état",
+      isLuxury: true,
+    };
+  }
+  if (/\bdior\b/i.test(blob)) {
+    return {
+      brand: "Dior",
+      conditionLabel: "Occasion — état conforme annonce",
+      isLuxury: true,
+    };
+  }
+  if (/\bgucci\b/i.test(blob)) {
+    return {
+      brand: "Gucci",
+      conditionLabel: "Occasion — état conforme annonce",
       isLuxury: true,
     };
   }

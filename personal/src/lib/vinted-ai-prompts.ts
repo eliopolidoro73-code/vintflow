@@ -37,7 +37,11 @@ Retourne UNIQUEMENT JSON :
 - avoidWords (mots interdits pour cette annonce)
 - photoFingerprintTips (4 conseils photo)
 - waitMinutesBeforeRepost (number 3–15)
-- safeToPostNow (boolean)`;
+- safeToPostNow (boolean)
+- descriptionRisk ("low"|"medium"|"high")
+- duplicateScore (0-100 duplication texte)
+- spamFlags (phrases sur spam description)
+- safeToPostDescription (boolean)`;
 
 export const VISION_JSON_SYSTEM = `Expert revente seconde main. Analyse l'image et retourne JSON :
 title, brand, category, size, condition, defects, estimatedPrice (EUR number),
@@ -56,6 +60,36 @@ Retourne JSON :
 - checklist (5 étapes avant upload)
 - safeToPublishAfterEdits (boolean)
 - summary (phrase FR pour le vendeur)`;
+
+export const DESCRIPTION_SAFETY_JSON_SYSTEM = `Expert anti-shadowban Vinted France (2026) — uniquement le TEXTE (titre + description).
+
+Tu détectes : duplication mot pour mot, hashtags spam (>3), majuscules, mots interdits (URGENT, PROMO, PayPal), répétition de phrases, structure copiée d'une autre annonce.
+
+Retourne UNIQUEMENT JSON :
+- descriptionRisk ("low"|"medium"|"high")
+- duplicateScore (0-100, probabilité filtre duplication texte)
+- spamFlags (courtes phrases FR sur ce qui posait problème)
+- reorderedTitle (50-72 car., unique)
+- titleAlternatives (2 titres sûrs)
+- refreshedDescription (4-8 lignes Vinted prêtes à coller, ton humain, max 3 hashtags)
+- checklist (6 actions texte avant republication)
+- safeToPostDescription (boolean)
+- summary (phrase directe FR)`;
+
+export const LISTING_SAFETY_JSON_SYSTEM = `Expert anti-shadowban Vinted — analyse COMBINÉE photo + texte pour republication.
+
+Analyse l'image (empreinte/duplicate) ET le titre/description (spam, duplication texte).
+
+Retourne UNIQUEMENT JSON :
+- fingerprintRisk ("low"|"medium"|"high")
+- descriptionRisk ("low"|"medium"|"high")
+- globalRisk ("low"|"medium"|"high")
+- recommendedBrightness, recommendedContrast, recommendedPaddingPct, shouldRemoveBackground, shouldRotateSlight
+- reorderedTitle, titleAlternatives (2), refreshedDescription
+- photoChecklist (4 étapes photo), descriptionChecklist (4 étapes texte)
+- safeToPublishAfterEdits (boolean)
+- safeToPostDescription (boolean)
+- summary (2 phrases FR : photo + description)`;
 
 export const VISIBILITY_JSON_SYSTEM = `Expert trafic Vinted France. Donne plan de publication.
 

@@ -1,7 +1,12 @@
 import { jsPDF } from "jspdf";
 import type { AuthUser } from "@/lib/auth";
 import { formatDateFr, formatEuro } from "@/lib/format";
-import { isLouisVuitton, luxuryMetaFromTitle } from "@/lib/invoice-luxury";
+import { luxuryMetaFromTitle } from "@/lib/invoice-luxury";
+import {
+  brandStyleFor,
+  detectInvoiceBrandTemplate,
+  drawLuxuryInvoiceHeader,
+} from "@/lib/invoice-brand-styles";
 
 export interface InvoicePdfSale {
   invoice_number: string;
@@ -24,21 +29,21 @@ function safeFileName(invoiceNumber: string): string {
 function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const margin = 18;
-  let y = margin;
   const luxury = luxuryMetaFromTitle(sale.item_title, sale.sku);
-  const lv = luxury.isLuxury || isLouisVuitton(sale.item_title);
-  const accent = lv ? [92, 64, 51] as const : [5, 120, 85] as const;
+  const template = detectInvoiceBrandTemplate(
+    sale.item_title,
+    sale.sku,
+    luxury.brand,
+  );
+  const style = brandStyleFor(template);
+  const isLuxe = style.template !== "default";
+  const accent = style.accent;
 
-  if (lv) {
-    doc.setFillColor(250, 246, 240);
-    doc.rect(0, 0, 210, 42, "F");
-    doc.setDrawColor(accent[0], accent[1], accent[2]);
-    doc.setLineWidth(0.6);
-    doc.line(margin, 40, 195, 40);
-  }
+  let y = drawLuxuryInvoiceHeader(doc, style, margin);
+  if (!isLuxe) y = margin;
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(lv ? 17 : 16);
+  doc.setFontSize(isLuxe ? 15 : 16);
   doc.setTextColor(30, 30, 30);
   doc.text(user.company_name || user.name, margin, y);
 
@@ -50,19 +55,26 @@ function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
   doc.text(`Email : ${user.email}`, margin, y);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
+  doc.setFontSize(isLuxe ? 12 : 14);
   doc.setTextColor(accent[0], accent[1], accent[2]);
-  doc.text(lv ? "FACTURE · LUXE" : "FACTURE", 195, margin, { align: "right" });
+  doc.text(style.invoiceLabel, 195, isLuxe ? 14 : margin, { align: "right" });
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(10);
-  doc.text(sale.invoice_number, 195, margin + 7, { align: "right" });
+  const invY = isLuxe ? 21 : margin + 7;
+  doc.text(sale.invoice_number, 195, invY, { align: "right" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text(`Date : ${formatDateFr(sale.sold_at)}`, 195, margin + 12, {
+  doc.text(`Date : ${formatDateFr(sale.sold_at)}`, 195, invY + 5, {
     align: "right",
   });
+  if (isLuxe && luxury.brand) {
+    doc.setFontSize(8);
+    doc.setTextColor(style.muted[0], style.muted[1], style.muted[2]);
+    doc.text(`Réf. maison : ${luxury.brand}`, 195, invY + 10, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+  }
 
-  y = 42;
+  y = Math.max(y + 14, isLuxe ? 52 : 42);
   doc.setDrawColor(220, 220, 220);
   doc.line(margin, y, 195, y);
   y += 8;
@@ -89,8 +101,13 @@ function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
   doc.text(`${sale.carrier} · ${sale.tracking_code}`, 110, y);
 
   y += 14;
-  doc.setFillColor(248, 250, 252);
-  doc.rect(margin, y - 4, 177, 28, "F");
+  if (isLuxe) {
+    doc.setFillColor(style.headerBg[0], style.headerBg[1], style.headerBg[2]);
+  } else {
+    doc.setFillColor(248, 250, 252);
+  }
+  const boxH = isLuxe ? 38 : 28;
+  doc.rect(margin, y - 4, 177, boxH, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.text("Désignation / SKU", margin + 2, y + 2);
@@ -98,7 +115,7 @@ function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
   doc.text("Montant TTC", 175, y + 2, { align: "right" });
   y += 10;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(lv ? 11 : 10);
+  doc.setFontSize(isLuxe ? 11 : 10);
   const titleLines = doc.splitTextToSize(sale.item_title, 105);
   doc.text(titleLines, margin + 2, y);
   doc.setFont("helvetica", "normal");
@@ -117,13 +134,18 @@ function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
   } else {
     doc.text(`Réf. SKU : ${sale.sku} · Article d'occasion`, margin + 2, y + 6);
   }
-  doc.text("1", 132, y + (lv ? 10 : 0));
+  doc.text("1", 132, y + (isLuxe ? 10 : 0));
   doc.setFont("helvetica", "bold");
-  doc.text(formatEuro(sale.gross_amount), 193, y + (lv ? 5 : 0), {
+  doc.text(formatEuro(sale.gross_amount), 193, y + (isLuxe ? 5 : 0), {
     align: "right",
   });
 
-  y += lv ? 32 : 22;
+  y += isLuxe ? 36 : 22;
+
+  doc.setDrawColor(accent[0], accent[1], accent[2]);
+  doc.setLineWidth(0.25);
+  doc.line(130, y - 2, 193, y - 2);
+
   doc.setFont("helvetica", "normal");
   doc.text("Total HT", 140, y);
   doc.text(formatEuro(sale.gross_amount), 193, y, { align: "right" });
@@ -143,6 +165,12 @@ function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
       : "TVA non applicable, article 293 B du CGI.";
   doc.text(legal, margin, y, { maxWidth: 177 });
   y += 5;
+  if (style.footerTagline) {
+    doc.setTextColor(style.muted[0], style.muted[1], style.muted[2]);
+    doc.text(style.footerTagline, margin, y, { maxWidth: 177 });
+    y += 5;
+    doc.setTextColor(90, 90, 90);
+  }
   doc.text(
     `Facture acquittée via ${sale.platform.replace("_", " ")} · Générée par VintFlow.`,
     margin,
@@ -220,4 +248,12 @@ function buildShippingLabelPdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
   doc.text(`SKU ${sale.sku} · ${sale.invoice_number}`, m, y);
 
   return doc;
+}
+
+/** Style de facture pour l’aperçu UI (sans jsPDF côté client lourd). */
+export function invoicePreviewTheme(itemTitle: string, sku: string) {
+  const luxury = luxuryMetaFromTitle(itemTitle, sku);
+  const template = detectInvoiceBrandTemplate(itemTitle, sku, luxury.brand);
+  const style = brandStyleFor(template);
+  return { luxury, style, template };
 }

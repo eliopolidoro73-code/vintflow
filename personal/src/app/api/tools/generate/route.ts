@@ -12,10 +12,13 @@ import {
   defaultVintedSlots,
   LISTING_JSON_SYSTEM,
   PHOTO_SAFETY_JSON_SYSTEM,
+  DESCRIPTION_SAFETY_JSON_SYSTEM,
+  LISTING_SAFETY_JSON_SYSTEM,
   VISION_JSON_SYSTEM,
   VISIBILITY_JSON_SYSTEM,
 } from "@/lib/vinted-ai-prompts";
 import { localAntiShadowbanRewrite } from "@/lib/antishadowban-engine";
+import { localDescriptionSafety } from "@/lib/description-safety";
 
 function parseAiJson<T extends Record<string, unknown>>(text: string): T | null {
   try {
@@ -236,7 +239,9 @@ export async function POST(request: Request) {
       | "negotiation"
       | "vision_analyze"
       | "visibility"
-      | "photo_safety";
+      | "photo_safety"
+      | "description_safety"
+      | "listing_safety";
     title?: string;
     brand?: string;
     category?: string;
@@ -458,6 +463,224 @@ export async function POST(request: Request) {
     return NextResponse.json(fallback);
   }
 
+  if (mode === "description_safety") {
+    const title = (body.title ?? "").trim().slice(0, 100);
+    const description = (body.originalText ?? body.title ?? "").trim().slice(0, 2000);
+    const baseTitle =
+      title || description.split("\n")[0]?.slice(0, 65) || "Pièce seconde main";
+    const bodyText =
+      title && description !== title
+        ? description
+        : description.split("\n").slice(1).join("\n") || description;
+
+    const local = localDescriptionSafety(baseTitle, bodyText, {
+      isRepost: Boolean(body.isRepost),
+      category: (body.category ?? "").trim() || undefined,
+    });
+
+    let out = {
+      engine: "local_description_rules",
+      cloudAiActive: isPersoCloudAiEnabled(),
+      ...local,
+    };
+
+    if (allowCloudAi) {
+      const aiOut = await callCloudAi({
+        systemPrompt: DESCRIPTION_SAFETY_JSON_SYSTEM,
+        userPrompt: `Titre: ${baseTitle}
+Description actuelle:
+${bodyText || "(vide)"}
+Republication: ${body.isRepost ? "oui" : "non"}
+Catégorie: ${body.category ?? "—"}
+Analyse locale: risque ${local.descriptionRisk}, score dup ${local.duplicateScore}`,
+        jsonMode: true,
+        maxTokens: 2200,
+        power: true,
+      });
+      if (aiOut) {
+        const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
+        if (parsed) {
+          out = {
+            ...out,
+            engine: cloudEngineTag(aiOut.provider),
+            cloudAiActive: true,
+            descriptionRisk:
+              parsed.descriptionRisk === "low" ||
+              parsed.descriptionRisk === "medium" ||
+              parsed.descriptionRisk === "high"
+                ? parsed.descriptionRisk
+                : local.descriptionRisk,
+            duplicateScore: Math.min(
+              100,
+              Number(parsed.duplicateScore ?? local.duplicateScore),
+            ),
+            spamFlags: Array.isArray(parsed.spamFlags)
+              ? (parsed.spamFlags.slice(0, 8) as string[])
+              : local.spamFlags,
+            reorderedTitle: String(
+              parsed.reorderedTitle ?? local.reorderedTitle,
+            ).slice(0, 72),
+            titleAlternatives: Array.isArray(parsed.titleAlternatives)
+              ? (parsed.titleAlternatives.slice(0, 3) as string[])
+              : local.titleAlternatives,
+            refreshedDescription: String(
+              parsed.refreshedDescription ?? local.refreshedDescription,
+            ),
+            checklist: Array.isArray(parsed.checklist)
+              ? (parsed.checklist.slice(0, 8) as string[])
+              : local.checklist,
+            safeToPostDescription: Boolean(
+              parsed.safeToPostDescription ?? local.safeToPostDescription,
+            ),
+            summary: String(parsed.summary ?? local.summary),
+          };
+        }
+      }
+    }
+
+    return NextResponse.json(out);
+  }
+
+  if (mode === "listing_safety") {
+    const imageDataUrl = (body.imageDataUrl ?? "").trim();
+    const title = (body.title ?? "").trim().slice(0, 100);
+    const description = (body.originalText ?? "").trim().slice(0, 2000);
+    const baseTitle =
+      title || description.split("\n")[0]?.slice(0, 65) || "Pièce seconde main";
+
+    const descLocal = localDescriptionSafety(baseTitle, description, {
+      isRepost: Boolean(body.isRepost),
+      category: (body.category ?? "").trim() || undefined,
+    });
+
+    const fallback = {
+      engine: "local_listing_safety",
+      cloudAiActive: isPersoCloudAiEnabled(),
+      fingerprintRisk: "medium",
+      descriptionRisk: descLocal.descriptionRisk,
+      globalRisk:
+        descLocal.descriptionRisk === "high" ? "high" : ("medium" as const),
+      recommendedBrightness: 108,
+      recommendedContrast: 112,
+      recommendedPaddingPct: 8,
+      shouldRemoveBackground: true,
+      shouldRotateSlight: false,
+      reorderedTitle: descLocal.reorderedTitle,
+      titleAlternatives: descLocal.titleAlternatives,
+      refreshedDescription: descLocal.refreshedDescription,
+      photoChecklist: [
+        "Détourer ou fond studio différent.",
+        "Luminosité +5 %, contraste léger.",
+        "Marge blanche 6–10 % autour de l'article.",
+        "Exporter depuis Vintflow (pas la photo brute).",
+      ],
+      descriptionChecklist: descLocal.checklist,
+      safeToPublishAfterEdits: true,
+      safeToPostDescription: descLocal.safeToPostDescription,
+      summary:
+        "Photo : risque moyen sans retouche. Description : voir variante IA proposée.",
+    };
+
+    if (
+      allowCloudAi &&
+      imageDataUrl.startsWith("data:image/") &&
+      (description.length > 10 || title.length > 3)
+    ) {
+      const aiOut = await callCloudAi({
+        systemPrompt: LISTING_SAFETY_JSON_SYSTEM,
+        userPrompt: `Titre: ${baseTitle}
+Description:
+${description || "(vide)"}
+Republication: ${body.isRepost ? "oui" : "non"}`,
+        imageDataUrl,
+        jsonMode: true,
+        maxTokens: 2600,
+        power: true,
+      });
+      if (aiOut) {
+        const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
+        if (parsed) {
+          return NextResponse.json({
+            engine: cloudEngineTag(aiOut.provider),
+            cloudAiActive: true,
+            fingerprintRisk: String(parsed.fingerprintRisk ?? "medium"),
+            descriptionRisk: String(
+              parsed.descriptionRisk ?? descLocal.descriptionRisk,
+            ),
+            globalRisk: String(parsed.globalRisk ?? "medium"),
+            recommendedBrightness: Math.min(
+              135,
+              Math.max(80, Number(parsed.recommendedBrightness ?? 108)),
+            ),
+            recommendedContrast: Math.min(
+              135,
+              Math.max(80, Number(parsed.recommendedContrast ?? 112)),
+            ),
+            recommendedPaddingPct: Math.min(
+              16,
+              Math.max(3, Number(parsed.recommendedPaddingPct ?? 8)),
+            ),
+            shouldRemoveBackground: Boolean(parsed.shouldRemoveBackground ?? true),
+            shouldRotateSlight: Boolean(parsed.shouldRotateSlight ?? false),
+            reorderedTitle: String(
+              parsed.reorderedTitle ?? descLocal.reorderedTitle,
+            ).slice(0, 72),
+            titleAlternatives: Array.isArray(parsed.titleAlternatives)
+              ? (parsed.titleAlternatives.slice(0, 3) as string[])
+              : descLocal.titleAlternatives,
+            refreshedDescription: String(
+              parsed.refreshedDescription ?? descLocal.refreshedDescription,
+            ),
+            photoChecklist: Array.isArray(parsed.photoChecklist)
+              ? (parsed.photoChecklist.slice(0, 6) as string[])
+              : fallback.photoChecklist,
+            descriptionChecklist: Array.isArray(parsed.descriptionChecklist)
+              ? (parsed.descriptionChecklist.slice(0, 6) as string[])
+              : descLocal.checklist,
+            safeToPublishAfterEdits: Boolean(
+              parsed.safeToPublishAfterEdits ?? true,
+            ),
+            safeToPostDescription: Boolean(
+              parsed.safeToPostDescription ?? descLocal.safeToPostDescription,
+            ),
+            summary: String(parsed.summary ?? fallback.summary),
+          });
+        }
+      }
+    }
+
+    if (allowCloudAi && imageDataUrl.startsWith("data:image/")) {
+      const photoOnly = await callCloudAi({
+        systemPrompt: PHOTO_SAFETY_JSON_SYSTEM,
+        userPrompt: "Analyse empreinte photo pour republication Vinted.",
+        imageDataUrl,
+        jsonMode: true,
+        maxTokens: 800,
+        power: true,
+      });
+      if (photoOnly) {
+        const parsed = parseAiJson<Record<string, unknown>>(photoOnly.text);
+        if (parsed) {
+          return NextResponse.json({
+            ...fallback,
+            engine: cloudEngineTag(photoOnly.provider),
+            fingerprintRisk: String(parsed.fingerprintRisk ?? "medium"),
+            recommendedBrightness: Number(parsed.recommendedBrightness ?? 108),
+            recommendedContrast: Number(parsed.recommendedContrast ?? 112),
+            recommendedPaddingPct: Number(parsed.recommendedPaddingPct ?? 8),
+            shouldRemoveBackground: Boolean(parsed.shouldRemoveBackground ?? true),
+            photoChecklist: Array.isArray(parsed.checklist)
+              ? (parsed.checklist.slice(0, 6) as string[])
+              : fallback.photoChecklist,
+            summary: `Photo : ${String(parsed.summary ?? "retouche conseillée")} Description : ${descLocal.summary}`,
+          });
+        }
+      }
+    }
+
+    return NextResponse.json(fallback);
+  }
+
   if (mode === "visibility") {
     const category = (body.category ?? "Vêtements").trim().slice(0, 60);
     const slots = defaultVintedSlots();
@@ -523,6 +746,14 @@ export async function POST(request: Request) {
       isRepost: Boolean(body.isRepost),
       category: (body.category ?? "").trim() || undefined,
     });
+    const descSafety = localDescriptionSafety(
+      baseTitle,
+      cleanedBody || raw,
+      {
+        isRepost: Boolean(body.isRepost),
+        category: (body.category ?? "").trim() || undefined,
+      },
+    );
 
     let reorderedTitle = local.reorderedTitle;
     let refreshedDescription = local.refreshedDescription;
@@ -535,6 +766,10 @@ export async function POST(request: Request) {
     let avoidWords = local.avoidWords;
     let waitMinutesBeforeRepost = local.waitMinutesBeforeRepost;
     let safeToPostNow = local.safeToPostNow;
+    let descriptionRisk = descSafety.descriptionRisk;
+    let duplicateScore = descSafety.duplicateScore;
+    let descriptionSpamFlags = descSafety.spamFlags;
+    let safeToPostDescription = descSafety.safeToPostDescription;
     let engine = "local_antishadowban_expert";
 
     if (allowCloudAi) {
@@ -575,6 +810,14 @@ Analyse locale risque: ${riskLevel} — ${riskReasons.join("; ")}`,
             waitMinutesBeforeRepost = Number(parsed.waitMinutesBeforeRepost);
           if (typeof parsed.safeToPostNow === "boolean")
             safeToPostNow = parsed.safeToPostNow;
+          if (parsed.descriptionRisk === "low" || parsed.descriptionRisk === "medium" || parsed.descriptionRisk === "high")
+            descriptionRisk = parsed.descriptionRisk;
+          if (typeof parsed.duplicateScore === "number")
+            duplicateScore = Math.min(100, parsed.duplicateScore);
+          if (Array.isArray(parsed.spamFlags))
+            descriptionSpamFlags = parsed.spamFlags.slice(0, 8) as string[];
+          if (typeof parsed.safeToPostDescription === "boolean")
+            safeToPostDescription = parsed.safeToPostDescription;
         }
       }
     }
@@ -593,6 +836,10 @@ Analyse locale risque: ${riskLevel} — ${riskReasons.join("; ")}`,
       photoFingerprintTips,
       waitMinutesBeforeRepost,
       safeToPostNow,
+      descriptionRisk,
+      duplicateScore,
+      descriptionSpamFlags,
+      safeToPostDescription,
     });
   }
 

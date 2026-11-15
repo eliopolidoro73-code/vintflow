@@ -258,6 +258,23 @@ export function ResellerToolsStudio({
   const [showOriginal, setShowOriginal] = useState(false);
   const [visionLoading, setVisionLoading] = useState(false);
   const [photoSafetyLoading, setPhotoSafetyLoading] = useState(false);
+  const [fullSafetyLoading, setFullSafetyLoading] = useState(false);
+  const [descSafetyLoading, setDescSafetyLoading] = useState(false);
+  const [listingSafetyResult, setListingSafetyResult] = useState<{
+    engine: string;
+    fingerprintRisk: string;
+    descriptionRisk: string;
+    globalRisk: string;
+    summary: string;
+    refreshedDescription: string;
+    reorderedTitle: string;
+    photoChecklist: string[];
+    descriptionChecklist: string[];
+    recommendedBrightness?: number;
+    recommendedContrast?: number;
+    recommendedPaddingPct?: number;
+    shouldRemoveBackground?: boolean;
+  } | null>(null);
   const [photoSafetyResult, setPhotoSafetyResult] = useState<{
     engine: string;
     fingerprintRisk: string;
@@ -316,6 +333,10 @@ export function ResellerToolsStudio({
     photoFingerprintTips?: string[];
     waitMinutesBeforeRepost?: number;
     safeToPostNow?: boolean;
+    descriptionRisk?: string;
+    duplicateScore?: number;
+    descriptionSpamFlags?: string[];
+    safeToPostDescription?: boolean;
   } | null>(null);
 
   const [visCategory, setVisCategory] = useState(
@@ -799,6 +820,130 @@ export function ResellerToolsStudio({
     }
   }
 
+  async function handleDescriptionSafetyAi() {
+    const title = shadowTitle.trim() || genTitle.trim();
+    const desc = shadowText.trim() || genResult?.vinted?.trim() || "";
+    if (!title && !desc) {
+      onToast("Saisis un titre et/ou une description à analyser.");
+      return;
+    }
+    setDescSafetyLoading(true);
+    try {
+      const out = (await postToolsGenerate({
+        mode: "description_safety",
+        title,
+        originalText: desc || title,
+        category: shadowCategory || genCategory,
+        isRepost: shadowIsRepost,
+      })) as {
+        engine: string;
+        descriptionRisk: string;
+        duplicateScore: number;
+        refreshedDescription: string;
+        reorderedTitle: string;
+        titleAlternatives?: string[];
+        summary: string;
+        checklist: string[];
+        spamFlags?: string[];
+        safeToPostDescription?: boolean;
+      };
+      setShadowResult((prev) => ({
+        bestSlots: prev?.bestSlots ?? [],
+        reorderedTitle: out.reorderedTitle,
+        refreshedDescription: out.refreshedDescription,
+        checklist: out.checklist,
+        titleAlternatives: out.titleAlternatives ?? prev?.titleAlternatives,
+        engine: out.engine,
+        descriptionRisk: out.descriptionRisk,
+        duplicateScore: out.duplicateScore,
+        descriptionSpamFlags: out.spamFlags,
+        safeToPostDescription: out.safeToPostDescription,
+        riskLevel: out.descriptionRisk,
+        riskReasons: out.spamFlags,
+        photoFingerprintTips: prev?.photoFingerprintTips,
+        waitMinutesBeforeRepost: prev?.waitMinutesBeforeRepost,
+        safeToPostNow: prev?.safeToPostNow,
+        avoidWords: prev?.avoidWords,
+      }));
+      setShadowTitle(out.reorderedTitle);
+      setShadowText(out.refreshedDescription);
+      setSubTab("antishadowban");
+      onItemCreated();
+      onToast(
+        `${aiEngineBadge(out.engine)} — description ${out.descriptionRisk} (dup ${out.duplicateScore}%).`,
+      );
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : "Analyse description impossible.");
+    } finally {
+      setDescSafetyLoading(false);
+    }
+  }
+
+  async function handleFullListingSafety() {
+    if (!photoSrc) {
+      onToast("Importe une photo pour l'analyse complète.");
+      return;
+    }
+    const title = shadowTitle.trim() || genTitle.trim() || genResult?.seoTitle || "";
+    const desc = shadowText.trim() || genResult?.vinted?.trim() || "";
+    if (!desc && !title) {
+      onToast("Ajoute au moins un titre ou une description Vinted.");
+      return;
+    }
+    setFullSafetyLoading(true);
+    try {
+      const imageDataUrl = await buildAiImageDataUrl({
+        canvas: canvasRef.current,
+        originalSrc: photoSrc,
+      });
+      const out = (await postToolsGenerate({
+        mode: "listing_safety",
+        imageDataUrl,
+        title,
+        originalText: desc,
+        category: shadowCategory || genCategory,
+        isRepost: shadowIsRepost,
+      })) as typeof listingSafetyResult & {
+        recommendedBrightness: number;
+        recommendedContrast: number;
+        recommendedPaddingPct: number;
+        shouldRemoveBackground: boolean;
+        titleAlternatives?: string[];
+      };
+      setListingSafetyResult(out);
+      if (out.recommendedBrightness) setBrightness(out.recommendedBrightness);
+      if (out.recommendedContrast) setContrast(out.recommendedContrast);
+      if (out.recommendedPaddingPct) setPaddingPct(out.recommendedPaddingPct);
+      if (out.shouldRemoveBackground) setRemoveBg(true);
+      setShadowTitle(out.reorderedTitle);
+      setShadowText(out.refreshedDescription);
+      setShadowResult({
+        engine: out.engine,
+        reorderedTitle: out.reorderedTitle,
+        titleAlternatives: out.titleAlternatives,
+        refreshedDescription: out.refreshedDescription,
+        bestSlots: [],
+        checklist: [
+          ...(out.photoChecklist ?? []).map((t) => `[Photo] ${t}`),
+          ...(out.descriptionChecklist ?? []).map((t) => `[Texte] ${t}`),
+        ],
+        riskLevel: out.globalRisk,
+        descriptionRisk: out.descriptionRisk,
+        riskReasons: [out.summary],
+        safeToPostNow: out.globalRisk === "low",
+      });
+      setSubTab("antishadowban");
+      onItemCreated();
+      onToast(
+        `${aiEngineBadge(out.engine)} — global ${out.globalRisk} (photo ${out.fingerprintRisk}, texte ${out.descriptionRisk}).`,
+      );
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : "Analyse complète impossible.");
+    } finally {
+      setFullSafetyLoading(false);
+    }
+  }
+
   async function handleLoadVisibility() {
     setVisibilityLoading(true);
     try {
@@ -1013,6 +1158,19 @@ export function ResellerToolsStudio({
               </Button>
               <Button
                 type="button"
+                disabled={fullSafetyLoading || !photoSrc}
+                onClick={handleFullListingSafety}
+                className="h-12 w-full border border-violet-500/40 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20 font-bold text-sm touch-manipulation"
+              >
+                {fullSafetyLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                ) : (
+                  <Sparkles className="h-5 w-5 mr-2" />
+                )}
+                Anti-ban complet (photo + description)
+              </Button>
+              <Button
+                type="button"
                 disabled={visionLoading || !photoSrc}
                 onClick={handleAnalyzePhotoToListing}
                 className="h-12 w-full bg-violet-600 text-white hover:bg-violet-500 font-bold text-sm touch-manipulation"
@@ -1170,7 +1328,7 @@ export function ResellerToolsStudio({
               />
             </div>
 
-            <div className="hidden lg:grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="hidden lg:grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Button
                 type="button"
                 onClick={handleDownloadCanvas}
@@ -1195,9 +1353,22 @@ export function ResellerToolsStudio({
               </Button>
               <Button
                 type="button"
+                disabled={fullSafetyLoading || !photoSrc}
+                onClick={handleFullListingSafety}
+                className="sm:col-span-2 border border-violet-500/35 bg-violet-500/10 text-violet-100 hover:bg-violet-500/20 font-bold text-xs h-10"
+              >
+                {fullSafetyLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                ) : (
+                  <Sparkles className="h-4 w-4 mr-1.5" />
+                )}
+                Anti-ban complet (photo + description IA)
+              </Button>
+              <Button
+                type="button"
                 disabled={visionLoading || !photoSrc}
                 onClick={handleAnalyzePhotoToListing}
-                className="bg-violet-600 text-white hover:bg-violet-500 font-bold text-xs h-10"
+                className="sm:col-span-2 bg-violet-600 text-white hover:bg-violet-500 font-bold text-xs h-10"
               >
                 {visionLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
@@ -1207,6 +1378,24 @@ export function ResellerToolsStudio({
                 Scanner → Annonce
               </Button>
             </div>
+
+            {listingSafetyResult && (
+              <div className="rounded-xl border border-violet-500/30 bg-violet-500/[0.08] p-3 text-[11px] space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="bg-violet-500/20 text-violet-100 border-violet-500/30">
+                    Global : {listingSafetyResult.globalRisk}
+                  </Badge>
+                  <Badge variant="outline" className="border-white/15 text-zinc-300">
+                    {aiEngineBadge(listingSafetyResult.engine)}
+                  </Badge>
+                </div>
+                <p className="text-zinc-200 leading-relaxed">{listingSafetyResult.summary}</p>
+                <p className="text-zinc-400">
+                  Photo : {listingSafetyResult.fingerprintRisk} · Description :{" "}
+                  {listingSafetyResult.descriptionRisk}
+                </p>
+              </div>
+            )}
 
             {photoSafetyResult && (
               <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3 text-[11px] space-y-2">
@@ -1643,18 +1832,37 @@ export function ResellerToolsStudio({
               </span>
               <Switch checked={shadowIsRepost} onCheckedChange={setShadowIsRepost} />
             </div>
-            <Button
-              type="submit"
-              disabled={shadowLoading}
-              className="w-full bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold h-11 touch-manipulation"
-            >
-              {shadowLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-              ) : (
-                <ShieldAlert className="h-4 w-4 mr-1.5" />
-              )}
-              Analyse anti-shadowban (IA Pro)
-            </Button>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Button
+                type="submit"
+                disabled={shadowLoading}
+                className="w-full bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold h-11 touch-manipulation"
+              >
+                {shadowLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                ) : (
+                  <ShieldAlert className="h-4 w-4 mr-1.5" />
+                )}
+                Titre + description (IA)
+              </Button>
+              <Button
+                type="button"
+                disabled={descSafetyLoading}
+                onClick={handleDescriptionSafetyAi}
+                className="w-full bg-violet-600 text-white hover:bg-violet-500 font-bold h-11 touch-manipulation"
+              >
+                {descSafetyLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                ) : (
+                  <Wand2 className="h-4 w-4 mr-1.5" />
+                )}
+                Description anti-ban IA
+              </Button>
+            </div>
+            <p className="text-[10px] text-zinc-500 leading-relaxed">
+              La photo se traite dans le Studio ; ici l&apos;IA réécrit vraiment le texte
+              (même logique cloud que l&apos;analyse empreinte photo).
+            </p>
           </form>
 
           <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4 text-xs">
@@ -1697,7 +1905,23 @@ export function ResellerToolsStudio({
                               : "bg-amber-500/15 text-amber-200 border-amber-500/30"
                         }
                       >
-                        Risque shadowban : {shadowResult.riskLevel}
+                        Risque annonce : {shadowResult.riskLevel}
+                      </Badge>
+                    )}
+                    {shadowResult.descriptionRisk && (
+                      <Badge
+                        className={
+                          shadowResult.descriptionRisk === "high"
+                            ? "bg-rose-500/20 text-rose-200 border-rose-500/30"
+                            : shadowResult.descriptionRisk === "low"
+                              ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                              : "bg-violet-500/15 text-violet-200 border-violet-500/30"
+                        }
+                      >
+                        Texte : {shadowResult.descriptionRisk}
+                        {typeof shadowResult.duplicateScore === "number"
+                          ? ` · dup ${shadowResult.duplicateScore}%`
+                          : ""}
                       </Badge>
                     )}
                     {shadowResult.engine && (
