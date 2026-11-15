@@ -25,6 +25,9 @@ Lien mobile (Vercel) : `https://vintflow-perso.vercel.app/app` — ouverture dir
   - `GEMINI_API_KEY` — clé [AI Studio](https://aistudio.google.com/apikey) (`AQ.…` ou `AIza…`)
   - `OPENAI_API_KEY` — secours si Gemini échoue (recommandé)
   - `PERSO_ENABLE_CLOUD_AI` = `true`, `PERSO_AI_POWER` = `true`
+  - `PERSO_AI_MONTHLY_CLOUD_CAP` = `120` (appels Gemini/OpenAI max/mois ; au-delà = **blocage cloud**, factures/anti-ban **locaux gratuits**)
+  - `PERSO_AI_OPENAI_FALLBACK` = `false` par défaut (0 € — pas d’OpenAI payant sans le demander)
+  - `PERSO_AI_HARD_BLOCK_WHEN_EXHAUSTED` = `true` pour tout couper à 403 quand le cap est atteint (sinon local reste actif)
   - `SESSION_SECRET`, `PERSO_PASSWORD`, `PERSO_ALLOWED_EMAILS`, clés Blob si utilisées
 - Après toute modification : **Redeploy** → test `GET /api/health/ai`  
   Réponse OK attendue : `"ok": true`, `gemini.keyFormat`, `gemini.status: "ok"`.

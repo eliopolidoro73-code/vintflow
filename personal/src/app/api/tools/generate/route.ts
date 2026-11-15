@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 60;
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
-import { callCloudAi, isPersoCloudAiEnabled } from "@/lib/ai";
+import { callCloudAi, isPersoCloudAiEnabled, type AiCallResult } from "@/lib/ai";
+import {
+  getAiCreditSnapshot,
+  getMonthlyCloudCap,
+  isHardAiBlockWhenExhausted,
+  reserveCloudAiCredit,
+} from "@/lib/ai-credits";
 import { sql } from "@/lib/db";
 import { computeNetMargin, generateListingCopy } from "@/lib/format";
 import { getEffectivePlan } from "@/lib/perso-plan";
@@ -36,6 +42,10 @@ function cloudEngineTag(provider?: "gemini" | "openai") {
   return "local_smart";
 }
 
+type CloudInvoke = (
+  params: Parameters<typeof callCloudAi>[0],
+) => Promise<AiCallResult | null>;
+
 const BRAND_CATALOG = [
   ...LUXURY_BRAND_CATALOG.map((b) => ({
     key: b.key,
@@ -68,7 +78,7 @@ async function buildListingPayload(
     purchasePrice: number;
     targetPrice: number;
   },
-  allowCloudAi: boolean,
+  cloudInvoke: CloudInvoke | null,
 ) {
   const { title, brand, category, size, condition, defects, purchasePrice, targetPrice } =
     input;
@@ -110,12 +120,12 @@ Disponible tant que l'annonce est en ligne.`;
   let hashtags: string[] = [];
   let antiBanTitle = baseCopy.seoTitle;
 
-  if (allowCloudAi) {
-    const aiOut = await callCloudAi({
+  if (cloudInvoke) {
+    const aiOut = await cloudInvoke({
       systemPrompt: LISTING_JSON_SYSTEM,
       userPrompt: `Article: ${title}, Marque: ${brand}, Catégorie: ${category}, Taille: ${size}, État: ${condition}, Défauts: ${defects || "Aucun"}, Prix achat: ${purchasePrice} €, Prix vente: ${targetPrice} €.`,
       jsonMode: true,
-      maxTokens: 3600,
+      maxTokens: 1800,
       power: true,
     });
     if (aiOut) {
@@ -225,9 +235,31 @@ export async function POST(request: Request) {
     );
   }
 
-  const plan = getEffectivePlan(auth.user);
-  const monthlyCap =
-    plan.aiCreditsMonthlyLimit === -1 ? 2_000_000 : plan.aiCreditsMonthlyLimit;
+  const user = auth.user;
+  const plan = getEffectivePlan(user);
+  const cloudCap = getMonthlyCloudCap(user, plan);
+  let aiCredits = await getAiCreditSnapshot(user.id, cloudCap);
+  const userId = user.id;
+  const isDemo = user.is_demo;
+
+  async function invokeCloudAi(
+    params: Parameters<typeof callCloudAi>[0],
+  ): Promise<AiCallResult | null> {
+    if (isDemo || !isPersoCloudAiEnabled() || !aiCredits.cloudAllowed) {
+      return null;
+    }
+    const reserved = await reserveCloudAiCredit(userId, cloudCap);
+    if (!reserved) {
+      aiCredits = await getAiCreditSnapshot(userId, cloudCap);
+      return null;
+    }
+    aiCredits = await getAiCreditSnapshot(userId, cloudCap);
+    return callCloudAi(params);
+  }
+
+  const cloudInvoke: CloudInvoke | null = aiCredits.cloudAllowed
+    ? invokeCloudAi
+    : null;
 
   let body: {
     mode?:
@@ -262,33 +294,31 @@ export async function POST(request: Request) {
   }
 
   const mode = body.mode ?? "listing";
-  const allowCloudAi = !auth.user.is_demo;
 
-  if (monthlyCap === 0) {
+  if (cloudCap === 0) {
     return NextResponse.json(
       { error: "Outils IA non disponibles sur ce forfait." },
       { status: 403 },
     );
   }
 
-  const skipAiCredits = mode === "negotiation";
-
-  if (!skipAiCredits) {
-    const reserved = await sql<{ ai_credits_used: number }>(
-      `update users
-       set ai_credits_used = ai_credits_used + 1
-       where id = $1 and ai_credits_used < $2
-       returning ai_credits_used`,
-      [auth.user.id, monthlyCap],
-    );
-    if (reserved.length === 0) {
-      return NextResponse.json(
-        {
-          error: `Quota de ${monthlyCap} crédits IA/mois atteint.`,
+  if (
+    isHardAiBlockWhenExhausted() &&
+    aiCredits.exhausted &&
+    mode !== "negotiation"
+  ) {
+    return NextResponse.json(
+      {
+        error: "Quota cloud IA du mois atteint — plus d'actions IA ce mois-ci.",
+        code: "ai_quota_exhausted",
+        aiCredits: {
+          used: aiCredits.used,
+          limit: aiCredits.limit,
+          remaining: 0,
         },
-        { status: 403 },
-      );
-    }
+      },
+      { status: 403 },
+    );
   }
 
   // MODE 0: AI VISION PHOTO -> STRUCTURED LISTING EXTRACTION
@@ -311,13 +341,13 @@ export async function POST(request: Request) {
           purchasePrice,
           targetPrice: Math.max(2, Number(vision.estimatedPrice ?? 45)),
         },
-        allowCloudAi,
+        cloudInvoke,
       );
       return { ...vision, listing };
     };
 
-    if (allowCloudAi && imageDataUrl.startsWith("data:image/")) {
-      const aiOut = await callCloudAi({
+    if (cloudInvoke && imageDataUrl.startsWith("data:image/")) {
+      const aiOut = await invokeCloudAi({
         systemPrompt: VISION_JSON_SYSTEM,
         userPrompt: `Analyse cet article pour préparer la fiche de vente (couleur détectée: ${dominantColor}).`,
         imageDataUrl,
@@ -433,8 +463,8 @@ export async function POST(request: Request) {
       ...localPhoto,
     };
 
-    if (allowCloudAi) {
-      const aiOut = await callCloudAi({
+    if (cloudInvoke) {
+      const aiOut = await invokeCloudAi({
         systemPrompt: PHOTO_SAFETY_JSON_SYSTEM,
         userPrompt:
           "Évalue l'empreinte de cette photo Vinted et donne les réglages studio exacts.",
@@ -502,8 +532,8 @@ export async function POST(request: Request) {
       ...local,
     };
 
-    if (allowCloudAi) {
-      const aiOut = await callCloudAi({
+    if (cloudInvoke) {
+      const aiOut = await invokeCloudAi({
         systemPrompt: DESCRIPTION_SAFETY_JSON_SYSTEM,
         userPrompt: `Titre: ${baseTitle}
 Description actuelle:
@@ -624,11 +654,11 @@ Analyse locale: risque ${local.descriptionRisk}, score dup ${local.duplicateScor
     };
 
     if (
-      allowCloudAi &&
+      cloudInvoke &&
       imageDataUrl.startsWith("data:image/") &&
       (description.length > 10 || title.length > 3)
     ) {
-      const aiOut = await callCloudAi({
+      const aiOut = await invokeCloudAi({
         systemPrompt: LISTING_SAFETY_JSON_SYSTEM,
         userPrompt: `Titre: ${baseTitle}
 Description:
@@ -691,8 +721,8 @@ Republication: ${body.isRepost ? "oui" : "non"}`,
       }
     }
 
-    if (allowCloudAi && imageDataUrl.startsWith("data:image/")) {
-      const photoOnly = await callCloudAi({
+    if (cloudInvoke && imageDataUrl.startsWith("data:image/")) {
+      const photoOnly = await invokeCloudAi({
         systemPrompt: PHOTO_SAFETY_JSON_SYSTEM,
         userPrompt: "Analyse empreinte photo pour republication Vinted.",
         imageDataUrl,
@@ -727,8 +757,8 @@ Republication: ${body.isRepost ? "oui" : "non"}`,
     const category = (body.category ?? "Vêtements").trim().slice(0, 60);
     const slots = defaultVintedSlots();
 
-    if (allowCloudAi) {
-      const aiOut = await callCloudAi({
+    if (cloudInvoke) {
+      const aiOut = await invokeCloudAi({
         systemPrompt: VISIBILITY_JSON_SYSTEM,
         userPrompt: `Catégorie principale du vendeur : ${category}. Donne le plan pour maximiser les vues Vinted cette semaine (heure Europe/Paris).`,
         jsonMode: true,
@@ -814,8 +844,8 @@ Republication: ${body.isRepost ? "oui" : "non"}`,
     let safeToPostDescription = descSafety.safeToPostDescription;
     let engine = "local_antishadowban_expert";
 
-    if (allowCloudAi) {
-      const aiOut = await callCloudAi({
+    if (cloudInvoke) {
+      const aiOut = await invokeCloudAi({
         systemPrompt: ANTISHADOWBAN_JSON_SYSTEM,
         userPrompt: `Titre actuel: ${baseTitle}
 Description: ${cleanedBody || raw}
@@ -964,7 +994,7 @@ Analyse locale risque: ${riskLevel} — ${riskReasons.join("; ")}`,
       purchasePrice,
       targetPrice,
     },
-    allowCloudAi,
+    cloudInvoke,
   );
 
   return NextResponse.json(listing);

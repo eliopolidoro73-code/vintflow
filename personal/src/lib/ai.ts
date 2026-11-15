@@ -21,8 +21,8 @@ function parseDataUrl(
 
 /** Actif si clé cloud présente (édition perso Vercel) ou flag explicite. */
 export function isPersoCloudAiEnabled(): boolean {
-  if (process.env.PERSO_ENABLE_CLOUD_AI === "true") return true;
   if (process.env.PERSO_ENABLE_CLOUD_AI === "false") return false;
+  if (process.env.PERSO_ENABLE_CLOUD_AI === "true") return true;
   const hasKey = Boolean(
     readGeminiApiKey() || process.env.OPENAI_API_KEY?.trim(),
   );
@@ -36,6 +36,16 @@ function isPersoPowerAi(): boolean {
   );
 }
 
+/** Évite les coûts OpenAI sauf si explicitement autorisé. */
+export function isOpenAiFallbackEnabled(): boolean {
+  return process.env.PERSO_AI_OPENAI_FALLBACK === "true";
+}
+
+function maxGeminiModelsToTry(): number {
+  const n = Number(process.env.PERSO_AI_MAX_GEMINI_RETRIES ?? 2);
+  return Number.isFinite(n) ? Math.min(6, Math.max(1, n)) : 2;
+}
+
 export async function callCloudAi(params: {
   systemPrompt: string;
   userPrompt: string;
@@ -46,11 +56,13 @@ export async function callCloudAi(params: {
   power?: boolean;
 }): Promise<AiCallResult | null> {
   const power = params.power ?? isPersoPowerAi();
-  const defaultTokens = power ? 1200 : 450;
+  const defaultTokens = power ? 1200 : 420;
   const maxTokens = Math.min(4096, params.maxTokens ?? defaultTokens);
   if (!isPersoCloudAiEnabled()) {
     return null;
   }
+
+  let hitQuota = false;
 
   const geminiKey = readGeminiApiKey();
   if (geminiKey) {
@@ -77,7 +89,7 @@ export async function callCloudAi(params: {
         power ? "power" : "fast",
       );
 
-      for (const model of geminiModels) {
+      for (const model of geminiModels.slice(0, maxGeminiModelsToTry())) {
         const result = await callGeminiGenerate({
           apiKey: geminiKey,
           model,
@@ -88,7 +100,7 @@ export async function callCloudAi(params: {
             contents: [{ role: "user", parts }],
             generationConfig: {
               maxOutputTokens: maxTokens,
-              temperature: power ? 0.45 : 0.65,
+              temperature: power ? 0.38 : 0.55,
               ...(params.jsonMode
                 ? { responseMimeType: "application/json" }
                 : {}),
@@ -99,13 +111,23 @@ export async function callCloudAi(params: {
         if (result.ok && result.text) {
           return { provider: "gemini", text: result.text };
         }
+        if (!result.ok && result.reason === "quota_or_rate_limit") {
+          hitQuota = true;
+          break;
+        }
       }
     } catch {
-      // Fall back to OpenAI or local engine
+      // Fall back to OpenAI (si autorisé) ou null
     }
   }
 
-  const openaiKey = process.env.OPENAI_API_KEY?.trim();
+  if (hitQuota && !isOpenAiFallbackEnabled()) {
+    return null;
+  }
+
+  const openaiKey = isOpenAiFallbackEnabled()
+    ? process.env.OPENAI_API_KEY?.trim()
+  : undefined;
   if (openaiKey) {
     try {
       const userContent:
@@ -140,7 +162,7 @@ export async function callCloudAi(params: {
             { role: "user", content: userContent },
           ],
           max_tokens: maxTokens,
-          temperature: power ? 0.45 : 0.65,
+          temperature: power ? 0.38 : 0.55,
         }),
       });
 
@@ -154,7 +176,7 @@ export async function callCloudAi(params: {
         }
       }
     } catch {
-      // Fall back to local engine
+      // local engine
     }
   }
 

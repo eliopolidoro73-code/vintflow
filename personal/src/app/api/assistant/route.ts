@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { callCloudAi, isPersoCloudAiEnabled } from "@/lib/ai";
+import {
+  getAiCreditSnapshot,
+  getMonthlyCloudCap,
+  reserveCloudAiCredit,
+} from "@/lib/ai-credits";
 import { INVOICE_FROM_TEXT_SYSTEM } from "@/lib/invoice-ai-prompt";
 import { finalizeInvoiceDraft } from "@/lib/invoice-enrich";
 import {
@@ -45,24 +50,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const reserved = await sql<{ ai_credits_used: number }>(
-    `update users
-     set ai_credits_used = ai_credits_used + 1
-     where id = $1 and ai_credits_used < $2
-     returning ai_credits_used`,
-    [
-      user.id,
-      plan.aiCreditsMonthlyLimit === -1 ? 2_000_000 : plan.aiCreditsMonthlyLimit,
-    ],
-  );
-  if (reserved.length === 0) {
-    return NextResponse.json(
-      {
-        error: `Quota de crédits IA/mois atteint.`,
-      },
-      { status: 403 },
-    );
-  }
+  const cloudCap = getMonthlyCloudCap(user, plan);
 
   let body: {
     question?: string;
@@ -169,12 +157,17 @@ export async function POST(request: Request) {
       /vendu|vendre|sac|louis|vuitton|nike|jordan|carhartt/i.test(question));
 
   if (invoiceIntent) {
+    let aiCredits = await getAiCreditSnapshot(user.id, cloudCap);
     const allowCloudAi =
-      (!user.is_demo || persoUnlimited) && isPersoCloudAiEnabled();
-  const { draft } = await draftInvoiceFromPrompt(
+      (!user.is_demo || persoUnlimited) &&
+      isPersoCloudAiEnabled() &&
+      aiCredits.cloudAllowed;
+    const { draft } = await draftInvoiceFromPrompt(
       question,
       allowCloudAi,
       async (userPrompt) => {
+        const reserved = await reserveCloudAiCredit(user.id, cloudCap);
+        if (!reserved) return null;
         const aiOut = await callCloudAi({
           systemPrompt: INVOICE_FROM_TEXT_SYSTEM,
           userPrompt,
@@ -272,7 +265,15 @@ export async function POST(request: Request) {
     null,
   );
 
-  if (!user.is_demo || persoUnlimited) {
+  const aiCredits = await getAiCreditSnapshot(user.id, cloudCap);
+  const canCloudNova =
+    (!user.is_demo || persoUnlimited) &&
+    isPersoCloudAiEnabled() &&
+    aiCredits.cloudAllowed;
+
+  if (canCloudNova) {
+    const reserved = await reserveCloudAiCredit(user.id, cloudCap);
+    if (reserved) {
     const aiOut = await callCloudAi({
       systemPrompt: `Tu es Nova, l'assistant IA stratégique expert Vinted, Leboncoin, TikTok Shop et eBay (France). Tu combines chiffres réels et conseils terrain (créneaux de publication, anti-shadowban, pricing, lots).
 
@@ -310,6 +311,7 @@ Règles : réponses structurées (3–6 phrases + puces si utile), français dir
                 }
               : null,
       });
+    }
     }
   }
 

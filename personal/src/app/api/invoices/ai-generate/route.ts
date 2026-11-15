@@ -3,6 +3,11 @@ import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { callCloudAi, isPersoCloudAiEnabled } from "@/lib/ai";
 import {
+  getAiCreditSnapshot,
+  getMonthlyCloudCap,
+  reserveCloudAiCredit,
+} from "@/lib/ai-credits";
+import {
   INVOICE_FROM_TEXT_SYSTEM,
   type InvoiceAiDraft,
 } from "@/lib/invoice-ai-prompt";
@@ -10,8 +15,6 @@ import { finalizeInvoiceDraft } from "@/lib/invoice-enrich";
 import { createSaleFromInvoiceDraft, draftInvoiceFromPrompt } from "@/lib/invoice-sales";
 import { getEffectivePlan } from "@/lib/perso-plan";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { sql } from "@/lib/db";
-
 export const maxDuration = 60;
 
 function parseAiJson(text: string): InvoiceAiDraft | null {
@@ -70,17 +73,8 @@ export async function POST(request: Request) {
   }
 
   const plan = getEffectivePlan(auth.user);
-  const monthlyCap =
-    plan.aiCreditsMonthlyLimit === -1 ? 2_000_000 : plan.aiCreditsMonthlyLimit;
-  const reserved = await sql<{ ai_credits_used: number }>(
-    `update users set ai_credits_used = ai_credits_used + 1
-     where id = $1 and ai_credits_used < $2
-     returning ai_credits_used`,
-    [auth.user.id, monthlyCap],
-  );
-  if (reserved.length === 0) {
-    return NextResponse.json({ error: "Quota IA atteint." }, { status: 403 });
-  }
+  const cloudCap = getMonthlyCloudCap(auth.user, plan);
+  let aiCredits = await getAiCreditSnapshot(auth.user.id, cloudCap);
 
   let body: { prompt?: string };
   try {
@@ -97,17 +91,25 @@ export async function POST(request: Request) {
     );
   }
 
-  const allowCloudAi = !auth.user.is_demo || auth.user.subscription_status === "personal_free";
+  const allowCloudEnhance =
+    (!auth.user.is_demo || auth.user.subscription_status === "personal_free") &&
+    isPersoCloudAiEnabled() &&
+    aiCredits.cloudAllowed;
 
-  const { draft, engine } = await draftInvoiceFromPrompt(
+  const { draft, engine, cloudSkipped } = await draftInvoiceFromPrompt(
     prompt,
-    allowCloudAi,
+    allowCloudEnhance,
     async (userPrompt) => {
+      const reserved = await reserveCloudAiCredit(auth.user.id, cloudCap);
+      if (!reserved) {
+        aiCredits = await getAiCreditSnapshot(auth.user.id, cloudCap);
+        return null;
+      }
       const aiOut = await callCloudAi({
         systemPrompt: INVOICE_FROM_TEXT_SYSTEM,
         userPrompt,
         jsonMode: true,
-        maxTokens: 2800,
+        maxTokens: 1600,
         power: true,
       });
       if (!aiOut?.text) return null;
@@ -115,13 +117,20 @@ export async function POST(request: Request) {
       return parsed ? finalizeInvoiceDraft(parsed, userPrompt) : null;
     },
   );
+  aiCredits = await getAiCreditSnapshot(auth.user.id, cloudCap);
 
   const finalized = finalizeInvoiceDraft(draft, prompt);
   const sale = await createSaleFromInvoiceDraft(auth.user.id, finalized);
 
   return NextResponse.json({
     engine,
-    cloudAiActive: isPersoCloudAiEnabled(),
+    cloudAiActive: isPersoCloudAiEnabled() && aiCredits.cloudAllowed,
+    cloudQuotaExhausted: Boolean(cloudSkipped || !aiCredits.cloudAllowed),
+    aiCredits: {
+      used: aiCredits.used,
+      limit: aiCredits.limit,
+      remaining: aiCredits.remaining,
+    },
     powerAi: process.env.PERSO_AI_POWER !== "false",
     draft: finalized,
     invoiceKind: finalized.invoice_kind ?? "resale",

@@ -113,6 +113,7 @@ export function InvoiceAiStudio({
       const out = (await res.json()) as {
         error?: string;
         engine?: string;
+        cloudQuotaExhausted?: boolean;
         sale?: SaleRecord & {
           purchase_cost?: number;
           platform_fees?: number;
@@ -152,9 +153,13 @@ export function InvoiceAiStudio({
       setLastEngine(out.engine ?? "ia");
       onRefresh();
       onToast(
-        out.invoiceKind === "retail_purchase"
-          ? `Facture boutique prête — ajuste les champs puis PDF.`
-          : `Facture générée — vérifie puis enregistre si besoin.`,
+        out.cloudQuotaExhausted
+          ? "Quota cloud atteint — facture en mode local intelligent (0 €), PDF prêt."
+          : out.invoiceKind === "retail_purchase"
+            ? `Facture boutique prête — ajuste les champs puis PDF.`
+            : out.engine?.startsWith("local")
+              ? "Facture locale intelligente — marque détectée depuis ton texte."
+              : `Facture générée — vérifie puis enregistre si besoin.`,
       );
     } catch {
       onToast("Connexion coupée — réessaie.");

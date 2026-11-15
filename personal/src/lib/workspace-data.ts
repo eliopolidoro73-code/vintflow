@@ -1,6 +1,12 @@
 import type { AuthUser } from "@/lib/auth";
+import { getEffectivePlan } from "@/lib/perso-plan";
+import {
+  getAiCreditSnapshot,
+  getMonthlyCloudCap,
+} from "@/lib/ai-credits";
 import { sql } from "@/lib/db";
 import { daysSince } from "@/lib/format";
+import { isPersoCloudAiEnabled } from "@/lib/ai";
 
 export async function loadWorkspaceForUser(user: AuthUser) {
   const [accounts, items, sales, messages, lots, expenses, referralRows] =
@@ -248,11 +254,21 @@ export async function loadWorkspaceForUser(user: AuthUser) {
       stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY?.trim()),
       geminiConfigured: Boolean(process.env.GEMINI_API_KEY?.trim()),
       openaiConfigured: Boolean(process.env.OPENAI_API_KEY?.trim()),
-      cloudAiConfigured: Boolean(
-        process.env.GEMINI_API_KEY?.trim() ||
-          process.env.OPENAI_API_KEY?.trim(),
-      ),
+      cloudAiConfigured: isPersoCloudAiEnabled(),
     },
+    ai: await (async () => {
+      const plan = getEffectivePlan(user);
+      const limit = getMonthlyCloudCap(user, plan);
+      const snap = await getAiCreditSnapshot(user.id, limit);
+      return {
+        creditsUsed: snap.used,
+        creditsLimit: snap.limit,
+        creditsRemaining: snap.remaining,
+        cloudAllowed: snap.cloudAllowed,
+        exhausted: snap.exhausted,
+        strategy: "local_first" as const,
+      };
+    })(),
   };
 }
 

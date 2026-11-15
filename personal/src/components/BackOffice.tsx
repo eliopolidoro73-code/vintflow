@@ -185,6 +185,14 @@ interface WorkspacePayload {
     openaiConfigured: boolean;
     cloudAiConfigured: boolean;
   };
+  ai?: {
+    creditsUsed: number;
+    creditsLimit: number;
+    creditsRemaining: number;
+    cloudAllowed: boolean;
+    exhausted: boolean;
+    strategy: "local_first";
+  };
 }
 
 type TabId =
@@ -815,7 +823,16 @@ export function BackOffice({
     referralsCount,
     kpis,
     integrations,
+    ai: workspaceAi,
   } = data;
+  const aiQuota = workspaceAi ?? {
+    creditsUsed: user.ai_credits_used,
+    creditsLimit: 120,
+    creditsRemaining: 120,
+    cloudAllowed: true,
+    exhausted: false,
+    strategy: "local_first" as const,
+  };
   const activePlan = PLANS.pro;
   const selectedMsg = messages.find((m) => m.id === selectedMsgId) ?? messages[0];
   const vatProgress = Math.min(
@@ -1622,11 +1639,16 @@ export function BackOffice({
           {/* TAB 2B: AI TOOLS STUDIO */}
           {tab === "tools" && (
             <div className="space-y-3">
-              <CloudAiStatusBar />
+              <CloudAiStatusBar
+                creditsUsed={aiQuota.creditsUsed}
+                creditsLimit={aiQuota.creditsLimit}
+                creditsRemaining={aiQuota.creditsRemaining}
+                cloudAllowed={aiQuota.cloudAllowed}
+              />
             <ResellerToolsStudio
               planId="pro"
-              aiCreditsUsed={user.ai_credits_used}
-              aiCreditsLimit={-1}
+              aiCreditsUsed={aiQuota.creditsUsed}
+              aiCreditsLimit={aiQuota.creditsLimit}
               studioPresets={user.preferences?.studio}
               onStudioPresetsChange={saveStudioPresets}
               onItemCreated={fetchWorkspace}
@@ -1640,7 +1662,12 @@ export function BackOffice({
 
           {tab === "invoices" && (
             <div className="space-y-3">
-              <CloudAiStatusBar />
+              <CloudAiStatusBar
+                creditsUsed={aiQuota.creditsUsed}
+                creditsLimit={aiQuota.creditsLimit}
+                creditsRemaining={aiQuota.creditsRemaining}
+                cloudAllowed={aiQuota.cloudAllowed}
+              />
             <InvoiceAiStudio
               user={user}
               cloudAiActive={integrations.cloudAiConfigured}

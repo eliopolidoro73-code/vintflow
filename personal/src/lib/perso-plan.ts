@@ -1,5 +1,6 @@
 import type { PlanDefinition } from "./plans";
 import { PLANS } from "./plans";
+import { getPersoCloudCreditCapEnv } from "./ai-credits";
 
 /** Capacités édition perso : tout Pro Scale, quotas très larges. */
 export function getEffectivePlan(user: {
@@ -13,7 +14,7 @@ export function getEffectivePlan(user: {
     ...PLANS.pro,
     activeItemsLimit: 100_000,
     crosslistMonthlyLimit: -1,
-    aiCreditsMonthlyLimit: -1,
+    aiCreditsMonthlyLimit: getPersoCloudCreditCapEnv(),
   };
 }
 

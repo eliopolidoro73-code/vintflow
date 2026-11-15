@@ -1407,7 +1407,9 @@ export function ResellerToolsStudio({
           <span className="font-semibold text-white">
             {aiCreditsLimit === -1
               ? "Suite IA Illimitée (Pro Scale)"
-              : `Crédits IA mensuels (Vendeur Plus) : ${aiCreditsUsed} / ${aiCreditsLimit} utilisés`}
+              : aiCreditsUsed >= aiCreditsLimit
+                ? `Quota cloud épuisé — moteurs locaux (0 €) actifs`
+                : `Crédits cloud ce mois : ${aiCreditsUsed} / ${aiCreditsLimit} · local gratuit`}
           </span>
         </div>
         {aiCreditsLimit > 0 && (

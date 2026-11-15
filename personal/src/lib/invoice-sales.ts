@@ -309,8 +309,10 @@ export async function draftInvoiceFromPrompt(
   prompt: string,
   allowCloudAi: boolean,
   callAi: (p: string) => Promise<InvoiceAiDraft | null>,
-): Promise<{ draft: InvoiceAiDraft; engine: string }> {
+): Promise<{ draft: InvoiceAiDraft; engine: string; cloudSkipped?: boolean }> {
   const trimmed = prompt.trim().slice(0, 800);
+  const localDraft = parseDraftLocal(trimmed);
+
   if (allowCloudAi) {
     const aiDraft = await callAi(trimmed);
     if (aiDraft) {
@@ -321,7 +323,8 @@ export async function draftInvoiceFromPrompt(
     }
   }
   return {
-    draft: parseDraftLocal(trimmed),
-    engine: "local_invoice_parse",
+    draft: localDraft,
+    engine: "local_invoice_smart",
+    cloudSkipped: !allowCloudAi,
   };
 }
