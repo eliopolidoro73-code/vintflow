@@ -52,13 +52,9 @@ export const metadata: Metadata = {
       "Le cockpit des revendeurs pro : marge, crosslist, factures PDF et assistant Nova.",
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
-  ...(getGoogleSiteVerificationMeta()
-    ? {
-        verification: {
-          google: getGoogleSiteVerificationMeta()!,
-        },
-      }
-    : {}),
+  verification: {
+    google: getGoogleSiteVerificationMeta(),
+  },
 };
 
 export default function RootLayout({
