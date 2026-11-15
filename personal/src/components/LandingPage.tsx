@@ -200,7 +200,7 @@ export function LandingPage({
 
       {persoEdition && (
         <div className="relative border-b border-violet-500/30 bg-violet-500/10 text-center text-xs text-violet-100 px-4 py-2">
-          Édition perso · Pro Scale inclus · connexion email et mot de passe (plus d&apos;accès
+          Édition perso · Pro Scale inclus · accès direct sans mot de passe (plus d&apos;accès
           Cursor)
         </div>
       )}

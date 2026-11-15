@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
 import { assertSameOrigin } from "@/lib/auth";
 
-/** Connexion propriétaire supprimée : session automatique via /api/auth/enter. */
+/** Aucune connexion par mot de passe — redirection côté client vers l'accès auto. */
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
   if (originError) return originError;
 
   return NextResponse.json(
-    {
-      error:
-        "Connexion par mot de passe désactivée sur l'édition perso. Ouvre simplement /app.",
-    },
+    { error: "Ouvre l'édition perso : connexion automatique sans mot de passe." },
     { status: 410 },
   );
 }
