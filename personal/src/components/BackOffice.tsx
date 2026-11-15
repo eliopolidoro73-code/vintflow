@@ -2227,8 +2227,8 @@ export function BackOffice({
                         Nova · Assistant IA connecté à tes chiffres
                       </h2>
                       <p className="text-[11px] text-zinc-400">
-                        {integrations.openaiConfigured
-                          ? "Propulsé par OpenAI + tes données SQL temps réel"
+                        {integrations.cloudAiConfigured
+                          ? "Propulsé par Gemini/OpenAI + tes données SQL temps réel"
                           : "Moteur analytique local temps réel (0 € · aucune clé API requise)"}
                       </p>
                     </div>
