@@ -22,7 +22,7 @@ npm run dev
 
 Sans `STRIPE_SECRET_KEY`, seul l'**essai Essentiel 14 jours** est disponible : toutes les API cockpit renvoient **402** une fois l'essai terminé. Les formules **Vendeur Plus** et **Pro Scale** ne s'activent qu'après paiement Stripe vérifié (`/api/billing/verify`).
 
-**Référencement** : `sitemap.xml`, `robots.txt`, page guide `/guide-revente-vinted` et données structurées Schema.org sur la home. L’URL **`vintflow-io.apps.grok.bot`** (Cursor) ne se renomme pas dans le dashboard et reste **non indexable** (`noindex`). Pour Google, pointe **`vintflow.io`** avec le proxy Cloudflare : voir `deploy/cloudflare-worker/README.md`. Vérifier : `node scripts/check-seo-headers.mjs https://vintflow.io`.
+**Référencement** : `sitemap.xml`, `robots.txt`, page guide `/guide-revente-vinted` et données structurées Schema.org. **Sans domaine payant**, utilise une URL gratuite **Vercel** (`*.vercel.app`, indexable) : voir `deploy/vercel-free-url.md`. L’hébergement Cursor `*.apps.grok.bot` reste utilisable mais **non indexable** (`noindex`).
 
 ## Vintflow Perso (`personal/`)
 

@@ -2,7 +2,9 @@
  * Proxie vintflow.io vers l'app Cursor et enlève X-Robots-Tag: noindex
  * (obligatoire pour Google : *.apps.grok.bot est non indexable).
  */
-const ORIGIN = "https://vintflow-io.apps.grok.bot";
+/** Source : app Cursor ou Vercel (gratuite, indexable). */
+const ORIGIN =
+  globalThis.VINTFLOW_ORIGIN ?? "https://vintflow-io.apps.grok.bot";
 
 export default {
   async fetch(request) {
