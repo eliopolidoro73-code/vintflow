@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { callCloudAi, isPersoCloudAiEnabled } from "@/lib/ai";
+import { isPersoCloudAiEnabled } from "@/lib/ai";
 import { probeGeminiKey, readGeminiApiKey } from "@/lib/gemini-api";
 
 export const maxDuration = 30;

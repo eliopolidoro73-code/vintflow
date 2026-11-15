@@ -137,6 +137,8 @@ export async function callGeminiGenerate(opts: {
 }): Promise<GeminiCallResult> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${opts.model}:generateContent`;
   try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 7_500);
     const res = await fetch(url, {
       method: "POST",
       headers: {
@@ -145,7 +147,9 @@ export async function callGeminiGenerate(opts: {
       },
       body: JSON.stringify(opts.body),
       cache: "no-store",
+      signal: ctrl.signal,
     });
+    clearTimeout(timer);
     const raw = await res.text();
     if (res.ok) {
       let data: unknown;
@@ -168,29 +172,48 @@ export async function callGeminiGenerate(opts: {
   }
 }
 
+const QUICK_PROBE_MODELS = [
+  "gemini-2.0-flash",
+  "gemini-1.5-flash-8b",
+  "gemini-1.5-flash",
+] as const;
+
 export async function probeGeminiKey(
   apiKey: string,
 ): Promise<{ status: string; model?: string; detail?: string }> {
   let lastReason = "no_model_succeeded";
-  const models = await geminiModelsFor(apiKey, "probe");
-  for (const model of models) {
+  const tryModels = [...QUICK_PROBE_MODELS];
+  for (const model of tryModels) {
     const result = await callGeminiGenerate({
       apiKey,
       model,
       body: {
-        contents: [
-          { role: "user", parts: [{ text: 'Réponds uniquement {"ok":true}' }] },
-        ],
-        generationConfig: {
-          maxOutputTokens: 24,
-          responseMimeType: "application/json",
-        },
+        contents: [{ role: "user", parts: [{ text: "ping" }] }],
+        generationConfig: { maxOutputTokens: 8, temperature: 0 },
       },
     });
     if (result.ok) return { status: "ok", model: result.model };
     lastReason = result.reason;
     if (result.reason === "invalid_key" || result.reason === "forbidden") {
-      return { status: result.reason, detail: result.model, model: result.model };
+      return { status: result.reason, detail: result.reason, model: result.model };
+    }
+  }
+  const extra = (await discoverGeminiModels(apiKey))
+    .filter((m) => !tryModels.includes(m as (typeof tryModels)[number]))
+    .slice(0, 2);
+  for (const model of extra) {
+    const result = await callGeminiGenerate({
+      apiKey,
+      model,
+      body: {
+        contents: [{ role: "user", parts: [{ text: "ping" }] }],
+        generationConfig: { maxOutputTokens: 8, temperature: 0 },
+      },
+    });
+    if (result.ok) return { status: "ok", model: result.model };
+    lastReason = result.reason;
+    if (result.reason === "invalid_key" || result.reason === "forbidden") {
+      return { status: result.reason, detail: result.reason, model: result.model };
     }
   }
   return {
