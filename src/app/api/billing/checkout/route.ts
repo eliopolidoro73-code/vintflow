@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
+import { isPublicHostedRuntime } from "@/lib/hosting";
 import {
   normalizePlanId,
   PLANS,
@@ -7,16 +8,15 @@ import {
   type PlanId,
 } from "@/lib/plans";
 
-function resolveSafeBaseUrl(request: Request): string {
+const SAFE_APP_URL = /^https?:\/\/[a-zA-Z0-9.-]+(?::\d+)?$/;
+
+function resolveSafeBaseUrl(request: Request): string | null {
   const configured = process.env.APP_URL?.trim();
-  if (configured && /^https?:\/\/[a-zA-Z0-9.-]+(:\d+)?$/.test(configured)) {
-    return configured;
+  if (configured && SAFE_APP_URL.test(configured)) {
+    return configured.replace(/\/$/, "");
   }
-  const isHosted = Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production";
-  if (isHosted) {
-    return configured && /^https?:\/\/[a-zA-Z0-9.-]+(:\d+)?$/.test(configured)
-      ? configured
-      : "https://vintflow.io";
+  if (isPublicHostedRuntime()) {
+    return null;
   }
   const rawHost =
     request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "";
@@ -62,6 +62,16 @@ export async function POST(request: Request) {
   }
 
   const baseUrl = resolveSafeBaseUrl(request);
+  if (!baseUrl) {
+    return NextResponse.json(
+      {
+        error:
+          "L'URL publique du site (APP_URL) doit être configurée avant d'activer Stripe.",
+        code: "app_url_not_configured",
+      },
+      { status: 503 },
+    );
+  }
   const unitAmountCents =
     billingCycle === "annual"
       ? plan.annualTotal * 100

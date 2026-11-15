@@ -8,11 +8,22 @@ const EDGE_CLIENT_IP_HEADERS = [
   "x-vercel-forwarded-for",
 ] as const;
 
+function isTrustedHostingRuntime(): boolean {
+  return Boolean(process.env.CURSOR_APP_ID) || Boolean(process.env.VERCEL);
+}
+
 export function getClientIp(request: Request): string {
-  for (const name of EDGE_CLIENT_IP_HEADERS) {
-    const value = request.headers.get(name)?.trim();
-    if (value) {
-      const first = value.split(",")[0]?.trim();
+  if (isTrustedHostingRuntime()) {
+    for (const name of EDGE_CLIENT_IP_HEADERS) {
+      const value = request.headers.get(name)?.trim();
+      if (value) {
+        const first = value.split(",")[0]?.trim();
+        if (first) return first.slice(0, 64);
+      }
+    }
+    const xff = request.headers.get("x-forwarded-for")?.trim();
+    if (xff) {
+      const first = xff.split(",")[0]?.trim();
       if (first) return first.slice(0, 64);
     }
   }

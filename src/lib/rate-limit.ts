@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
+import { isTrustedHostingRuntime } from "./hosting";
 import { sql } from "./db";
 
-/** En-têtes fixés par le reverse proxy d'hébergement (pas envoyables par le navigateur). */
+/** En-têtes que seul le reverse proxy d'hébergement doit poser (jamais en local). */
 const EDGE_CLIENT_IP_HEADERS = [
   "cf-connecting-ip",
   "true-client-ip",
@@ -10,10 +11,17 @@ const EDGE_CLIENT_IP_HEADERS = [
 ] as const;
 
 export function getClientIp(request: Request): string {
-  for (const name of EDGE_CLIENT_IP_HEADERS) {
-    const value = request.headers.get(name)?.trim();
-    if (value) {
-      const first = value.split(",")[0]?.trim();
+  if (isTrustedHostingRuntime()) {
+    for (const name of EDGE_CLIENT_IP_HEADERS) {
+      const value = request.headers.get(name)?.trim();
+      if (value) {
+        const first = value.split(",")[0]?.trim();
+        if (first) return first.slice(0, 64);
+      }
+    }
+    const xff = request.headers.get("x-forwarded-for")?.trim();
+    if (xff) {
+      const first = xff.split(",")[0]?.trim();
       if (first) return first.slice(0, 64);
     }
   }

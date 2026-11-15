@@ -3,11 +3,17 @@ import { hashPassword } from "./auth";
 import { getPersoAllowedEmails } from "./perso-access";
 import { sql } from "./db";
 
+function isPersonalProdHosted(): boolean {
+  return Boolean(process.env.CURSOR_APP_ID) || process.env.NODE_ENV === "production";
+}
+
 export function viewerEmailAllowed(email: string): boolean {
   const normalized = email.trim().toLowerCase();
   if (!normalized) return false;
   const allowed = getPersoAllowedEmails();
-  if (allowed.length === 0) return true;
+  if (allowed.length === 0) {
+    return !isPersonalProdHosted();
+  }
   return allowed.includes(normalized);
 }
 
