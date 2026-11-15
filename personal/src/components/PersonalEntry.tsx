@@ -58,8 +58,8 @@ export function PersonalEntry() {
             Connexion email et mot de passe
           </h1>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            Plus besoin de Cursor. Crée ton compte ou connecte-toi comme sur un site
-            classique.
+            Connexion classique email et mot de passe. L&apos;inscription n&apos;accepte que
+            l&apos;adresse email autorisée par l&apos;administrateur (PERSO_ALLOWED_EMAILS).
           </p>
         </div>
 

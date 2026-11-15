@@ -2,28 +2,23 @@ import crypto from "node:crypto";
 import { sql } from "./db";
 
 export function getClientIp(request: Request): string {
-  // Prefer edge/proxy-injected headers that clients cannot forge over raw X-Forwarded-For[0]
-  const vercelIp = request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim();
-  if (vercelIp) return vercelIp.slice(0, 64);
-
-  const cfIp = request.headers.get("cf-connecting-ip")?.trim();
-  if (cfIp) return cfIp.slice(0, 64);
-
-  const flyIp = request.headers.get("fly-client-ip")?.trim();
-  if (flyIp) return flyIp.slice(0, 64);
-
-  const realIp = request.headers.get("x-real-ip")?.trim();
-  if (realIp) return realIp.slice(0, 64);
-
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
-    // Use the rightmost entry appended by the reverse proxy rather than client-controlled leftmost entries
     const parts = forwarded
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
     const proxyAppended = parts[parts.length - 1];
     if (proxyAppended) return proxyAppended.slice(0, 64);
+  }
+
+  const host = request.headers.get("host")?.trim();
+  const localHosts = new Set(["localhost", "127.0.0.1", "[::1]", "0.0.0.0"]);
+  if (host) {
+    const hostname = host.split(":")[0]?.toLowerCase() ?? "";
+    if (localHosts.has(hostname)) {
+      return "local-dev";
+    }
   }
 
   return "unknown-ip";

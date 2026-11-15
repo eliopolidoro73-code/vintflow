@@ -7,32 +7,50 @@ import {
   hashPassword,
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import {
+  isPersoOwnerEmail,
+  persoRegistrationConfigured,
+} from "@/lib/perso-access";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
-
-function isEmailAllowed(email: string): boolean {
-  const raw = process.env.PERSO_ALLOWED_EMAILS?.trim();
-  if (!raw) return true;
-  const allowed = raw
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-  return allowed.includes(email);
-}
 
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
   if (originError) return originError;
 
+  if (!persoRegistrationConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          "Inscription désactivée : l'administrateur doit configurer PERSO_ALLOWED_EMAILS sur l'hébergement.",
+      },
+      { status: 503 },
+    );
+  }
+
   const ip = getClientIp(request);
+  const ipLimit = ip === "unknown-ip" ? 2 : 5;
   const limit = await checkRateLimit({
     scope: "register",
     key: ip,
-    limit: 8,
+    limit: ipLimit,
     windowSeconds: 3600,
   });
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Trop de créations de comptes. Réessaie plus tard." },
+      { status: 429 },
+    );
+  }
+
+  const globalLimit = await checkRateLimit({
+    scope: "register_global",
+    key: "all",
+    limit: 10,
+    windowSeconds: 86400,
+  });
+  if (!globalLimit.allowed) {
+    return NextResponse.json(
+      { error: "Limite d'inscriptions atteinte pour aujourd'hui." },
       { status: 429 },
     );
   }
@@ -55,11 +73,11 @@ export async function POST(request: Request) {
   if (!email || !email.includes("@") || email.length > 160) {
     return NextResponse.json({ error: "Email invalide" }, { status: 400 });
   }
-  if (!isEmailAllowed(email)) {
+  if (!isPersoOwnerEmail(email)) {
     return NextResponse.json(
       {
         error:
-          "Inscription non autorisée pour cette adresse sur l'édition personnelle.",
+          "Seules les adresses autorisées par l'administrateur peuvent créer un compte.",
       },
       { status: 403 },
     );

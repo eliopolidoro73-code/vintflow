@@ -37,8 +37,12 @@ export default function ConfidentialitePage() {
         <section className="space-y-2 rounded-2xl border border-white/10 bg-[#0e111a] p-6">
           <h2 className="text-base font-bold text-white">2. Sécurité &amp; Traitement des photos</h2>
           <p>
-            Le Studio Photo IA traite vos images localement dans le navigateur. Vos mots de passe
-            sont chiffrés via scrypt et vos sessions protégées par cookies HttpOnly signés.
+            Lorsque vous activez la Vision IA ou le Studio Photo avec une clé Google Gemini ou
+            OpenAI configurée sur le serveur, vos photos peuvent être envoyées de façon chiffrée
+            (HTTPS) à ces prestataires pour analyse — elles ne restent pas uniquement dans le
+            navigateur dans ce cas. Sans clé API configurée, le traitement reste simulé ou
+            local. Vos mots de passe sont chiffrés via scrypt et vos sessions protégées par
+            cookies HttpOnly signés.
           </p>
         </section>
 

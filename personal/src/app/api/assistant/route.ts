@@ -38,7 +38,14 @@ export async function POST(request: Request) {
     );
   }
 
-  if (user.ai_credits_used >= plan.aiCreditsMonthlyLimit) {
+  const reserved = await sql<{ ai_credits_used: number }>(
+    `update users
+     set ai_credits_used = ai_credits_used + 1
+     where id = $1 and ai_credits_used < $2
+     returning ai_credits_used`,
+    [user.id, plan.aiCreditsMonthlyLimit],
+  );
+  if (reserved.length === 0) {
     return NextResponse.json(
       {
         error: `Quota de ${plan.aiCreditsMonthlyLimit} crédits IA/mois atteint.`,
@@ -46,10 +53,6 @@ export async function POST(request: Request) {
       { status: 403 },
     );
   }
-  await sql(
-    "update users set ai_credits_used = ai_credits_used + 1 where id = $1",
-    [user.id],
-  );
 
   let body: {
     question?: string;

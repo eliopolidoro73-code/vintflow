@@ -51,7 +51,14 @@ export async function POST(request: Request) {
       { status: 403 },
     );
   }
-  if (auth.user.ai_credits_used >= plan.aiCreditsMonthlyLimit) {
+  const reserved = await sql<{ ai_credits_used: number }>(
+    `update users
+     set ai_credits_used = ai_credits_used + 1
+     where id = $1 and ai_credits_used < $2
+     returning ai_credits_used`,
+    [auth.user.id, plan.aiCreditsMonthlyLimit],
+  );
+  if (reserved.length === 0) {
     return NextResponse.json(
       {
         error: `Quota de ${plan.aiCreditsMonthlyLimit} crédits IA/mois atteint sur ${plan.name}.`,
@@ -59,10 +66,6 @@ export async function POST(request: Request) {
       { status: 403 },
     );
   }
-  await sql(
-    "update users set ai_credits_used = ai_credits_used + 1 where id = $1",
-    [auth.user.id],
-  );
 
   let body: {
     mode?: "listing" | "antishadowban" | "negotiation" | "vision_analyze";

@@ -6,6 +6,7 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { isPersoOwnerEmail } from "@/lib/perso-access";
 import { checkRateLimit, getClientIp, isRateLimited } from "@/lib/rate-limit";
 
 const ACCOUNT_FAILURE_LIMIT = 10;
@@ -42,6 +43,13 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Email et mot de passe requis" },
       { status: 400 },
+    );
+  }
+
+  if (!isPersoOwnerEmail(email)) {
+    return NextResponse.json(
+      { error: "Accès réservé à l'édition personnelle autorisée." },
+      { status: 403 },
     );
   }
 

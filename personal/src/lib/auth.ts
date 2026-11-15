@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { sql } from "./db";
-import type { BillingCycle, PlanId } from "./plans";
+import { isPersoOwnerEmail } from "./perso-access";
+import { normalizePlanId, type BillingCycle, type PlanId } from "./plans";
 
 export const SESSION_COOKIE_NAME = "vintflow_perso_session";
 
@@ -198,13 +199,21 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
   const row = rows[0];
   if (!row) return null;
 
+  if (!isPersoOwnerEmail(row.email)) {
+    return null;
+  }
+
+  const personalOwner =
+    row.subscription_status === "personal_free" &&
+    normalizePlanId(row.plan) === "pro";
+
   return {
     id: row.id,
     email: row.email,
     name: row.name,
-    plan: "pro",
-    billing_cycle: "monthly",
-    subscription_status: "personal_free",
+    plan: personalOwner ? "pro" : "essentiel",
+    billing_cycle: row.billing_cycle === "annual" ? "annual" : "monthly",
+    subscription_status: personalOwner ? "personal_free" : "expired",
     trial_ends_at: String(row.trial_ends_at),
     company_name: row.company_name,
     siret: row.siret,
@@ -215,7 +224,7 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     ai_credits_used: Number(row.ai_credits_used ?? 0),
     crosslist_used: Number(row.crosslist_used ?? 0),
     referral_code: row.referral_code ?? "VF-PERSO",
-    is_demo: false,
+    is_demo: Boolean(row.is_demo),
   };
 }
 
