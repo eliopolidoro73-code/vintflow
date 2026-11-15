@@ -16,7 +16,7 @@ export default function GuideReventeVintedPage() {
     <main className="min-h-screen bg-[#07080d] text-slate-100">
       <article className="mx-auto max-w-3xl px-4 py-16 sm:py-24 prose prose-invert prose-headings:font-bold prose-a:text-violet-300">
         <p className="text-sm text-violet-300 font-semibold tracking-wide uppercase not-prose">
-          Guide Vintflow
+          Guide VintFlow
         </p>
         <h1 className="text-3xl sm:text-4xl text-white not-prose">
           Guide du revendeur Vinted : passer du dressing au vrai business
