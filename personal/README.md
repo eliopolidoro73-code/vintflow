@@ -16,7 +16,7 @@ Sur téléphone, tablette ou PC : même lien, pas besoin de Cursor.
 
 ## Connexion Cursor (optionnel)
 
-`/api/auth/enter` reste disponible si l’app est **Private** et ouverte depuis Cursor.
+Lien à mettre sur ton téléphone (app en **Public** sur Cursor) : `https://vintflow-perso.apps.grok.bot/app`
 
 ## Local
 
