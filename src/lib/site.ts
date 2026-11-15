@@ -1,6 +1,4 @@
-/** URL gratuite indexable (Vercel) — définie après `vercel deploy` ou claim deployment. */
-const CANONICAL_MARKETING_ORIGIN =
-  "https://vintflow-saas.vercel.app";
+import { CURSOR_PUBLIC_APP_URL, FREE_INDEXABLE_URL } from "./live-url";
 
 /** Hôtes indexables (pas *.apps.grok.bot sauf politique plateforme — préférer vercel.app / workers.dev). */
 const INDEXABLE_HOST_SUFFIXES = [
@@ -56,5 +54,8 @@ export function getPublicSiteUrl(): string {
     }
     return `https://${fromEnv.replace(/\/$/, "")}`;
   }
-  return CANONICAL_MARKETING_ORIGIN;
+  if (process.env.VERCEL && FREE_INDEXABLE_URL.length > 0) {
+    return FREE_INDEXABLE_URL.replace(/\/$/, "");
+  }
+  return CURSOR_PUBLIC_APP_URL;
 }
