@@ -2,6 +2,24 @@
 
 L’erreur **« could not read Username for origin.cursor.com »** = le dépôt Cursor/Origin est **privé**. GitHub ne peut pas le télécharger tout seul.
 
+## Tu viens de connecter GitHub dans Cursor
+
+La connexion dans **Réglages Cursor → GitHub** ne remplit pas le dépôt tout seule : [eliopolidoro73-code/vintflow](https://github.com/eliopolidoro73-code/vintflow) est encore **vide** tant qu’aucun `git push` n’a été fait.
+
+**Fais ça une fois** (terminal intégré Cursor sur **ton PC**, pas le cloud) :
+
+```bash
+cd vintflow
+git pull origin main
+git remote remove github 2>/dev/null
+git remote add github https://github.com/eliopolidoro73-code/vintflow.git
+git push -u github main
+```
+
+Quand GitHub affiche du code sur `main`, Vercel redéploie (si le projet est branché sur ce dépôt). Vérifie ensuite : **https://vintflow-vint4.vercel.app/sitemap.xml** → URLs **`vintflow-vint4.vercel.app`** uniquement.
+
+**Option pour que l’agent cloud pousse à ta place** : dans [Secrets Cursor](https://cursor.com/dashboard?tab=secrets), ajoute un secret perso nommé **`GH_TOKEN`** (PAT GitHub classique, coche **`repo`**), puis écris dans le chat : *« GH_TOKEN ajouté »*. L’agent pourra alors `git push github main` depuis ici.
+
 ## Méthode simple (depuis ton PC, avec Cursor)
 
 ### 1. Crée un dépôt vide sur GitHub

@@ -1,0 +1,18 @@
+VintFlow — envoyer le code sur GitHub (1 fois)
+
+GitHub connecté dans Cursor : OK pour le compte eliopolidoro73-code.
+Le dépôt github.com/eliopolidoro73-code/vintflow est encore VIDE sans git push.
+
+Sur ton PC, terminal Cursor dans le projet :
+
+  git pull origin main
+  git remote remove github 2>/dev/null
+  git remote add github https://github.com/eliopolidoro73-code/vintflow.git
+  git push -u github main
+
+Ensuite : Vercel → projet vintflow → attendre Ready.
+Puis Search Console → resoumettre sitemap.xml.
+
+Sites :
+  App (comptes) : https://https-vintflow-io.apps.grok.bot
+  SEO Google    : https://vintflow-vint4.vercel.app
