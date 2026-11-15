@@ -206,7 +206,7 @@ export async function POST(request: Request) {
         }
       },
     );
-    const finalized = finalizeInvoiceDraft(draft, userPrompt);
+    const finalized = finalizeInvoiceDraft(draft, question);
     const sale = await createSaleFromInvoiceDraft(user.id, finalized);
     return NextResponse.json({
       answer: `Facture **${sale.invoice_number}** créée pour « ${finalized.item_title} » (${formatEuro(finalized.gross_amount)} TTC) — acheteur ${finalized.buyer_name}, ${finalized.buyer_city}. PDF prêt (mise en page ${finalized.brand === "Louis Vuitton" ? "luxe LV" : "pro"}).`,
