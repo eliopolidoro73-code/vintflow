@@ -1,6 +1,5 @@
 import { head, put } from "@vercel/blob";
 import type { PGlite } from "@electric-sql/pglite";
-import { waitUntil } from "@vercel/functions";
 
 const BLOB_PATH = "perso/database-export.json";
 
@@ -24,7 +23,9 @@ type DatabaseExport = Partial<Record<TableName, Record<string, unknown>[]>>;
 let persistInFlight = false;
 
 async function fetchExport(): Promise<DatabaseExport | null> {
-  const meta = await head(BLOB_PATH).catch(() => null);
+  const meta = await head(BLOB_PATH, {
+    token: process.env.BLOB_READ_WRITE_TOKEN,
+  }).catch(() => null);
   if (!meta?.url) return null;
   const res = await fetch(meta.url);
   if (!res.ok) return null;
@@ -87,17 +88,9 @@ export async function persistPersoDatabaseToBlob(db: PGlite): Promise<void> {
       access: "private",
       addRandomSuffix: false,
       contentType: "application/json",
+      token: process.env.BLOB_READ_WRITE_TOKEN,
     });
   } finally {
     persistInFlight = false;
   }
-}
-
-export function schedulePersoDatabasePersist(db: PGlite): void {
-  if (!process.env.VERCEL) return;
-  waitUntil(
-    persistPersoDatabaseToBlob(db).catch(() => {
-      /* ignore background persistence errors */
-    }),
-  );
 }

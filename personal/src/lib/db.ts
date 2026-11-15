@@ -2,8 +2,8 @@ import { readdir, readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import pg from "pg";
 import {
+  persistPersoDatabaseToBlob,
   restorePersoDatabaseFromBlob,
-  schedulePersoDatabasePersist,
 } from "@/lib/perso-json-snapshot";
 
 const databaseUrl = process.env.DATABASE_URL?.trim() ?? "";
@@ -41,7 +41,7 @@ export async function sql<T = Record<string, unknown>>(
   const db = await globalForDb.__vintflowPglite;
   const res = await db.query<T>(text, params);
   if (process.env.VERCEL && isWriteQuery(text)) {
-    schedulePersoDatabasePersist(db);
+    await persistPersoDatabaseToBlob(db).catch(() => undefined);
   }
   return res.rows;
 }
