@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "seo:check:vercel": "node scripts/check-seo-headers.mjs https://vintflow-vint4.vercel.app",
     "dev": "next dev",
     "build": "next build && node scripts/migrate.mjs",
     "start": "next start",
