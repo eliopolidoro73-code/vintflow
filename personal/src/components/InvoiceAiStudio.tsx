@@ -97,7 +97,12 @@ export function InvoiceAiStudio({
       setLastEngine(out.engine ?? "ia");
       onRefresh();
       downloadInvoicePdf(sale, user);
-      onToast(`Facture ${sale.invoice_number} créée et PDF téléchargé !`);
+      const kind = (out as { invoiceKind?: string }).invoiceKind;
+      onToast(
+        kind === "retail_purchase"
+          ? `Facture d'achat boutique ${sale.invoice_number} — PDF téléchargé.`
+          : `Facture revente ${sale.invoice_number} créée et PDF téléchargé !`,
+      );
     } catch {
       onToast("Connexion coupée — réessaie.");
     } finally {
@@ -115,8 +120,9 @@ export function InvoiceAiStudio({
               Factures PDF par IA
             </h2>
             <p className="mt-1 text-sm text-zinc-300 max-w-xl leading-relaxed">
-              Une phrase suffit — l&apos;IA génère une facture pro avec en-tête marque
-              (LV, Chanel, Hermès…), bordereau d&apos;expédition et enregistrement en ventes.
+              Achat boutique (ex. « Neverfull neuf acheté chez LV Paris ») → facture
+              d&apos;achat magasin. Vente Vinted avec acheteur → facture de revente.
+              PDF style maison, enregistrement automatique.
             </p>
           </div>
           <Badge className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30">

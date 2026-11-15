@@ -20,7 +20,9 @@ export type BrandStyle = {
   accent: readonly [number, number, number];
   muted: readonly [number, number, number];
   invoiceLabel: string;
+  retailLabel?: string;
   footerTagline?: string;
+  retailFooter?: string;
 };
 
 const BRAND_MATCHERS: Array<{ template: InvoiceBrandTemplate; re: RegExp }> = [
@@ -55,7 +57,10 @@ export function brandStyleFor(template: InvoiceBrandTemplate): BrandStyle {
         accent: [92, 64, 51],
         muted: [130, 105, 88],
         invoiceLabel: "REÇU DE VENTE · MAISON",
+        retailLabel: "FACTURE D'ACHAT · BOUTIQUE",
         footerTagline: "Article d'occasion authentique — contrôle visuel avant expédition.",
+        retailFooter:
+          "Achat article neuf — conservez ce document pour la garantie et le SAV maison.",
       };
     case "chanel":
       return {

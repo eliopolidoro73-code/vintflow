@@ -3,7 +3,10 @@ import { sql } from "@/lib/db";
 import { computeNetMargin } from "@/lib/format";
 import type { InvoicePdfSale } from "@/lib/invoice-pdf";
 import type { InvoiceAiDraft } from "@/lib/invoice-ai-prompt";
-import { enrichInvoiceDraft, isLouisVuitton } from "@/lib/invoice-luxury";
+import { isLouisVuitton } from "@/lib/invoice-luxury";
+import { finalizeInvoiceDraft } from "@/lib/invoice-enrich";
+import { detectInvoiceKind } from "@/lib/invoice-kind";
+import { enrichRetailPurchaseDraft } from "@/lib/invoice-retail-lv";
 
 export async function createSaleFromInvoiceDraft(
   userId: string,
@@ -34,15 +37,29 @@ export async function createSaleFromInvoiceDraft(
     "select count(*) as count from sales where user_id = $1",
     [userId],
   );
+  const isRetail = draft.invoice_kind === "retail_purchase" || /^boutique_/i.test(draft.platform);
   const nextNum = Number(salesCountRows[0]?.count ?? 0) + 42;
-  const invoiceNumber = `FAC-2026-${String(nextNum).padStart(3, "0")}`;
-  const trackingCode = `MR-${Math.floor(10000000 + Math.random() * 89999999)}FR`;
+  const invoiceNumber = isRetail
+    ? `ACHAT-LV-2026-${String(nextNum).padStart(3, "0")}`
+  : `FAC-2026-${String(nextNum).padStart(3, "0")}`;
+  const trackingCode = isRetail
+    ? `BOUTIQUE-${draft.boutique_ref ?? "LV"}-${String(Math.floor(1000 + Math.random() * 8999))}`
+    : `MR-${Math.floor(10000000 + Math.random() * 89999999)}FR`;
   const saleId = crypto.randomUUID();
-  const platform = ["vinted", "leboncoin", "tiktok_shop", "ebay"].includes(
-    draft.platform,
-  )
+  const platform = [
+    "vinted",
+    "leboncoin",
+    "tiktok_shop",
+    "ebay",
+    "boutique_lv",
+    "boutique",
+    "store_purchase",
+  ].includes(draft.platform)
     ? draft.platform
-    : "vinted";
+    : isRetail
+      ? "boutique_lv"
+      : "vinted";
+  const shipmentStatus = isRetail ? "delivered" : "to_ship";
 
   await sql(
     `insert into sales (
@@ -53,8 +70,8 @@ export async function createSaleFromInvoiceDraft(
     ) values (
       $1, $2, null, $3, $4, $5,
       $6, $7, $8, $9, $10, $11,
-      'to_ship', $12, $13, $14,
-      0, 0, $15, $16
+      $12, $13, $14, $15,
+      0, 0, $16, $17
     )`,
     [
       saleId,
@@ -68,6 +85,7 @@ export async function createSaleFromInvoiceDraft(
       (draft.buyer_city || "Paris").slice(0, 80),
       (draft.carrier || "Mondial Relay").slice(0, 50),
       trackingCode,
+      shipmentStatus,
       gross,
       purchase,
       fees,
@@ -92,13 +110,33 @@ export async function createSaleFromInvoiceDraft(
     platform_fees: fees,
     boost_cost: 0,
     shipping_cost: 0,
-    shipment_status: "to_ship",
+    shipment_status: shipmentStatus,
     sold_at: new Date().toISOString(),
     net_margin: margin.netMargin,
   };
 }
 
 function parseDraftLocal(prompt: string): InvoiceAiDraft {
+  const kind = detectInvoiceKind(prompt);
+  if (kind === "retail_purchase") {
+    const base: InvoiceAiDraft = {
+      invoice_kind: "retail_purchase",
+      item_title: prompt.slice(0, 120),
+      brand: "Louis Vuitton",
+      sku: "LV-ACHAT-PENDING",
+      buyer_name: "Client",
+      buyer_city: "Paris",
+      gross_amount: 1890,
+      purchase_cost: 1890,
+      platform: "boutique_lv",
+      account_handle: "Boutique Louis Vuitton",
+      carrier: "Retrait boutique",
+      platform_fees: 0,
+      notes: prompt.slice(0, 200),
+    };
+    return enrichRetailPurchaseDraft(base, prompt);
+  }
+
   const euros = [...prompt.matchAll(/(\d+)[\s,]?€/gi)].map((m) => Number(m[1]));
   const price = euros[0] ?? 49;
   const lower = prompt.toLowerCase();
@@ -148,7 +186,7 @@ function parseDraftLocal(prompt: string): InvoiceAiDraft {
       ? `LV-${modelSku(prompt)}-${price}`
       : `${brand.slice(0, 3).toUpperCase()}-${Date.now().toString(36).slice(-4)}`;
 
-  return enrichInvoiceDraft({
+  return finalizeInvoiceDraft({
     item_title: item_title || `Article ${brand}`,
     brand,
     sku,
@@ -168,7 +206,8 @@ function parseDraftLocal(prompt: string): InvoiceAiDraft {
       ? "Très bon état — occasion authentique"
       : undefined,
     luxury_brand: isLouisVuitton(prompt),
-  });
+    invoice_kind: "resale",
+  }, prompt);
 }
 
 function modelSku(prompt: string): string {
@@ -187,7 +226,7 @@ export async function draftInvoiceFromPrompt(
     const aiDraft = await callAi(trimmed);
     if (aiDraft) {
       return {
-        draft: enrichInvoiceDraft(aiDraft),
+        draft: finalizeInvoiceDraft(aiDraft, trimmed),
         engine: "gemini_or_openai_power",
       };
     }

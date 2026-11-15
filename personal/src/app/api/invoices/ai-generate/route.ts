@@ -6,7 +6,7 @@ import {
   INVOICE_FROM_TEXT_SYSTEM,
   type InvoiceAiDraft,
 } from "@/lib/invoice-ai-prompt";
-import { enrichInvoiceDraft } from "@/lib/invoice-luxury";
+import { finalizeInvoiceDraft } from "@/lib/invoice-enrich";
 import { createSaleFromInvoiceDraft, draftInvoiceFromPrompt } from "@/lib/invoice-sales";
 import { getEffectivePlan } from "@/lib/perso-plan";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -17,7 +17,12 @@ export const maxDuration = 60;
 function parseAiJson(text: string): InvoiceAiDraft | null {
   try {
     const parsed = JSON.parse(text) as Record<string, unknown>;
+    const invoice_kind =
+      parsed.invoice_kind === "retail_purchase" || parsed.invoice_kind === "resale"
+        ? parsed.invoice_kind
+        : undefined;
     return {
+      invoice_kind,
       item_title: String(parsed.item_title ?? "Article seconde main"),
       brand: String(parsed.brand ?? ""),
       sku: String(parsed.sku ?? `VF-${crypto.randomUUID().slice(0, 6)}`),
@@ -34,6 +39,10 @@ function parseAiJson(text: string): InvoiceAiDraft | null {
       condition_label: parsed.condition_label
         ? String(parsed.condition_label)
         : undefined,
+      payment_method: parsed.payment_method ? String(parsed.payment_method) : undefined,
+      store_name: parsed.store_name ? String(parsed.store_name) : undefined,
+      store_city: parsed.store_city ? String(parsed.store_city) : undefined,
+      boutique_ref: parsed.boutique_ref ? String(parsed.boutique_ref) : undefined,
     };
   } catch {
     return null;
@@ -103,20 +112,19 @@ export async function POST(request: Request) {
       });
       if (!aiOut?.text) return null;
       const parsed = parseAiJson(aiOut.text);
-      return parsed ? enrichInvoiceDraft(parsed) : null;
+      return parsed ? finalizeInvoiceDraft(parsed, userPrompt) : null;
     },
   );
 
-  const sale = await createSaleFromInvoiceDraft(
-    auth.user.id,
-    enrichInvoiceDraft(draft),
-  );
+  const finalized = finalizeInvoiceDraft(draft, prompt);
+  const sale = await createSaleFromInvoiceDraft(auth.user.id, finalized);
 
   return NextResponse.json({
     engine,
     cloudAiActive: isPersoCloudAiEnabled(),
     powerAi: process.env.PERSO_AI_POWER !== "false",
-    draft,
+    draft: finalized,
+    invoiceKind: finalized.invoice_kind ?? "resale",
     sale,
     pdfPath: `/api/sales/${sale.id}/invoice`,
   });

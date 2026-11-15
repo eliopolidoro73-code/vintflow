@@ -7,6 +7,7 @@ import {
   detectInvoiceBrandTemplate,
   drawLuxuryInvoiceHeader,
 } from "@/lib/invoice-brand-styles";
+import { isRetailPurchasePlatform } from "@/lib/invoice-kind";
 
 export interface InvoicePdfSale {
   invoice_number: string;
@@ -26,7 +27,133 @@ function safeFileName(invoiceNumber: string): string {
   return invoiceNumber.replace(/[^\w.-]+/g, "_");
 }
 
+function isRetailSale(sale: InvoicePdfSale): boolean {
+  return (
+    isRetailPurchasePlatform(sale.platform) ||
+    sale.invoice_number.startsWith("ACHAT-") ||
+    sale.sku.startsWith("LV-ACHAT")
+  );
+}
+
+function buildRetailBoutiquePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const margin = 18;
+  const luxury = luxuryMetaFromTitle(sale.item_title, sale.sku);
+  const template = detectInvoiceBrandTemplate(
+    sale.item_title,
+    sale.sku,
+    luxury.brand ?? "Louis Vuitton",
+  );
+  const style = brandStyleFor(template);
+  const accent = style.accent;
+  const label = style.retailLabel ?? "FACTURE D'ACHAT · BOUTIQUE";
+
+  let y = drawLuxuryInvoiceHeader(doc, style, margin);
+  y = Math.max(y, 50);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(accent[0], accent[1], accent[2]);
+  doc.text("LOUIS VUITTON FRANCE", margin, y);
+  doc.setTextColor(60, 60, 60);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  y += 5;
+  doc.text(`Boutique — ${sale.buyer_city || "Paris"}`, margin, y);
+  y += 4;
+  doc.text("101 Avenue des Champs-Élysées, 75008 Paris (réf. document)", margin, y);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(accent[0], accent[1], accent[2]);
+  doc.text(label, 195, 16, { align: "right" });
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(10);
+  doc.text(sale.invoice_number, 195, 22, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text(`Date d'achat : ${formatDateFr(sale.sold_at)}`, 195, 27, {
+    align: "right",
+  });
+
+  y += 14;
+  doc.setDrawColor(200, 190, 180);
+  doc.line(margin, y, 195, y);
+  y += 8;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text("CLIENT", margin, y);
+  doc.text("RÈGLEMENT", 110, y);
+  y += 5;
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text(sale.buyer_name, margin, y);
+  doc.text("Carte bancaire — TTC", 110, y);
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text(`${sale.buyer_city}, France`, margin, y);
+  doc.text(sale.tracking_code.replace("BOUTIQUE-", "N° ticket "), 110, y);
+
+  y += 12;
+  doc.setFillColor(style.headerBg[0], style.headerBg[1], style.headerBg[2]);
+  doc.rect(margin, y - 3, 177, 36, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("Article (neuf)", margin + 2, y + 2);
+  doc.text("Qté", 130, y + 2);
+  doc.text("Prix TTC", 175, y + 2, { align: "right" });
+  y += 9;
+  doc.setFontSize(11);
+  const lines = doc.splitTextToSize(sale.item_title, 108);
+  doc.text(lines, margin + 2, y);
+  y += lines.length * 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(accent[0], accent[1], accent[2]);
+  doc.text(`Réf. boutique : ${sale.sku.replace("LV-ACHAT-", "")}`, margin + 2, y);
+  doc.setTextColor(80, 80, 80);
+  doc.text("État : Neuf — facture d'achat magasin", margin + 2, y + 5);
+  doc.text("1", 132, y);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text(formatEuro(sale.gross_amount), 193, y + 2, { align: "right" });
+
+  y += 18;
+  doc.setFont("helvetica", "bold");
+  doc.text("Total TTC", 140, y);
+  doc.text(formatEuro(sale.gross_amount), 193, y, { align: "right" });
+
+  y += 14;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(90, 90, 90);
+  doc.text(
+    "TVA comprise selon tarification boutique France. Document généré via VintFlow à partir de l'achat décrit.",
+    margin,
+    y,
+    { maxWidth: 177 },
+  );
+  y += 8;
+  const foot = style.retailFooter ?? style.footerTagline;
+  if (foot) doc.text(foot, margin, y, { maxWidth: 177 });
+  y += 10;
+  doc.text(
+    `Vendeur enregistré VintFlow : ${user.company_name || user.name}${user.siret ? ` · SIRET ${user.siret}` : ""}`,
+    margin,
+    y,
+    { maxWidth: 177 },
+  );
+
+  return doc;
+}
+
 function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
+  if (isRetailSale(sale)) {
+    return buildRetailBoutiquePdf(sale, user);
+  }
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const margin = 18;
   const luxury = luxuryMetaFromTitle(sale.item_title, sale.sku);
