@@ -68,6 +68,7 @@ export async function POST(request: Request) {
     crosslist_ebay?: boolean;
     description_vinted?: string;
     description_lbc?: string;
+    studio_image_thumb?: string;
   };
   try {
     body = await request.json();
@@ -146,17 +147,21 @@ export async function POST(request: Request) {
   const color =
     COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
 
+  const studioThumb = (body.studio_image_thumb ?? "")
+    .trim()
+    .slice(0, 100_000);
+
   await sql(
     `insert into inventory_items (
       id, user_id, sku, title, brand, category, size, condition, location,
       purchase_price, extra_costs, listing_price, status,
       vinted_status, leboncoin_status, tiktok_status, ebay_status,
-      vinted_account, description_vinted, description_lbc, image_color
+      vinted_account, description_vinted, description_lbc, image_color, studio_image_thumb
     ) values (
       $1, $2, $3, $4, $5, $6, $7, $8, $9,
       $10, $11, $12, 'active',
       'listed', $13, $14, $15,
-      $16, $17, $18, $19
+      $16, $17, $18, $19, $20
     )`,
     [
       id,
@@ -178,6 +183,7 @@ export async function POST(request: Request) {
       (body.description_vinted ?? generated.vinted).slice(0, 1200),
       (body.description_lbc ?? generated.leboncoin).slice(0, 1200),
       color,
+      studioThumb,
     ],
   );
 

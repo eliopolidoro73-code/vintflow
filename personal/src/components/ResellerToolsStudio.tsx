@@ -32,6 +32,7 @@ import type { PlanId } from "@/lib/plans";
 import type { StudioPresets } from "@/lib/user-preferences";
 import { buildAiImageDataUrl } from "@/lib/client-ai-image";
 import { localAntiShadowbanRewrite } from "@/lib/antishadowban-engine";
+import { studioThumbFromCanvas } from "@/lib/studio-thumb";
 
 interface ResellerToolsStudioProps {
   planId: PlanId;
@@ -871,8 +872,12 @@ export function ResellerToolsStudio({
     }
   }
 
-  async function handleSaveGeneratedToStock() {
+  async function saveGeneratedToStock(includeStudioPhoto: boolean) {
     if (!genResult) return;
+    const thumb =
+      includeStudioPhoto && photoSrc
+        ? studioThumbFromCanvas(canvasRef.current)
+        : "";
     const res = await fetch("/api/items", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -888,6 +893,7 @@ export function ResellerToolsStudio({
         crosslist_tiktok: true,
         description_vinted: genResult.vinted,
         description_lbc: genResult.leboncoin,
+        studio_image_thumb: thumb,
       }),
     });
     const out = (await res.json()) as { error?: string };
@@ -896,7 +902,11 @@ export function ResellerToolsStudio({
       return;
     }
     onItemCreated();
-    onToast("Article ajouté au Dressing & crosslisté !");
+    onToast(
+      thumb
+        ? "Article + miniature Studio enregistrés dans le Dressing !"
+        : "Article ajouté au Dressing & crosslisté !",
+    );
   }
 
   async function handleAntiShadowban(e: React.FormEvent) {
@@ -2072,13 +2082,25 @@ export function ResellerToolsStudio({
                   </div>
                 </div>
 
-                <Button
-                  onClick={handleSaveGeneratedToStock}
-                  className="w-full bg-violet-600 text-white hover:bg-violet-500 font-bold text-xs"
-                >
-                  <Plus className="h-4 w-4 mr-1.5" />
-                  Enregistrer cet article dans mon Dressing &amp; Crosslister
-                </Button>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Button
+                    type="button"
+                    onClick={() => void saveGeneratedToStock(false)}
+                    className="w-full bg-violet-600 text-white hover:bg-violet-500 font-bold text-xs h-11"
+                  >
+                    <Plus className="h-4 w-4 mr-1.5" />
+                    Ajouter au Dressing
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={!photoSrc}
+                    onClick={() => void saveGeneratedToStock(true)}
+                    className="w-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20 font-bold text-xs h-11"
+                  >
+                    <Camera className="h-4 w-4 mr-1.5" />
+                    Dressing + photo Studio
+                  </Button>
+                </div>
               </>
             )}
           </div>

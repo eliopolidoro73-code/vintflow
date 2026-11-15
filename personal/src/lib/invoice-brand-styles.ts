@@ -118,6 +118,8 @@ export function brandStyleFor(template: InvoiceBrandTemplate): BrandStyle {
         accent: [71, 85, 105],
         muted: [120, 128, 140],
         invoiceLabel: "FACTURE · ARTICLE DE LUXE",
+        retailLabel: "REÇU BOUTIQUE · LUXE",
+        retailFooter: "Achat article neuf — conserver pour garantie.",
         footerTagline: "Vente occasion — contrôle qualité avant envoi.",
       };
     default:

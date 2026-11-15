@@ -557,27 +557,51 @@ Analyse locale: risque ${local.descriptionRisk}, score dup ${local.duplicateScor
       category: (body.category ?? "").trim() || undefined,
     });
 
+    const photoLocal =
+      imageDataUrl.startsWith("data:image/") ?
+        localPhotoSafetyFromImageSeed(imageDataUrl)
+      : {
+          fingerprintRisk: "medium" as const,
+          recommendedBrightness: 108,
+          recommendedContrast: 112,
+          recommendedPaddingPct: 8,
+          shouldRemoveBackground: true,
+          shouldRotateSlight: false,
+          checklist: [] as string[],
+        };
+
+    const globalRisk =
+      descLocal.descriptionRisk === "high" || photoLocal.fingerprintRisk === "high"
+        ? "high"
+        : descLocal.descriptionRisk === "medium" ||
+            photoLocal.fingerprintRisk === "medium"
+          ? "medium"
+          : "low";
+
     const fallback = {
       engine: "local_listing_safety",
       cloudAiActive: isPersoCloudAiEnabled(),
-      fingerprintRisk: "medium",
+      usedLocalFallback: true,
+      fingerprintRisk: photoLocal.fingerprintRisk,
       descriptionRisk: descLocal.descriptionRisk,
-      globalRisk:
-        descLocal.descriptionRisk === "high" ? "high" : ("medium" as const),
-      recommendedBrightness: 108,
-      recommendedContrast: 112,
-      recommendedPaddingPct: 8,
-      shouldRemoveBackground: true,
-      shouldRotateSlight: false,
+      globalRisk,
+      recommendedBrightness: photoLocal.recommendedBrightness,
+      recommendedContrast: photoLocal.recommendedContrast,
+      recommendedPaddingPct: photoLocal.recommendedPaddingPct,
+      shouldRemoveBackground: photoLocal.shouldRemoveBackground,
+      shouldRotateSlight: photoLocal.shouldRotateSlight,
       reorderedTitle: descLocal.reorderedTitle,
       titleAlternatives: descLocal.titleAlternatives,
       refreshedDescription: descLocal.refreshedDescription,
-      photoChecklist: [
-        "Détourer ou fond studio différent.",
-        "Luminosité +5 %, contraste léger.",
-        "Marge blanche 6–10 % autour de l'article.",
-        "Exporter depuis Vintflow (pas la photo brute).",
-      ],
+      photoChecklist:
+        photoLocal.checklist.length > 0
+          ? photoLocal.checklist
+          : [
+              "Détourer ou fond studio différent.",
+              "Luminosité +5 %, contraste léger.",
+              "Marge blanche 6–10 % autour de l'article.",
+              "Exporter depuis Vintflow (pas la photo brute).",
+            ],
       descriptionChecklist: descLocal.checklist,
       safeToPublishAfterEdits: true,
       safeToPostDescription: descLocal.safeToPostDescription,

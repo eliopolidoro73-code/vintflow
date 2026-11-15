@@ -13,8 +13,9 @@ export function localPhotoSafetyFromImageSeed(seed: string) {
   const shouldRemoveBackground = (n & 4) !== 0;
   const shouldRotateSlight = (n & 32) !== 0;
 
-  const fingerprintRisk: "low" | "medium" | "high" =
+  let fingerprintRisk: "low" | "medium" | "high" =
     recommendedPaddingPct >= 10 && shouldRemoveBackground ? "low" : "medium";
+  if ((n % 23) === 0) fingerprintRisk = "high";
 
   return {
     fingerprintRisk,

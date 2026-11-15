@@ -168,6 +168,28 @@ function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
   });
 
   y += isLuxe ? 36 : 22;
+
+  if (isLuxe) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(7.5);
+    doc.setTextColor(style.muted[0], style.muted[1], style.muted[2]);
+    doc.text(
+      "Pièce d'occasion — contrôle visuel avant expédition · traçabilité VintFlow.",
+      margin,
+      y,
+      { maxWidth: 175 },
+    );
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80, 80, 80);
+    doc.text(
+      `N° suivi vente : ${sale.tracking_code || sale.invoice_number}`,
+      margin,
+      y,
+    );
+    y += 5;
+  }
+
   y = drawTotalsBlock(doc, sale.gross_amount, 118, 193, y, accent);
 
   const hasEconomics =

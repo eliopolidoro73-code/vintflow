@@ -108,6 +108,7 @@ interface InventoryItem {
   description_vinted: string;
   description_lbc: string;
   image_color: string;
+  studio_image_thumb?: string;
   listed_at: string;
   days_listed: number;
 }
@@ -1365,10 +1366,23 @@ export function BackOffice({
                       >
                         <div className="flex items-start gap-3.5">
                           <div
-                            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-inner"
-                            style={{ backgroundColor: item.image_color }}
+                            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-inner overflow-hidden"
+                            style={
+                              item.studio_image_thumb
+                                ? undefined
+                                : { backgroundColor: item.image_color }
+                            }
                           >
-                            {(item.brand || item.title).slice(0, 2).toUpperCase()}
+                            {item.studio_image_thumb ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={item.studio_image_thumb}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              (item.brand || item.title).slice(0, 2).toUpperCase()
+                            )}
                           </div>
                           <div>
                             <div className="flex flex-wrap items-center gap-2">

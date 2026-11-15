@@ -38,12 +38,14 @@ export async function loadWorkspaceForUser(user: AuthUser) {
         description_vinted: string;
         description_lbc: string;
         image_color: string;
+        studio_image_thumb: string;
         listed_at: string;
       }>(
         `select id, sku, title, brand, category, size, condition, location,
                 purchase_price, extra_costs, listing_price, status,
                 vinted_status, leboncoin_status, tiktok_status, ebay_status,
-                vinted_account, description_vinted, description_lbc, image_color, listed_at
+                vinted_account, description_vinted, description_lbc, image_color,
+                studio_image_thumb, listed_at
          from inventory_items where user_id = $1 order by created_at desc`,
         [user.id],
       ),

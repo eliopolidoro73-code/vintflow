@@ -12,8 +12,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { formatDateFr, formatEuro } from "@/lib/format";
+import { formatDateFr } from "@/lib/format";
 import type { AuthUser } from "@/lib/auth";
+import { InvoiceBrandedPreview } from "@/components/InvoiceBrandedPreview";
 
 export interface SaleRecord {
   id: string;
@@ -90,108 +91,22 @@ export function DocumentPrintModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div
-          id="printable-document"
-          className="rounded-xl bg-white text-zinc-900 p-6 shadow-inner"
-        >
+        <div id="printable-document" className="rounded-xl p-2 sm:p-4 shadow-inner bg-zinc-100">
           {mode === "invoice" ? (
-            <div className="space-y-6 text-xs">
-              <div className="flex items-start justify-between border-b border-zinc-200 pb-4">
-                <div>
-                  <p className="text-lg font-extrabold tracking-tight text-zinc-950">
-                    {user.company_name}
-                  </p>
-                  <p className="text-zinc-600 mt-0.5">SIRET : {user.siret}</p>
-                  <p className="text-zinc-600">Email : {user.email}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-base font-bold text-emerald-700">FACTURE</p>
-                  <p className="font-mono font-semibold text-zinc-900">
-                    {sale.invoice_number}
-                  </p>
-                  <p className="text-zinc-500">
-                    Date : {formatDateFr(sale.sold_at)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 rounded-lg bg-zinc-50 p-3.5 border border-zinc-200">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-                    Client / Acheteur
-                  </p>
-                  <p className="font-semibold text-zinc-900 mt-1">
-                    {sale.buyer_name}
-                  </p>
-                  <p className="text-zinc-600">{sale.buyer_city}, France</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-                    Canal &amp; Expédition
-                  </p>
-                  <p className="font-semibold text-zinc-900 mt-1 capitalize">
-                    {sale.platform.replace("_", " ")} ({sale.account_handle})
-                  </p>
-                  <p className="text-zinc-600">
-                    {sale.carrier} · {sale.tracking_code}
-                  </p>
-                </div>
-              </div>
-
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-zinc-300 text-left text-[11px] uppercase text-zinc-500">
-                    <th className="py-2">Désignation / SKU</th>
-                    <th className="py-2 text-center">Qté</th>
-                    <th className="py-2 text-right">Montant TTC</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-zinc-200">
-                    <td className="py-3">
-                      <p className="font-semibold text-zinc-900">
-                        {sale.item_title}
-                      </p>
-                      <p className="font-mono text-[11px] text-zinc-500">
-                        Réf. SKU : {sale.sku} · Article d&apos;occasion
-                      </p>
-                    </td>
-                    <td className="py-3 text-center">1</td>
-                    <td className="py-3 text-right font-semibold">
-                      {formatEuro(sale.gross_amount)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div className="flex justify-end">
-                <div className="w-56 space-y-1.5">
-                  <div className="flex justify-between text-zinc-600">
-                    <span>Total HT</span>
-                    <span>{formatEuro(sale.gross_amount)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm font-extrabold text-zinc-950 border-t border-zinc-300 pt-1.5">
-                    <span>Net à payer (TTC)</span>
-                    <span>{formatEuro(sale.gross_amount)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-zinc-200 pt-3 text-[10px] text-zinc-500 space-y-1">
+            <>
+              <InvoiceBrandedPreview sale={sale} user={user} variant="print" />
+              <div className="mt-3 text-[10px] text-zinc-600 space-y-1 px-2">
                 {isVatMargin ? (
                   <p>
-                    Régime particulier — Biens d&apos;occasion (TVA sur la marge,
-                    article 297 A du CGI).
+                    Régime particulier — Biens d&apos;occasion (TVA sur la marge, art.
+                    297 A du CGI).
                   </p>
                 ) : (
                   <p>TVA non applicable, article 293 B du CGI.</p>
                 )}
-                <p>
-                  Facture acquittée via {sale.platform.replace("_", " ")} ·
-                  Générée par VintFlow.
-                </p>
+                <p>Email : {user.email}</p>
               </div>
-            </div>
+            </>
           ) : (
             <div className="mx-auto max-w-[360px] border-2 border-zinc-900 p-4 space-y-4 text-xs">
               <div className="flex items-center justify-between border-b-2 border-zinc-900 pb-2.5">

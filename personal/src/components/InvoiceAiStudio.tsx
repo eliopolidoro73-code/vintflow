@@ -14,14 +14,13 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import type { AuthUser } from "@/lib/auth";
 import { INVOICE_EXAMPLE_PROMPTS } from "@/lib/invoice-ai-prompt";
-import { isRetailPurchasePlatform } from "@/lib/invoice-kind";
 import {
   downloadInvoicePdf,
   downloadShippingLabelPdf,
-  invoicePreviewTheme,
 } from "@/lib/invoice-pdf";
-import { formatDateFr, formatEuro } from "@/lib/format";
+import { formatEuro } from "@/lib/format";
 import type { SaleRecord } from "@/components/DocumentPrintModal";
+import { InvoiceBrandedPreview } from "@/components/InvoiceBrandedPreview";
 
 interface InvoiceAiStudioProps {
   user: AuthUser;
@@ -168,7 +167,7 @@ export function InvoiceAiStudio({
 
       {lastSale && (
         <>
-          <InvoiceDocumentPreview sale={lastSale} user={user} />
+          <InvoiceBrandedPreview sale={lastSale} user={user} />
         <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4 text-xs space-y-3">
           <p className="font-bold text-emerald-200">
             {lastSale.invoice_number} · {lastSale.item_title}
@@ -212,123 +211,6 @@ export function InvoiceAiStudio({
       )}
 
       <AiPowerHelpCard />
-    </div>
-  );
-}
-
-function InvoiceDocumentPreview({
-  sale,
-  user,
-}: {
-  sale: SaleRecord;
-  user: AuthUser;
-}) {
-  const { style, luxury } = invoicePreviewTheme(sale.item_title, sale.sku);
-  const accent = style.accent;
-  const bg = style.headerBg;
-  const isLuxe = style.template !== "default";
-  const isRetail = isRetailPurchasePlatform(sale.platform);
-  const label = isRetail
-    ? (style.retailLabel ?? "FACTURE D'ACHAT · BOUTIQUE")
-    : style.invoiceLabel;
-
-  return (
-    <div
-      className="rounded-2xl border border-white/10 overflow-hidden shadow-xl"
-      style={{
-        background: `linear-gradient(180deg, rgb(${bg.join(",")}) 0%, #0e111a 38%)`,
-      }}
-    >
-      <div className="px-5 py-4 border-b border-black/10 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          {isLuxe && luxury.brand && (
-            <p
-              className="text-[10px] font-bold tracking-[0.2em] uppercase"
-              style={{ color: `rgb(${accent.join(",")})` }}
-            >
-              {luxury.brand}
-            </p>
-          )}
-          <p className="text-sm font-extrabold text-zinc-900 dark:text-white mt-0.5">
-            {user.company_name || user.name}
-          </p>
-        </div>
-        <div className="text-right">
-          <p
-            className="text-xs font-bold"
-            style={{ color: `rgb(${accent.join(",")})` }}
-          >
-            {label}
-          </p>
-          <p className="text-[11px] text-zinc-600 dark:text-zinc-300 mt-0.5">
-            {sale.invoice_number}
-          </p>
-          <p className="text-[10px] text-zinc-500">{formatDateFr(sale.sold_at)}</p>
-        </div>
-      </div>
-      <div className="px-5 py-4 text-xs space-y-2 bg-[#0e111a]/90 text-zinc-300">
-        <div className="grid sm:grid-cols-2 gap-3">
-          <PreviewField
-            label={isRetail ? "Client" : "Acheteur"}
-            value={`${sale.buyer_name} · ${sale.buyer_city}`}
-          />
-          <PreviewField
-            label={isRetail ? "Règlement" : "Expédition"}
-            value={
-              isRetail
-                ? `${sale.carrier}`
-                : `${sale.carrier} · ${sale.tracking_code}`
-            }
-          />
-        </div>
-        <PreviewField label="Article" value={sale.item_title} emphasize />
-        {luxury.productLine && (
-          <PreviewField label="Modèle" value={luxury.productLine} />
-        )}
-        <p className="text-lg font-bold text-white pt-1">
-          {formatEuro(sale.gross_amount)}{" "}
-          <span className="text-[10px] font-normal text-zinc-500">TTC</span>
-        </p>
-        {(sale.purchase_cost > 0 || sale.net_margin !== 0) && !isRetail && (
-          <p className="text-[11px] text-zinc-400">
-            Coût {formatEuro(sale.purchase_cost)} · Frais plateforme{" "}
-            {formatEuro(sale.platform_fees)} · Marge{" "}
-            <span className="text-emerald-300 font-semibold">
-              {formatEuro(sale.net_margin)}
-            </span>
-          </p>
-        )}
-        {style.footerTagline && (
-          <p className="text-[10px] text-zinc-500 border-t border-white/5 pt-2">
-            {style.footerTagline}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function PreviewField({
-  label,
-  value,
-  emphasize,
-}: {
-  label: string;
-  value: string;
-  emphasize?: boolean;
-}) {
-  return (
-    <div>
-      <p className="text-[10px] uppercase tracking-wide text-zinc-500">{label}</p>
-      <p
-        className={
-          emphasize
-            ? "text-sm font-semibold text-white leading-snug"
-            : "text-zinc-300"
-        }
-      >
-        {value}
-      </p>
     </div>
   );
 }
