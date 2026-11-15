@@ -49,15 +49,21 @@ export function InvoiceBrandedPreview({
         className={`px-5 py-4 flex flex-wrap items-center justify-between gap-3 ${headerBand}`}
         style={print ? { backgroundColor: `rgb(${bg.join(",")})` } : undefined}
       >
-        <div>
-          {isLuxe && luxury.brand && (
+        <div className={isRetail && style.template === "moncler" ? "w-full text-center" : undefined}>
+          {isRetail && style.template === "moncler" ? (
+            <img
+              src="/brands/moncler-wordmark.svg"
+              alt="Moncler"
+              className="mx-auto h-8 w-auto max-w-[220px] object-contain"
+            />
+          ) : isLuxe && luxury.brand ? (
             <p
               className="text-[10px] font-bold tracking-[0.2em] uppercase"
               style={{ color: `rgb(${accent.join(",")})` }}
             >
               {style.displayName || luxury.brand}
             </p>
-          )}
+          ) : null}
           <p className={`text-sm font-extrabold mt-0.5 ${companyClass}`}>
             {user.company_name || user.name}
           </p>

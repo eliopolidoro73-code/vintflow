@@ -12,6 +12,8 @@ export const LUXURY_BRAND_CATALOG = [
   { key: "saddle", brand: "Dior", cat: "Sacs", avgPrice: 1950 },
   { key: "gucci", brand: "Gucci", cat: "Sacs", avgPrice: 980 },
   { key: "marmont", brand: "Gucci", cat: "Sacs", avgPrice: 720 },
+  { key: "moncler", brand: "Moncler", cat: "Doudounes & ready-to-wear", avgPrice: 680 },
+  { key: "maya", brand: "Moncler", cat: "Doudounes", avgPrice: 720 },
   { key: "prada", brand: "Prada", cat: "Sacs", avgPrice: 850 },
   { key: "celine", brand: "Celine", cat: "Sacs", avgPrice: 920 },
   { key: "ysl", brand: "Saint Laurent", cat: "Sacs", avgPrice: 1100 },

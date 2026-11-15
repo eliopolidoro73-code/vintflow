@@ -11,6 +11,15 @@ const LUXE_RETAIL: Array<{
   title: (model: string) => string;
 }> = [
   {
+    re: /\bmoncler\b|maya|grenoble|doudoune\s+moncler/i,
+    brand: "Moncler",
+    platform: "boutique_moncler",
+    skuPrefix: "MON-ACHAT",
+    store: "Moncler",
+    defaultPrice: 1490,
+    title: (m) => `Doudoune Moncler ${m || "Maya"} · neuf boutique`,
+  },
+  {
     re: /chanel/i,
     brand: "Chanel",
     platform: "boutique_chanel",
@@ -47,6 +56,25 @@ const LUXE_RETAIL: Array<{
     title: () => "Sac Gucci · neuf",
   },
 ];
+
+const MONCLER_RETAIL_REFS: Array<{
+  match: RegExp;
+  model: string;
+  ref: string;
+  defaultPrice: number;
+}> = [
+  { match: /maya/i, model: "Maya", ref: "1A203", defaultPrice: 1490 },
+  { match: /grenoble/i, model: "Grenoble", ref: "3B109", defaultPrice: 1290 },
+  { match: /genius/i, model: "Genius", ref: "4A118", defaultPrice: 1890 },
+  { match: /bady/i, model: "Bady", ref: "2A120", defaultPrice: 1390 },
+];
+
+function pickMonclerRetail(prompt: string) {
+  for (const row of MONCLER_RETAIL_REFS) {
+    if (row.match.test(prompt)) return row;
+  }
+  return MONCLER_RETAIL_REFS[0];
+}
 
 const LV_RETAIL_REFS: Array<{ match: RegExp; model: string; ref: string; canvas: string; defaultPrice: number }> = [
   {
@@ -96,19 +124,64 @@ function extractCustomerName(prompt: string): string {
 
 function extractStoreCity(prompt: string): string {
   const m =
-    /(?:boutique|magasin)\s+(?:de\s+)?(?:lv|louis\s*vuitton\s+)?(?:à|sur)\s+([A-Za-zÀ-ÿ\s-]+)/i.exec(
+    /(?:boutique|magasin)\s+(?:de\s+)?(?:(?:lv|louis\s*vuitton|moncler)\s+)?(?:à|sur)\s+([A-Za-zÀ-ÿ\s-]+)/i.exec(
       prompt,
     ) ?? /(?:à|sur)\s+(Paris|Lyon|Marseille|Bordeaux|Lille|Nice|Cannes|Strasbourg)/i.exec(prompt);
   return m?.[1]?.trim().slice(0, 60) || "Paris";
 }
 
-/** Facture d'achat boutique Louis Vuitton (article neuf). */
+function monclerStoreLine(city: string): string {
+  if (/galeries|haussmann/i.test(city) || city === "Paris")
+    return "Moncler Paris Galeries Lafayette · 40, boulevard Haussmann · 75009 Paris";
+  return `Moncler · boutique ${city}`;
+}
+
+/** Facture d'achat boutique (neuf) — maison détectée depuis le prompt, pas de défaut LV. */
 export function enrichRetailPurchaseDraft(
   draft: InvoiceAiDraft,
   prompt: string,
 ): InvoiceAiDraft {
   const d = { ...draft };
-  const lv = isLouisVuitton(`${prompt} ${d.brand} ${d.item_title}`);
+  const blob = `${prompt} ${d.brand} ${d.item_title}`;
+
+  const other = LUXE_RETAIL.find((b) => b.re.test(blob));
+  if (other) {
+    const price = extractPrice(prompt, other.defaultPrice);
+    d.invoice_kind = "retail_purchase";
+    d.brand = other.brand;
+    d.platform = other.platform;
+    d.account_handle = `Boutique ${other.brand}`;
+    d.carrier = "Retrait boutique";
+    d.platform_fees = 0;
+    d.gross_amount = price;
+    d.purchase_cost = price;
+    d.payment_method = d.payment_method ?? "Carte bancaire — Visa/Mastercard";
+    d.store_city = d.store_city ?? extractStoreCity(prompt);
+    d.buyer_name = d.buyer_name?.length > 2 ? d.buyer_name : extractCustomerName(prompt);
+    d.buyer_city = d.store_city;
+    d.condition_label = "Neuf — emballage d'origine, facture boutique";
+    d.luxury_brand = true;
+
+    if (other.brand === "Moncler") {
+      const spec = pickMonclerRetail(prompt);
+      d.product_line = spec.model;
+      d.boutique_ref = spec.ref;
+      d.sku = `${other.skuPrefix}-${spec.ref}`;
+      d.item_title = other.title(spec.model);
+      d.store_name = monclerStoreLine(d.store_city);
+      d.notes =
+        d.notes ??
+        `Achat boutique Moncler — ${spec.model} (réf. ${spec.ref}), TTC, TVA incluse. Pièce neuve.`;
+      return d;
+    }
+
+    d.item_title = other.title(d.product_line ?? "classique");
+    d.sku = `${other.skuPrefix}-${String(Math.round(price))}`;
+    d.store_name = other.store;
+    return d;
+  }
+
+  const lv = isLouisVuitton(blob);
   if (lv) {
     const spec = pickLvRetail(prompt);
     const price = extractPrice(prompt, spec.defaultPrice);
@@ -134,36 +207,17 @@ export function enrichRetailPurchaseDraft(
       d.notes ??
       `Achat en boutique Louis Vuitton — ${spec.model} (réf. ${spec.ref}), TTC, TVA incluse. Pièce neuve avec dustbag et reçu d'origine.`;
     d.luxury_brand = true;
-  } else {
-    const other = LUXE_RETAIL.find((b) => b.re.test(`${prompt} ${d.brand} ${d.item_title}`));
-    if (other) {
-      const price = extractPrice(prompt, other.defaultPrice);
-      d.invoice_kind = "retail_purchase";
-      d.brand = other.brand;
-      d.platform = other.platform;
-      d.account_handle = `Boutique ${other.brand}`;
-      d.carrier = "Retrait boutique";
-      d.item_title = other.title(d.product_line ?? "classique");
-      d.sku = `${other.skuPrefix}-${String(Math.round(price))}`;
-      d.gross_amount = price;
-      d.purchase_cost = price;
-      d.platform_fees = 0;
-      d.store_name = other.store;
-      d.store_city = extractStoreCity(prompt);
-      d.buyer_name = d.buyer_name?.length > 2 ? d.buyer_name : extractCustomerName(prompt);
-      d.condition_label = "Neuf — emballage d'origine";
-      d.luxury_brand = true;
-      return d;
-    }
-    d.invoice_kind = "retail_purchase";
-    d.platform = d.platform.startsWith("boutique") ? d.platform : "boutique";
-    d.carrier = "Retrait magasin";
-    d.condition_label = d.condition_label ?? "Neuf";
-    d.purchase_cost = d.gross_amount;
-    d.platform_fees = 0;
-    d.payment_method = d.payment_method ?? "Carte bancaire";
-    d.store_name = d.store_name ?? (d.brand || "Magasin");
-    d.store_city = d.store_city ?? extractStoreCity(prompt);
+    return d;
   }
+
+  d.invoice_kind = "retail_purchase";
+  d.platform = d.platform.startsWith("boutique") ? d.platform : "boutique";
+  d.carrier = "Retrait magasin";
+  d.condition_label = d.condition_label ?? "Neuf";
+  d.purchase_cost = d.gross_amount;
+  d.platform_fees = 0;
+  d.payment_method = d.payment_method ?? "Carte bancaire";
+  d.store_name = d.store_name ?? (d.brand || "Magasin");
+  d.store_city = d.store_city ?? extractStoreCity(prompt);
   return d;
 }

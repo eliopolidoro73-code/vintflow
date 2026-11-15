@@ -41,32 +41,41 @@ export async function createSaleFromInvoiceDraft(
   const nextNum = Number(salesCountRows[0]?.count ?? 0) + 42;
   const retailTag = (() => {
     const p = draft.platform.toLowerCase();
-    if (p.includes("chanel")) return "CHANEL";
-    if (p.includes("hermes")) return "HERMES";
-    if (p.includes("dior")) return "DIOR";
-    if (p.includes("gucci")) return "GUCCI";
-    if (p.includes("lv") || draft.brand?.toLowerCase().includes("louis")) return "LV";
+    const b = draft.brand?.toLowerCase() ?? "";
+    if (p.includes("moncler") || b.includes("moncler")) return "MONCLER";
+    if (p.includes("chanel") || b.includes("chanel")) return "CHANEL";
+    if (p.includes("hermes") || b.includes("herm")) return "HERMES";
+    if (p.includes("dior") || b.includes("dior")) return "DIOR";
+    if (p.includes("gucci") || b.includes("gucci")) return "GUCCI";
+    if (p.includes("lv") || b.includes("louis")) return "LV";
     return "LUXE";
   })();
   const invoiceNumber = isRetail
     ? `ACHAT-${retailTag}-2026-${String(nextNum).padStart(3, "0")}`
   : `FAC-2026-${String(nextNum).padStart(3, "0")}`;
   const trackingCode = isRetail
-    ? `BOUTIQUE-${draft.boutique_ref ?? "LV"}-${String(Math.floor(1000 + Math.random() * 8999))}`
+    ? `BOUTIQUE-${(draft.boutique_ref ?? retailTag).slice(0, 14)}-${String(Math.floor(1000 + Math.random() * 8999))}`
     : `MR-${Math.floor(10000000 + Math.random() * 89999999)}FR`;
   const saleId = crypto.randomUUID();
-  const platform = [
-    "vinted",
-    "leboncoin",
-    "tiktok_shop",
-    "ebay",
+  const retailPlatforms = [
     "boutique_lv",
+    "boutique_moncler",
+    "boutique_chanel",
+    "boutique_hermes",
+    "boutique_dior",
+    "boutique_gucci",
     "boutique",
     "store_purchase",
-  ].includes(draft.platform)
+  ] as const;
+  const marketPlatforms = ["vinted", "leboncoin", "tiktok_shop", "ebay"] as const;
+  const platform = [...retailPlatforms, ...marketPlatforms].includes(
+    draft.platform as (typeof retailPlatforms)[number] | (typeof marketPlatforms)[number],
+  )
     ? draft.platform
     : isRetail
-      ? "boutique_lv"
+      ? draft.platform.startsWith("boutique_")
+        ? draft.platform
+        : "boutique"
       : "vinted";
   const shipmentStatus = isRetail ? "delivered" : "to_ship";
 
@@ -125,20 +134,65 @@ export async function createSaleFromInvoiceDraft(
   };
 }
 
+function defaultRetailBrand(prompt: string): {
+  brand: string;
+  platform: string;
+  sku: string;
+  handle: string;
+  amount: number;
+} {
+  const lower = prompt.toLowerCase();
+  if (/\bmoncler\b|maya|grenoble/i.test(lower)) {
+    return {
+      brand: "Moncler",
+      platform: "boutique_moncler",
+      sku: "MON-ACHAT-PENDING",
+      handle: "Boutique Moncler",
+      amount: 1490,
+    };
+  }
+  if (/\bchanel\b/i.test(lower)) {
+    return {
+      brand: "Chanel",
+      platform: "boutique_chanel",
+      sku: "CH-ACHAT-PENDING",
+      handle: "Boutique Chanel",
+      amount: 5200,
+    };
+  }
+  if (isLouisVuitton(prompt)) {
+    return {
+      brand: "Louis Vuitton",
+      platform: "boutique_lv",
+      sku: "LV-ACHAT-PENDING",
+      handle: "Boutique Louis Vuitton",
+      amount: 1890,
+    };
+  }
+  return {
+    brand: "Boutique",
+    platform: "boutique",
+    sku: "ACHAT-PENDING",
+    handle: "Boutique",
+    amount: 1200,
+  };
+}
+
 function parseDraftLocal(prompt: string): InvoiceAiDraft {
   const kind = detectInvoiceKind(prompt);
   if (kind === "retail_purchase") {
+    const seed = defaultRetailBrand(prompt);
     const base: InvoiceAiDraft = {
       invoice_kind: "retail_purchase",
       item_title: prompt.slice(0, 120),
-      brand: "Louis Vuitton",
-      sku: "LV-ACHAT-PENDING",
+      brand: seed.brand,
+      sku: seed.sku,
       buyer_name: "Client",
       buyer_city: "Paris",
-      gross_amount: 1890,
-      purchase_cost: 1890,
-      platform: "boutique_lv",
-      account_handle: "Boutique Louis Vuitton",
+      gross_amount: seed.amount,
+      purchase_cost: seed.amount,
+      platform: seed.platform,
+      account_handle: seed.handle,
       carrier: "Retrait boutique",
       platform_fees: 0,
       notes: prompt.slice(0, 200),
@@ -150,7 +204,8 @@ function parseDraftLocal(prompt: string): InvoiceAiDraft {
   const price = euros[0] ?? 49;
   const lower = prompt.toLowerCase();
   let brand = "Sélection";
-  if (lower.includes("louis vuitton") || /\blv\b/.test(lower)) brand = "Louis Vuitton";
+  if (/\bmoncler\b/i.test(lower)) brand = "Moncler";
+  else if (lower.includes("louis vuitton") || /\blv\b/.test(lower)) brand = "Louis Vuitton";
   else if (/\bchanel\b/.test(lower)) brand = "Chanel";
   else if (/herm[eè]s/.test(lower)) brand = "Hermès";
   else if (/\bdior\b/.test(lower)) brand = "Dior";
@@ -189,6 +244,7 @@ function parseDraftLocal(prompt: string): InvoiceAiDraft {
 
   let productLine: string | undefined;
   const luxeBrand =
+    brand === "Moncler" ||
     brand === "Chanel" ||
     brand === "Hermès" ||
     brand === "Dior" ||
@@ -196,7 +252,11 @@ function parseDraftLocal(prompt: string): InvoiceAiDraft {
     brand === "Prada" ||
     isLouisVuitton(prompt);
 
-  if (isLouisVuitton(prompt)) {
+  if (/\bmoncler\b/i.test(prompt) && !isLouisVuitton(prompt)) {
+    brand = "Moncler";
+    productLine = /maya/i.test(prompt) ? "Maya" : "Doudoune";
+    item_title = `Moncler ${productLine} — authentique · seconde main`;
+  } else if (isLouisVuitton(prompt)) {
     brand = "Louis Vuitton";
     const model = /neverfull/i.test(prompt)
       ? "Neverfull MM"

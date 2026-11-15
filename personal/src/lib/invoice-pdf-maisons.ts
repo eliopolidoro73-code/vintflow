@@ -59,6 +59,112 @@ function baseRetailHeader(ctx: RetailCtx, subtitle: string): number {
   return headerH + 8;
 }
 
+function formatTicketTime(iso: string): string {
+  const d = new Date(iso);
+  return new Intl.DateTimeFormat("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(d);
+}
+
+/** Ticket caisse centré type boutique Moncler (sans logo déposé — wordmark typographique). */
+function renderMonclerPosTicketPdf(
+  sale: InvoicePdfSale,
+  user: AuthUser,
+  style: ReturnType<typeof brandStyleFor>,
+  ref: string,
+): jsPDF {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const margin = 18;
+  let y = 22;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(17, 17, 17);
+  doc.text("MONCLER", 105, y, { align: "center" });
+  y += 5;
+  doc.setDrawColor(231, 52, 64);
+  doc.setLineWidth(0.6);
+  doc.line(88, y, 92, y);
+  doc.setDrawColor(45, 74, 156);
+  doc.line(118, y, 122, y);
+  y += 8;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(45, 45, 45);
+  const store =
+    sale.buyer_city === "Paris" || !sale.buyer_city
+      ? [
+          "Moncler Paris Galeries Lafayette",
+          "40, boulevard Haussmann",
+          "75009 Paris · France",
+          "Tél. : +33 1 42 82 60 88",
+        ]
+      : [`Moncler · ${sale.buyer_city}`, "France"];
+  for (const line of store) {
+    doc.text(line, 105, y, { align: "center" });
+    y += 4;
+  }
+  y += 4;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("VENTE", 105, y, { align: "center" });
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.text(`N° document : ${sale.invoice_number}`, 105, y, { align: "center" });
+  y += 8;
+
+  const sold = new Date(sale.sold_at);
+  doc.setFontSize(8);
+  doc.text(`Magasin · Moncler 1407`, margin, y);
+  doc.text(`Date : ${formatDateFr(sold)}`, margin, y + 4);
+  doc.text(`Client : ${sale.buyer_name}`, margin, y + 8);
+  doc.text(`Caisse · 42`, 195, y, { align: "right" });
+  doc.text(`Heure : ${formatTicketTime(sale.sold_at)}`, 195, y + 4, { align: "right" });
+  y += 16;
+
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, y, 210 - margin, y);
+  y += 5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.text("Description", margin, y);
+  doc.text("Qté", 118, y);
+  doc.text("TVA %", 132, y);
+  doc.text("Prix TTC", 155, y);
+  doc.text("Montant", 185, y);
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  const titleLines = doc.splitTextToSize(sale.item_title, 95);
+  doc.text(titleLines, margin, y);
+  doc.text(`Réf. ${ref}`, margin, y + titleLines.length * 4);
+  doc.text("1", 120, y);
+  doc.text("20%", 132, y);
+  const amount = formatEuro(sale.gross_amount);
+  doc.text(amount, 155, y);
+  doc.text(amount, 195, y, { align: "right" });
+  y += titleLines.length * 4 + 12;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text(`Total ${amount}`, 195, y, { align: "right" });
+  y += 14;
+
+  drawRetailBarcode(doc, sale.tracking_code || sale.invoice_number, margin, y, 70);
+  y += 18;
+  drawLegalFooter(doc, margin, y, [
+    style.retailFooter ?? "Document de traçabilité — conservez pour SAV.",
+    "VintFlow · mise en page inspirée ticket boutique (wordmark typographique).",
+    `Titulaire déclarant : ${user.company_name || user.name}`,
+  ]);
+  return doc;
+}
+
 function retailItemBlock(ctx: RetailCtx, yStart: number): number {
   const { doc, sale, style, margin } = ctx;
   const accent = style.accent;
@@ -112,7 +218,15 @@ export function renderLuxuryRetailPdf(
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const margin = 15;
   const style = brandStyleFor(template);
-  const ref = sale.sku.replace(/^LV-ACHAT-|^CH-ACHAT-|^HER-ACHAT-/, "") || sale.sku.slice(-8);
+  const ref =
+    sale.sku.replace(
+      /^(LV|MON|CH|HER|DIOR|GUCCI)-ACHAT-/i,
+      "",
+    ) || sale.sku.slice(-8);
+
+  if (template === "moncler") {
+    return renderMonclerPosTicketPdf(sale, user, style, ref);
+  }
 
   const subtitles: Partial<Record<InvoiceBrandTemplate, string>> = {
     louis_vuitton: "101 Avenue des Champs-Élysées · 75008 Paris",

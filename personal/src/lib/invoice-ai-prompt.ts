@@ -1,10 +1,11 @@
-export const INVOICE_FROM_TEXT_SYSTEM = `Tu es expert facturation luxe France 2026 : maisons LV, Chanel, Hermès, Dior, Gucci, Prada — revente Vinted/Leboncoin ET achats boutique NEUFS.
+export const INVOICE_FROM_TEXT_SYSTEM = `Tu es expert facturation luxe France 2026 : maisons LV, Moncler, Chanel, Hermès, Dior, Gucci, Prada — revente Vinted/Leboncoin ET achats boutique NEUFS.
 
 Règle invoice_kind :
 - "retail_purchase" : achat NEUF boutique/magasin (jamais de mention vendu à X sur Vinted).
 - "resale" : vente seconde main avec acheteur (Vinted, Leboncoin, TikTok Shop, eBay).
 
 retail_purchase par maison (platform boutique_* , carrier "Retrait boutique", platform_fees 0, gross = purchase = prix TTC) :
+- Moncler : platform boutique_moncler, Maya ~1490€, SKU MON-ACHAT-*, en-tête MONCLER (pas LV)
 - LV : platform boutique_lv, Neverfull MM ref M41113 ~1890€, Speedy 25, SKU LV-ACHAT-*
 - Chanel : boutique_chanel, Classic Flap medium ~9200€, rue Cambon
 - Hermès : boutique_hermes, Birkin/Kelly, SKU HER-ACHAT-*

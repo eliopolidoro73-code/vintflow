@@ -6,6 +6,7 @@ import {
 
 export type InvoiceBrandTemplate =
   | "louis_vuitton"
+  | "moncler"
   | "chanel"
   | "hermes"
   | "dior"
@@ -26,6 +27,10 @@ export type BrandStyle = {
 };
 
 const BRAND_MATCHERS: Array<{ template: InvoiceBrandTemplate; re: RegExp }> = [
+  {
+    template: "moncler",
+    re: /\bmoncler\b|MON-ACHAT|maya|grenoble|genius\s*crew|puffer|doudoune\s+moncler/i,
+  },
   { template: "louis_vuitton", re: /louis\s*vuitton|\blv\b|neverfull|monogram|damier/i },
   { template: "chanel", re: /\bchanel\b|boy\s*bag|classic\s*flap|2\.55/i },
   { template: "hermes", re: /herm[eè]s|birkin|kelly|constance/i },
@@ -49,6 +54,18 @@ export function detectInvoiceBrandTemplate(
 
 export function brandStyleFor(template: InvoiceBrandTemplate): BrandStyle {
   switch (template) {
+    case "moncler":
+      return {
+        template,
+        displayName: "Moncler",
+        headerBg: [255, 255, 255],
+        accent: [17, 17, 17],
+        muted: [90, 90, 95],
+        invoiceLabel: "REÇU DE VENTE · MONCLER",
+        retailLabel: "VENTE · BOUTIQUE",
+        retailFooter: "Article neuf — conservez ce ticket pour échanges en boutique.",
+        footerTagline: "Seconde main Moncler — état décrit sur l'annonce.",
+      };
     case "louis_vuitton":
       return {
         template,
@@ -175,6 +192,16 @@ export function drawBrandMark(
     doc.setFontSize(10);
     doc.setTextColor(style.accent[0], style.accent[1], style.accent[2]);
     doc.text("HERMÈS", x + 17, y + 8);
+  } else if (t === "moncler") {
+    const cy = y + 6;
+    doc.setFillColor(231, 52, 64);
+    doc.rect(x, cy, 2.5, 10, "F");
+    doc.setFillColor(45, 74, 156);
+    doc.rect(x + 2.8, cy, 2.5, 10, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(17, 17, 17);
+    doc.text("MONCLER", x + 10, cy + 7);
   } else if (t === "dior" || t === "gucci") {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);

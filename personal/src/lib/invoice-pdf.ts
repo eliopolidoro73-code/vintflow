@@ -45,7 +45,7 @@ function buildRetailBoutiquePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
   const template = detectInvoiceBrandTemplate(
     sale.item_title,
     sale.sku,
-    luxury.brand ?? "Louis Vuitton",
+    luxury.brand,
   );
   return renderLuxuryRetailPdf(template, sale, user);
 }
