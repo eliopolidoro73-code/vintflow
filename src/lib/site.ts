@@ -53,25 +53,44 @@ export async function getRequestSiteUrl(): Promise<string> {
   return getPublicSiteUrl();
 }
 
+function normalizePublicOrigin(raw: string): string {
+  const trimmed = raw.trim().replace(/\/$/, "");
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+}
+
+function isBlockedMarketingOrigin(url: string): boolean {
+  const lower = url.toLowerCase();
+  return (
+    lower.includes("vintflow.io") ||
+    lower.includes("grok.bot") ||
+    lower.includes("tmp.now")
+  );
+}
+
 export function getPublicSiteUrl(): string {
+  if (process.env.VERCEL && FREE_INDEXABLE_URL.length > 0) {
+    return FREE_INDEXABLE_URL.replace(/\/$/, "");
+  }
+
   const vercelHost =
     process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() ||
     process.env.VERCEL_URL?.trim();
   if (vercelHost && !vercelHost.includes("---")) {
     const host = vercelHost.replace(/^https?:\/\//, "").replace(/\/$/, "");
-    return `https://${host}`;
+    if (!host.endsWith(".apps.grok.bot")) {
+      return `https://${host}`;
+    }
   }
+
   const fromEnv =
     process.env.APP_URL?.trim() ||
     process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (fromEnv && !fromEnv.includes("vintflow.io")) {
-    if (fromEnv.startsWith("http://") || fromEnv.startsWith("https://")) {
-      return fromEnv.replace(/\/$/, "");
-    }
-    return `https://${fromEnv.replace(/\/$/, "")}`;
+  if (fromEnv && !isBlockedMarketingOrigin(fromEnv)) {
+    return normalizePublicOrigin(fromEnv);
   }
-  if (process.env.VERCEL && FREE_INDEXABLE_URL.length > 0) {
-    return FREE_INDEXABLE_URL.replace(/\/$/, "");
-  }
+
   return CURSOR_PUBLIC_APP_URL;
 }
