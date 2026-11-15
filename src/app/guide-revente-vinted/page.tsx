@@ -68,12 +68,11 @@ export default function GuideReventeVintedPage() {
 
         <div className="not-prose mt-12 rounded-2xl border border-violet-500/30 bg-violet-500/10 p-6">
           <p className="text-white font-semibold text-lg">
-            Tester Vintflow sur 14 jours (Essentiel)
+            Découvrir Vintflow et s&apos;abonner
           </p>
           <p className="mt-2 text-sm text-zinc-300">
-            Compte gratuit limité au forfait Essentiel pendant l&apos;essai. Les
-            formules Plus et Pro Scale s&apos;activent uniquement après paiement
-            Stripe.
+            Crée un compte sur le site public, compare les forfaits et active le
+            cockpit après paiement Stripe (Essentiel, Plus ou Pro Scale).
           </p>
           <Link
             href="/"
