@@ -1,6 +1,5 @@
 import crypto from "node:crypto";
-import { cookies, headers } from "next/headers";
-import { getIdentity } from "../../cursor/identity";
+import { cookies } from "next/headers";
 import { sql } from "./db";
 import type { BillingCycle, PlanId } from "./plans";
 
@@ -46,6 +45,23 @@ interface SessionPayload {
   uid: string;
   jti: string;
   exp: number;
+}
+
+export function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const derived = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${derived}`;
+}
+
+export function verifyPassword(password: string, storedHash: string): boolean {
+  const parts = storedHash.split(":");
+  if (parts.length !== 2) return false;
+  const [salt, keyHex] = parts;
+  if (!salt || !keyHex) return false;
+  const keyBuf = Buffer.from(keyHex, "hex");
+  const derivedBuf = crypto.scryptSync(password, salt, 64);
+  if (keyBuf.length !== derivedBuf.length) return false;
+  return crypto.timingSafeEqual(keyBuf, derivedBuf);
 }
 
 export async function createSessionToken(userId: string): Promise<string> {
@@ -145,52 +161,6 @@ export interface AuthUser {
   crosslist_used: number;
   referral_code: string;
   is_demo: boolean;
-}
-
-/** Ensures the signed-in Cursor viewer has a Pro Scale owner row; returns its id. */
-export async function ensureOwnerFromVerifiedIdentity(): Promise<string | null> {
-  const hdrs = await headers();
-  const identity = await getIdentity(hdrs);
-  if (!identity.verified || identity.kind !== "person") {
-    return null;
-  }
-
-  const userId = identity.sub;
-  const displayName = identity.name.trim() || "Mon Dressing";
-  const displayEmail =
-    identity.email.trim() ||
-    `owner-${crypto.createHash("sha256").update(userId).digest("hex").slice(0, 10)}@vintflow.local`;
-
-  const rows = await sql<{ id: string }>(
-    "select id from users where id = $1",
-    [userId],
-  );
-  if (rows.length === 0) {
-    const referralCode = `VF-${crypto.createHash("sha256").update(userId).digest("hex").slice(0, 6).toUpperCase()}`;
-    const placeholderHash = crypto.randomBytes(32).toString("hex");
-    await sql(
-      `insert into users (
-        id, email, name, password_hash, plan, billing_cycle, subscription_status,
-        company_name, siret, referral_code, is_demo
-      ) values ($1, $2, $3, $4, 'pro', 'monthly', 'personal_free', $5, '000 000 000 00000', $6, false)
-      on conflict (id) do nothing`,
-      [
-        userId,
-        displayEmail,
-        displayName,
-        placeholderHash,
-        `${displayName} · Perso`,
-        referralCode,
-      ],
-    );
-  } else {
-    await sql(
-      "update users set email = $1, name = $2 where id = $3 and is_demo = false",
-      [displayEmail, displayName, userId],
-    );
-  }
-
-  return userId;
 }
 
 export async function getAuthenticatedUser(): Promise<AuthUser | null> {

@@ -26,7 +26,7 @@ Sans `STRIPE_SECRET_KEY`, seul l'**essai Essentiel 14 jours** est disponible : t
 
 ## Vintflow Perso (`personal/`)
 
-Édition personnelle avec toutes les fonctionnalités Pro Scale, sans abonnement. Publie-la en **Privé — pour toi seul** : elle s'ouvre avec ton compte Cursor, sans mot de passe, sur ordinateur ou téléphone.
+Édition personnelle avec toutes les fonctionnalités **Pro Scale**, sans abonnement ni Cursor : connexion **email + mot de passe** classique. Optionnel : limite les inscriptions avec `PERSO_ALLOWED_EMAILS=ton@email.com` sur l'hébergement.
 
 ```bash
 cd personal

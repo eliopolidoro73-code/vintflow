@@ -140,7 +140,13 @@ const FAQS = [
   },
 ];
 
-export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
+export function LandingPage({
+  isLoggedIn,
+  persoEdition = false,
+}: {
+  isLoggedIn: boolean;
+  persoEdition?: boolean;
+}) {
   const router = useRouter();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"register" | "login">("register");
@@ -191,6 +197,13 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
     <div className="min-h-screen bg-[#07080d] text-zinc-100 selection:bg-violet-500/30">
       <div className="pointer-events-none fixed inset-x-0 top-0 h-[560px] bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.22),transparent_68%)]" />
+
+      {persoEdition && (
+        <div className="relative border-b border-violet-500/30 bg-violet-500/10 text-center text-xs text-violet-100 px-4 py-2">
+          Édition perso · Pro Scale inclus · connexion email et mot de passe (plus d&apos;accès
+          Cursor)
+        </div>
+      )}
 
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#07080d]/85 backdrop-blur-xl">
