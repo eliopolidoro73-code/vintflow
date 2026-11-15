@@ -258,8 +258,14 @@ export function ResellerToolsStudio({
     replies: Array<{ tone: string; text: string }>;
   } | null>(null);
 
+  const prefsHydrated = useRef(false);
+
   useEffect(() => {
     if (!onStudioPresetsChange) return;
+    if (!prefsHydrated.current) {
+      prefsHydrated.current = true;
+      return;
+    }
     onStudioPresetsChange({
       subTab,
       photoFormat,

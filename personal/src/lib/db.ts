@@ -1,12 +1,10 @@
 import { readdir, readFile } from "node:fs/promises";
-import { access } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import pg from "pg";
 import {
-  PERSO_PGDATA_DIR,
-  restorePersoPgdataFromBlob,
-  schedulePersoPgdataPersist,
-} from "@/lib/perso-pglite-blob";
+  restorePersoDatabaseFromBlob,
+  schedulePersoDatabasePersist,
+} from "@/lib/perso-json-snapshot";
 
 const databaseUrl = process.env.DATABASE_URL?.trim() ?? "";
 
@@ -43,33 +41,24 @@ export async function sql<T = Record<string, unknown>>(
   const db = await globalForDb.__vintflowPglite;
   const res = await db.query<T>(text, params);
   if (process.env.VERCEL && isWriteQuery(text)) {
-    schedulePersoPgdataPersist();
+    schedulePersoDatabasePersist(db);
   }
   return res.rows;
 }
 
 async function startLocal(): Promise<PGlite> {
-  if (process.env.VERCEL && !globalForDb.__vintflowPgRestoreDone) {
-    globalForDb.__vintflowPgRestoreDone = true;
-    await restorePersoPgdataFromBlob();
-  }
-
-  let dataDir: string | undefined;
-  if (process.env.VERCEL) {
-    try {
-      await access(PERSO_PGDATA_DIR);
-      dataDir = PERSO_PGDATA_DIR;
-    } catch {
-      dataDir = PERSO_PGDATA_DIR;
-    }
-  }
-
-  const db = dataDir ? new PGlite(dataDir) : new PGlite();
+  const db = new PGlite();
   const files = (await readdir("migrations").catch(() => []))
     .filter((f) => f.endsWith(".sql"))
     .sort();
   for (const file of files) {
     await db.exec(await readFile(`migrations/${file}`, "utf8"));
   }
+
+  if (process.env.VERCEL && !globalForDb.__vintflowPgRestoreDone) {
+    globalForDb.__vintflowPgRestoreDone = true;
+    await restorePersoDatabaseFromBlob(db);
+  }
+
   return db;
 }
