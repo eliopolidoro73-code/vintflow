@@ -102,14 +102,19 @@ export function AuthModal({
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ plan, billing_cycle: cycle }),
         });
-        if (checkoutRes.ok) {
-          const out = (await checkoutRes.json()) as { checkoutUrl?: string };
-          if (out.checkoutUrl) {
-            onOpenChange(false);
-            window.location.assign(out.checkoutUrl);
-            return;
-          }
+        const checkoutOut = (await checkoutRes.json()) as {
+          checkoutUrl?: string;
+          error?: string;
+        };
+        if (checkoutRes.ok && checkoutOut.checkoutUrl) {
+          onOpenChange(false);
+          window.location.assign(checkoutOut.checkoutUrl);
+          return;
         }
+        setError(
+          checkoutOut.error ??
+            "Les formules Plus et Pro Scale nécessitent un paiement. Ton compte est créé sur l'essai Essentiel (14 jours).",
+        );
       }
       onOpenChange(false);
       router.push("/app");

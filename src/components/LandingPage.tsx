@@ -1187,6 +1187,9 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
             <span>· Logiciel de gestion &amp; outils IA pour revendeurs</span>
           </div>
           <div className="flex flex-wrap items-center gap-5">
+            <Link href="/guide-revente-vinted" className="hover:text-white transition">
+              Guide revendeur Vinted
+            </Link>
             <Link href="/legal/mentions-legales" className="hover:text-white transition">
               Mentions légales
             </Link>

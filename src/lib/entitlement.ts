@@ -4,8 +4,8 @@ import { PLANS, type PlanId } from "./plans";
 export type SubscriptionAccess = "active" | "trialing" | "expired";
 
 export function getSubscriptionAccess(user: AuthUser): SubscriptionAccess {
-  if (user.is_demo) return "trialing";
   if (user.subscription_status === "active") return "active";
+
   if (
     user.subscription_status === "trial_expired" ||
     user.subscription_status === "canceled" ||
@@ -13,21 +13,32 @@ export function getSubscriptionAccess(user: AuthUser): SubscriptionAccess {
   ) {
     return "expired";
   }
+
+  if (user.is_demo) {
+    return new Date(user.trial_ends_at).getTime() >= Date.now()
+      ? "trialing"
+      : "expired";
+  }
+
   if (user.subscription_status === "trialing") {
     return new Date(user.trial_ends_at).getTime() >= Date.now()
       ? "trialing"
       : "expired";
   }
+
   return "expired";
 }
 
-/** Full cockpit (hors facturation) : abonnement actif ou essai encore valide. */
+/** Full cockpit (hors facturation) : abonnement Stripe actif ou essai encore valide. */
 export function canUseCockpit(user: AuthUser): boolean {
   const access = getSubscriptionAccess(user);
   return access === "active" || access === "trialing";
 }
 
-/** Vendeur Plus / Pro : payé (Stripe) ou essai en cours sur ce forfait. */
+/**
+ * Palier fonctionnel : l'essai 14 jours ne couvre que Essentiel.
+ * Plus / Pro Scale exigent un abonnement payé (Stripe `active`).
+ */
 export function canUsePlanTier(user: AuthUser, required: PlanId): boolean {
   const access = getSubscriptionAccess(user);
   if (access === "expired") return false;
@@ -40,7 +51,8 @@ export function canUsePlanTier(user: AuthUser, required: PlanId): boolean {
   if (required === "essentiel") {
     return access === "active" || access === "trialing";
   }
-  return access === "active" || access === "trialing";
+
+  return access === "active";
 }
 
 export function subscriptionBlockedMessage(user: AuthUser): string {

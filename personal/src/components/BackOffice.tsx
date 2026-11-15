@@ -174,8 +174,7 @@ type TabId =
   | "finance"
   | "messages"
   | "assistant"
-  | "accounts"
-  | "billing";
+  | "accounts";
 
 interface ChatTurn {
   role: "user" | "assistant";
@@ -220,7 +219,6 @@ const VALID_TABS: TabId[] = [
   "messages",
   "assistant",
   "accounts",
-  "billing",
 ];
 
 export function BackOffice({
@@ -339,32 +337,8 @@ export function BackOffice({
   }, [router]);
 
   useEffect(() => {
-    async function init() {
-      if (initialStripeSessionId) {
-        try {
-          const res = await fetch("/api/billing/verify", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ session_id: initialStripeSessionId }),
-          });
-          const out = (await res.json()) as {
-            ok?: boolean;
-            plan?: string;
-            error?: string;
-          };
-          if (res.ok && out.ok) {
-            showToast("Paiement Stripe vérifié ! Ton abonnement est actif.");
-          } else if (out.error) {
-            showToast(out.error);
-          }
-        } catch {
-          showToast("Erreur lors de la vérification du paiement Stripe.");
-        }
-      }
-      await fetchWorkspace();
-    }
-    init();
-  }, [fetchWorkspace, initialStripeSessionId, showToast]);
+    void fetchWorkspace();
+  }, [fetchWorkspace]);
 
   const filteredItems = useMemo(() => {
     if (!data) return [];
@@ -624,33 +598,8 @@ export function BackOffice({
     showToast("Paramètres de facturation enregistrés.");
   }
 
-  async function handleSelectPlan(plan: PlanId) {
-    setCheckoutLoadingPlan(plan);
-    try {
-      const res = await fetch("/api/billing/checkout", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan, billing_cycle: billingCycle }),
-      });
-      const out = (await res.json()) as {
-        mode?: string;
-        checkoutUrl?: string;
-        message?: string;
-        error?: string;
-      };
-      if (!res.ok) {
-        showToast(out.error ?? "Erreur de facturation");
-        return;
-      }
-      if (out.mode === "stripe" && out.checkoutUrl) {
-        window.location.assign(out.checkoutUrl);
-        return;
-      }
-      await fetchWorkspace();
-      showToast(out.message ?? "Plan mis à jour !");
-    } finally {
-      setCheckoutLoadingPlan(null);
-    }
+  function handleSelectPlan(_plan: PlanId) {
+    showToast("Édition perso · Pro Scale déjà débloqué pour toi.");
   }
 
   async function handleLogout() {
@@ -806,13 +755,8 @@ export function BackOffice({
     },
     {
       id: "accounts",
-      label: "Comptes & Facturation",
+      label: "Comptes & Paramètres",
       icon: <Settings className="h-4 w-4" />,
-    },
-    {
-      id: "billing",
-      label: "Abonnement",
-      icon: <CreditCard className="h-4 w-4" />,
     },
   ];
 
@@ -1260,7 +1204,7 @@ export function BackOffice({
                   </span>
                   <button
                     type="button"
-                    onClick={() => setTab("billing")}
+                    onClick={() => showToast("Pro Scale actif — aucun abonnement requis sur cette version.")}
                     className="font-bold underline hover:text-white"
                   >
                     Passer à Pro Scale (crosslist illimité)
@@ -1514,7 +1458,9 @@ export function BackOffice({
               aiCreditsUsed={user.ai_credits_used}
               aiCreditsLimit={activePlan.aiCreditsMonthlyLimit}
               onItemCreated={fetchWorkspace}
-              onUpgradeClick={() => setTab("billing")}
+              onUpgradeClick={() =>
+                showToast("Pro Scale actif — tous les outils sont débloqués.")
+              }
               onToast={showToast}
             />
           )}
@@ -1546,7 +1492,7 @@ export function BackOffice({
                   </span>
                   <Button
                     size="sm"
-                    onClick={() => setTab("billing")}
+                    onClick={() => showToast("Pro Scale actif — aucun abonnement requis sur cette version.")}
                     className="bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold text-xs h-7"
                   >
                     Débloquer
@@ -1920,7 +1866,7 @@ export function BackOffice({
                   même endroit à partir de 29 €/mois.
                 </p>
                 <Button
-                  onClick={() => setTab("billing")}
+                  onClick={() => showToast("Pro Scale actif — aucun abonnement requis sur cette version.")}
                   className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold"
                 >
                   Débloquer la messagerie unifiée
@@ -2065,7 +2011,7 @@ export function BackOffice({
                   modifications Avant / Après en 1 clic sur tout ton stock.
                 </p>
                 <Button
-                  onClick={() => setTab("billing")}
+                  onClick={() => showToast("Pro Scale actif — aucun abonnement requis sur cette version.")}
                   className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold"
                 >
                   Passer à Pro Scale (essai 14j)
@@ -2351,366 +2297,6 @@ export function BackOffice({
             </div>
           )}
 
-          {/* TAB 7: BILLING & SUBSCRIPTION (HIGH-CONVERSION CHECKOUT EXPERIENCE) */}
-          {tab === "billing" && (
-            <div className="space-y-6">
-              {/* Persuasive Hero Trial & Zero-Risk Banner */}
-              <div className="relative overflow-hidden rounded-3xl border border-violet-500/40 bg-gradient-to-br from-violet-600/20 via-[#0e111a] to-indigo-600/15 p-6 sm:p-8 shadow-[0_0_50px_rgba(139,92,246,0.18)]">
-                <div className="flex flex-wrap items-center justify-between gap-6">
-                  <div className="space-y-2 max-w-2xl">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/35 bg-violet-500/15 px-3.5 py-1 text-[11px] font-bold text-violet-200">
-                      <span className="vf-live-dot h-2 w-2 rounded-full bg-violet-400" />
-                      0,00 € débité aujourd&apos;hui · Essai complet 14 jours
-                    </div>
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                      Débloque toute la puissance de Vintflow sans aucun risque
-                    </h2>
-                    <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-                      Plan actuel :{" "}
-                      <strong className="text-white">{activePlan.name}</strong> ({user.billing_cycle}) ·{" "}
-                      Essai actif jusqu&apos;au{" "}
-                      <strong className="text-violet-300">{formatDateFr(user.trial_ends_at)}</strong>.
-                      Rentabilisé dès 2 ventes supplémentaires sur Vinted &amp; Leboncoin.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col items-start sm:items-end gap-2">
-                    <div className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-[#07080d] p-1 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => setBillingCycle("monthly")}
-                        className={`vf-click-press rounded-full px-4 py-2 font-semibold transition-all ${
-                          billingCycle === "monthly"
-                            ? "bg-white text-zinc-950 shadow-sm"
-                            : "text-zinc-400 hover:text-white"
-                        }`}
-                      >
-                        Mensuel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBillingCycle("annual")}
-                        className={`vf-click-press rounded-full px-4 py-2 font-semibold transition-all flex items-center gap-1.5 ${
-                          billingCycle === "annual"
-                            ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-sm"
-                            : "text-zinc-400 hover:text-white"
-                        }`}
-                      >
-                        Annuel
-                        <span className="rounded bg-black/25 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">
-                          -2 mois offerts
-                        </span>
-                      </button>
-                    </div>
-                    <span className="text-[11px] text-emerald-400 font-medium">
-                      {billingCycle === "annual"
-                        ? "Tu économises jusqu'à 98 € / an avec la facturation annuelle"
-                        : "Passe en annuel pour obtenir 2 mois gratuits"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 3-Step Zero-Risk Trial Timeline */}
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-white/10 pt-5 text-xs">
-                  <div className="rounded-2xl border border-white/10 bg-[#07080d]/70 p-3.5">
-                    <p className="font-bold text-violet-300">1. Aujourd&apos;hui · 0,00 €</p>
-                    <p className="mt-1 text-zinc-400">
-                      Accès immédiat au Studio Photo IA, Crosslisting et Factures PDF.
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-[#07080d]/70 p-3.5">
-                    <p className="font-bold text-white">2. Jour 12 · Rappel avant fin</p>
-                    <p className="mt-1 text-zinc-400">
-                      Tu reçois un email de rappel 48 h avant la fin de tes 14 jours.
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-[#07080d]/70 p-3.5">
-                    <p className="font-bold text-emerald-400">3. Jour 14 · 100 % libre</p>
-                    <p className="mt-1 text-zinc-400">
-                      Annulable en 1 clic à tout moment depuis ton espace client Stripe.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Live Plan Switch Comparison Simulator */}
-              {(() => {
-                const targetPlan: PlanId =
-                  previewTargetPlan ??
-                  (user.plan === "essentiel"
-                    ? "plus"
-                    : user.plan === "plus"
-                      ? "pro"
-                      : "plus");
-                const diff = comparePlans(user.plan, targetPlan, billingCycle);
-                const isSame = user.plan === targetPlan;
-
-                return (
-                  <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-violet-400">
-                          Simulateur de changement de forfait
-                        </p>
-                        <h3 className="text-sm font-bold text-white mt-0.5">
-                          {isSame
-                            ? `Tu es actuellement sur ${activePlan.name}`
-                            : `Ce qui change si tu passes de ${activePlan.name} → ${PLANS[targetPlan].name}`}
-                        </h3>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1.5">
-                        {(["essentiel", "plus", "pro"] as PlanId[]).map((pid) => (
-                          <button
-                            key={pid}
-                            type="button"
-                            onClick={() => setPreviewTargetPlan(pid)}
-                            className={`vf-click-press rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                              targetPlan === pid
-                                ? "bg-violet-600 text-white shadow-sm"
-                                : "bg-white/5 text-zinc-400 hover:text-white"
-                            }`}
-                          >
-                            {PLANS[pid].name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {!isSame && (
-                      <div
-                        key={`${user.plan}-${targetPlan}-${billingCycle}`}
-                        className="vf-tab-enter grid gap-3 sm:grid-cols-2 text-xs"
-                      >
-                        <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] p-3.5 space-y-1.5">
-                          <p className="font-bold text-emerald-400 flex items-center gap-1.5">
-                            <ArrowUpRight className="h-4 w-4" />
-                            Ce que tu gagnes en mieux ({diff.gains.length})
-                          </p>
-                          {diff.gains.length === 0 ? (
-                            <p className="text-[11px] text-zinc-400">
-                              Aucune fonctionnalité supplémentaire sur ce palier.
-                            </p>
-                          ) : (
-                            diff.gains.map((g, i) => (
-                              <p
-                                key={i}
-                                className="flex items-start gap-1.5 text-[11px] text-emerald-200"
-                              >
-                                <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400 mt-0.5" />
-                                <span>{g}</span>
-                              </p>
-                            ))
-                          )}
-                        </div>
-
-                        <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3.5 space-y-1.5">
-                          <p className="font-bold text-amber-300 flex items-center gap-1.5">
-                            <ArrowDownRight className="h-4 w-4" />
-                            Ce qui est en moins ({diff.losses.length}) ·{" "}
-                            {diff.priceDiff > 0
-                              ? `+${diff.priceDiff} €/mois`
-                              : `${diff.priceDiff} €/mois`}
-                          </p>
-                          {diff.losses.length === 0 ? (
-                            <p className="text-[11px] text-zinc-400">
-                              Tu ne perds aucune fonctionnalité en passant à {PLANS[targetPlan].name}.
-                            </p>
-                          ) : (
-                            diff.losses.map((l, i) => (
-                              <p
-                                key={i}
-                                className="flex items-start gap-1.5 text-[11px] text-amber-200"
-                              >
-                                <Lock className="h-3.5 w-3.5 shrink-0 text-amber-400 mt-0.5" />
-                                <span>{l}</span>
-                              </p>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {/* 3 Premium Plan Cards */}
-              <div className="grid gap-5 lg:grid-cols-3">
-                {(["essentiel", "plus", "pro"] as PlanId[]).map((pid) => {
-                  const p = PLANS[pid];
-                  const isCurrent = user.plan === pid;
-                  const isPro = pid === "pro";
-                  const isPlus = pid === "plus";
-                  const price =
-                    billingCycle === "annual"
-                      ? p.annualMonthlyPrice
-                      : p.monthlyPrice;
-                  const isLoadingBtn = checkoutLoadingPlan === pid;
-
-                  return (
-                    <div
-                      key={`${pid}-${billingCycle}`}
-                      className={`vf-card-interactive vf-tab-enter rounded-3xl border p-6 flex flex-col justify-between ${
-                        isPro
-                          ? "border-violet-500/80 bg-gradient-to-b from-violet-500/[0.16] via-indigo-500/[0.08] to-[#0e111a] shadow-[0_0_50px_rgba(139,92,246,0.22)]"
-                          : isPlus
-                            ? "border-indigo-500/50 bg-[#0e111a]"
-                            : "border-white/10 bg-[#0b0d14]"
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <h3 className="text-lg font-extrabold text-white">
-                            {p.name}
-                          </h3>
-                          {isCurrent ? (
-                            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 font-bold">
-                              Plan actif
-                            </Badge>
-                          ) : (
-                            p.badge && (
-                              <Badge
-                                className={
-                                  isPro
-                                    ? "bg-gradient-to-r from-violet-500 to-indigo-500 text-white border-0 font-bold"
-                                    : "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 font-semibold"
-                                }
-                              >
-                                {p.badge}
-                              </Badge>
-                            )
-                          )}
-                        </div>
-                        <p className="mt-1.5 text-xs text-zinc-400 min-h-[32px]">
-                          {p.tagline}
-                        </p>
-
-                        <div className="mt-4 flex items-baseline gap-2">
-                          <span className="text-4xl font-extrabold text-white">
-                            {price} €
-                          </span>
-                          <span className="text-xs font-normal text-zinc-400">
-                            / mois TTC
-                          </span>
-                        </div>
-                        {billingCycle === "annual" && (
-                          <p className="mt-1 text-[11px] font-semibold text-violet-300">
-                            Facturé {p.annualTotal} €/an · 2 mois offerts
-                          </p>
-                        )}
-
-                        <ul className="mt-5 space-y-2.5">
-                          {p.features.map((f, i) => (
-                            <li
-                              key={i}
-                              className="flex items-start gap-2 text-xs text-zinc-200"
-                            >
-                              <Check className="h-3.5 w-3.5 shrink-0 text-violet-400 mt-0.5" />
-                              <span>{f}</span>
-                            </li>
-                          ))}
-                          {p.lockedFeatures.map((lf, i) => (
-                            <li
-                              key={`lf-${i}`}
-                              className="flex items-start gap-2 text-xs text-zinc-500"
-                            >
-                              <Lock className="h-3 w-3 shrink-0 text-zinc-600 mt-0.5" />
-                              <span>{lf}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div className="mt-6 space-y-2">
-                        <Button
-                          onClick={() => handleSelectPlan(pid)}
-                          disabled={isLoadingBtn}
-                          className={`w-full font-bold text-xs h-11 rounded-xl ${
-                            isPro
-                              ? "vf-shimmer-btn bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 shadow-[0_0_24px_rgba(139,92,246,0.35)]"
-                              : isPlus
-                                ? "bg-white text-zinc-950 hover:bg-zinc-200"
-                                : "bg-white/10 text-white hover:bg-white/15"
-                          }`}
-                        >
-                          {isLoadingBtn ? (
-                            <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                          ) : (
-                            <CreditCard className="h-4 w-4 mr-1.5" />
-                          )}
-                          {isCurrent
-                            ? `Gérer / Renouveler (${p.name})`
-                            : `Activer ${p.name} · 14j gratuits`}
-                        </Button>
-                        <p className="text-center text-[10px] text-zinc-500">
-                          {integrations.stripeConfigured
-                            ? "Redirection sécurisée vers Stripe Checkout"
-                            : "Paiement par carte sécurisé Stripe (activer STRIPE_SECRET_KEY)"}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Payment Trust Strip & Accepted Methods */}
-              <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-5 flex flex-wrap items-center justify-between gap-4 text-xs">
-                <div className="flex flex-wrap items-center gap-4 text-zinc-300">
-                  <span className="flex items-center gap-1.5 font-semibold text-white">
-                    <ShieldCheck className="h-4 w-4 text-violet-400" />
-                    Paiement 100 % sécurisé via Stripe
-                  </span>
-                  <span className="flex items-center gap-1.5 text-zinc-400">
-                    <Zap className="h-3.5 w-3.5 text-emerald-400" />
-                    Activation instantanée après validation
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
-                  {["Visa", "Mastercard", "Apple Pay", "Google Pay", "SEPA"].map(
-                    (method) => (
-                      <span
-                        key={method}
-                        className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1 text-zinc-300"
-                      >
-                        {method}
-                      </span>
-                    ),
-                  )}
-                </div>
-              </div>
-
-              {/* Referral & Creator Program Card */}
-              <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-5 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-violet-400">
-                    <Gift className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white">
-                      Programme Parrainage &amp; Créateurs (30 % récurrent)
-                    </h3>
-                    <p className="text-xs text-zinc-400 mt-0.5">
-                      Partage ton code parrain avec d&apos;autres revendeurs :{" "}
-                      <strong className="text-white font-mono">{user.referral_code}</strong>{" "}
-                      · Filleuls inscrits : <strong className="text-emerald-400">{referralsCount}</strong>
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(user.referral_code);
-                    showToast(`Code parrain ${user.referral_code} copié !`);
-                  }}
-                  className="border-violet-500/35 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 text-xs"
-                >
-                  <Copy className="h-3.5 w-3.5 mr-1.5" />
-                  Copier mon code ({user.referral_code})
-                </Button>
-              </div>
-            </div>
-          )}
         </main>
       </div>
 

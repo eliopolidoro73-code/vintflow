@@ -209,17 +209,30 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
 
   // A card-less trial grants the chosen plan only until trial_ends_at; after that,
   // anything other than a Stripe-verified subscription falls back to Essentiel.
-  const trialExpired =
-    row.subscription_status === "trialing" &&
+  const trialWindowEnded =
+    (row.subscription_status === "trialing" || Boolean(row.is_demo)) &&
     new Date(row.trial_ends_at).getTime() < Date.now();
+
+  if (
+    trialWindowEnded &&
+    row.subscription_status === "trialing" &&
+    !row.is_demo
+  ) {
+    await sql(
+      "update users set subscription_status = 'trial_expired', plan = 'essentiel' where id = $1 and subscription_status = 'trialing'",
+      [row.id],
+    );
+  }
 
   return {
     id: row.id,
     email: row.email,
     name: row.name,
-    plan: trialExpired ? "essentiel" : normalizePlanId(row.plan),
+    plan: trialWindowEnded ? "essentiel" : normalizePlanId(row.plan),
     billing_cycle: row.billing_cycle === "annual" ? "annual" : "monthly",
-    subscription_status: trialExpired ? "trial_expired" : row.subscription_status,
+    subscription_status: trialWindowEnded
+      ? "trial_expired"
+      : row.subscription_status,
     trial_ends_at: String(row.trial_ends_at),
     company_name: row.company_name,
     siret: row.siret,

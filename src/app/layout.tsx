@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import { SeoJsonLd } from "@/components/SeoJsonLd";
+import { getPublicSiteUrl } from "@/lib/site";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -13,10 +15,42 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = getPublicSiteUrl();
+
 export const metadata: Metadata = {
-  title: "Vintflow — Logiciel de Gestion Vinted, Leboncoin, TikTok Shop & eBay",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default:
+      "Vintflow — Logiciel de Gestion Vinted, Leboncoin, TikTok Shop & eBay",
+    template: "%s · Vintflow",
+  },
   description:
     "Centralise tout ton business de revente : ventes, marge commerciale, crosslisting Vinted ↔ Leboncoin, studio photo IA, stock SKU, bordereaux 10×15 et factures PDF.",
+  keywords: [
+    "logiciel vinted",
+    "crosslisting vinted leboncoin",
+    "gestion stock revendeur",
+    "marge commerciale vinted",
+    "facture micro bic",
+    "outil revente seconde main",
+  ],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: siteUrl,
+    siteName: "Vintflow",
+    title: "Vintflow — Back-office multi-plateformes pour revendeurs",
+    description:
+      "Stock SKU, crosslisting, trésorerie et IA pour Vinted, Leboncoin, TikTok Shop et eBay.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vintflow — Gestion Vinted & Leboncoin",
+    description:
+      "Le cockpit des revendeurs pro : marge, crosslist, factures PDF et assistant Nova.",
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({
@@ -30,6 +64,7 @@ export default function RootLayout({
       className={`${plusJakarta.variable} ${jetbrainsMono.variable} h-full antialiased scroll-smooth`}
     >
       <body className="min-h-full flex flex-col bg-[#07080d] text-slate-100">
+        <SeoJsonLd />
         {children}
       </body>
     </html>

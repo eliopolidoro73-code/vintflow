@@ -20,7 +20,9 @@ npm install
 npm run dev
 ```
 
-Sans `STRIPE_SECRET_KEY`, le choix d'un forfait lance un essai gratuit de 14 jours sans carte ; à la fin de l'essai, le compte repasse sur Essentiel tant qu'aucun abonnement Stripe n'est vérifié.
+Sans `STRIPE_SECRET_KEY`, seul l'**essai Essentiel 14 jours** est disponible : toutes les API cockpit renvoient **402** une fois l'essai terminé. Les formules **Vendeur Plus** et **Pro Scale** ne s'activent qu'après paiement Stripe vérifié (`/api/billing/verify`).
+
+**Référencement** : `sitemap.xml`, `robots.txt`, page guide `/guide-revente-vinted` et données structurées Schema.org sur la home.
 
 ## Vintflow Perso (`personal/`)
 

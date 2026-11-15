@@ -791,6 +791,8 @@ export function BackOffice({
   } = data;
   const activePlan = PLANS[user.plan];
   const subscriptionOpen = canUseCockpit(user);
+  const activeTab: TabId =
+    !subscriptionOpen && tab !== "billing" ? "billing" : tab;
   const selectedMsg = messages.find((m) => m.id === selectedMsgId) ?? messages[0];
   const guardTab = (id: TabId) => {
     if (!subscriptionOpen && id !== "billing") {
@@ -1032,11 +1034,11 @@ export function BackOffice({
         </header>
 
         <main
-          key={tab}
+          key={activeTab}
           className="vf-tab-enter flex-1 p-4 sm:p-6 space-y-6 max-w-7xl w-full mx-auto"
         >
           {/* TAB 1: OVERVIEW */}
-          {tab === "overview" && (
+          {activeTab === "overview" && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-5">
@@ -1319,7 +1321,7 @@ export function BackOffice({
           )}
 
           {/* TAB 2: DRESSING, SKU & CROSSLISTING */}
-          {tab === "dressing" && (
+          {activeTab === "dressing" && (
             <div className="space-y-4">
               {activePlan.crosslistMonthlyLimit > 0 && (
                 <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2.5 text-xs text-cyan-200 flex flex-wrap items-center justify-between gap-2">
@@ -1580,7 +1582,7 @@ export function BackOffice({
           )}
 
           {/* TAB 2B: AI TOOLS STUDIO */}
-          {tab === "tools" && (
+          {activeTab === "tools" && (
             <ResellerToolsStudio
               planId={user.plan}
               aiCreditsUsed={user.ai_credits_used}
@@ -1592,7 +1594,7 @@ export function BackOffice({
           )}
 
           {/* TAB 3: SALES, LABELS & INVOICES */}
-          {tab === "sales" && (
+          {activeTab === "sales" && (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-zinc-400">
@@ -1712,7 +1714,7 @@ export function BackOffice({
           )}
 
           {/* TAB 3B: TREASURY, SOURCING LOTS & DEDUCTIBLE EXPENSES */}
-          {tab === "finance" && (
+          {activeTab === "finance" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-4">
@@ -1978,7 +1980,7 @@ export function BackOffice({
           )}
 
           {/* TAB 4: UNIFIED MESSAGING */}
-          {tab === "messages" &&
+          {activeTab === "messages" &&
             (!activePlan.unifiedMessagesAllowed ? (
               <div className="rounded-3xl border border-amber-500/30 bg-[#0e111a] p-8 text-center space-y-4">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-300 border border-amber-500/30">
@@ -2123,7 +2125,7 @@ export function BackOffice({
             ))}
 
           {/* TAB 5: AI ASSISTANT NOVA (PRO SCALE EXCLUSIVE) */}
-          {tab === "assistant" &&
+          {activeTab === "assistant" &&
             (!activePlan.novaAssistantAllowed ? (
               <div className="rounded-3xl border border-emerald-500/30 bg-[#0e111a] p-8 text-center space-y-4">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
@@ -2256,7 +2258,7 @@ export function BackOffice({
             ))}
 
           {/* TAB 6: ACCOUNTS & FISCAL SETTINGS */}
-          {tab === "accounts" && (
+          {activeTab === "accounts" && (
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-[#0e111a] p-5 space-y-4">
                 <div className="flex items-center justify-between">
@@ -2424,7 +2426,7 @@ export function BackOffice({
           )}
 
           {/* TAB 7: BILLING & SUBSCRIPTION (HIGH-CONVERSION CHECKOUT EXPERIENCE) */}
-          {tab === "billing" && (
+          {activeTab === "billing" && (
             <div className="space-y-6">
               {/* Persuasive Hero Trial & Zero-Risk Banner */}
               <div className="relative overflow-hidden rounded-3xl border border-violet-500/40 bg-gradient-to-br from-violet-600/20 via-[#0e111a] to-indigo-600/15 p-6 sm:p-8 shadow-[0_0_50px_rgba(139,92,246,0.18)]">

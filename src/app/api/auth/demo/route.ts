@@ -42,8 +42,11 @@ export async function POST(request: Request) {
   const passwordHash = hashPassword(crypto.randomBytes(16).toString("hex"));
 
   await sql(
-    `insert into users (id, email, name, password_hash, plan, billing_cycle, subscription_status, company_name, siret, is_demo)
-     values ($1, $2, $3, $4, $5, 'monthly', 'demo', $6, '000 000 000 00000', true)`,
+    `insert into users (
+       id, email, name, password_hash, plan, billing_cycle, subscription_status,
+       trial_ends_at, company_name, siret, is_demo
+     )
+     values ($1, $2, $3, $4, $5, 'monthly', 'trialing', now() + interval '6 hours', $6, '000 000 000 00000', true)`,
     [userId, email, "Atelier Démo", passwordHash, plan, "Atelier Démo"],
   );
 
