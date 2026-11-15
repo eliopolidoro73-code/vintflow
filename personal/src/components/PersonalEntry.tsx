@@ -14,6 +14,7 @@ export function PersonalEntry() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -28,7 +29,9 @@ export function PersonalEntry() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(
-          mode === "register" ? { name, email, password } : { email, password },
+          mode === "register"
+            ? { name, email, password, invite_code: inviteCode }
+            : { email, password },
         ),
       });
       const data = (await res.json()) as { error?: string };
@@ -58,8 +61,8 @@ export function PersonalEntry() {
             Connexion email et mot de passe
           </h1>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            Connexion classique email et mot de passe. L&apos;inscription n&apos;accepte que
-            l&apos;adresse email autorisée par l&apos;administrateur (PERSO_ALLOWED_EMAILS).
+            Inscription : ton e-mail autorisé plus le code secret d&apos;activation
+            (PERSO_REGISTRATION_INVITE) que seul toi connais.
           </p>
         </div>
 
@@ -87,6 +90,22 @@ export function PersonalEntry() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === "register" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="invite" className="text-zinc-300">
+                Code d&apos;activation (secret perso)
+              </Label>
+              <Input
+                id="invite"
+                type="password"
+                autoComplete="off"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                className="border-white/15 bg-white/5"
+                required
+              />
+            </div>
+          )}
           {mode === "register" && (
             <div className="space-y-1.5">
               <Label htmlFor="name" className="text-zinc-300">

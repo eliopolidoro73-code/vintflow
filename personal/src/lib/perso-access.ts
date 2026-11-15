@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { sql } from "./db";
 
 /** Emails autorisés sur l'édition perso (variable d'environnement obligatoire en production). */
@@ -21,6 +22,22 @@ export function persoRegistrationConfigured(): boolean {
 }
 
 /** Une seule inscription par adresse autorisée. */
+/** Code d'invitation défini côté serveur (secret Cursor) — requis pour créer un compte. */
+export function verifyRegistrationInvite(
+  supplied: string | undefined,
+): boolean {
+  const expected = process.env.PERSO_REGISTRATION_INVITE?.trim();
+  if (!expected || !supplied) return false;
+  const a = Buffer.from(supplied.trim());
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+export function registrationInviteConfigured(): boolean {
+  return Boolean(process.env.PERSO_REGISTRATION_INVITE?.trim());
+}
+
 export async function persoOwnerSlotsAvailable(): Promise<boolean> {
   const allowed = getPersoAllowedEmails();
   if (allowed.length === 0) return false;

@@ -11,6 +11,8 @@ import {
   isPersoOwnerEmail,
   persoOwnerSlotsAvailable,
   persoRegistrationConfigured,
+  registrationInviteConfigured,
+  verifyRegistrationInvite,
 } from "@/lib/perso-access";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
@@ -30,6 +32,16 @@ export async function POST(request: Request) {
       {
         error:
           "Inscription désactivée : l'administrateur doit configurer PERSO_ALLOWED_EMAILS sur l'hébergement.",
+      },
+      { status: 503 },
+    );
+  }
+
+  if (!registrationInviteConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          "Inscription fermée : définis le secret PERSO_REGISTRATION_INVITE sur l'hébergement.",
       },
       { status: 503 },
     );
@@ -67,6 +79,7 @@ export async function POST(request: Request) {
     email?: string;
     password?: string;
     name?: string;
+    invite_code?: string;
   };
   try {
     body = await request.json();
@@ -81,6 +94,13 @@ export async function POST(request: Request) {
   if (!email || !email.includes("@") || email.length > 160) {
     return NextResponse.json({ error: "Email invalide" }, { status: 400 });
   }
+  if (!verifyRegistrationInvite(body.invite_code)) {
+    return NextResponse.json(
+      { error: "Code d'activation invalide." },
+      { status: 403 },
+    );
+  }
+
   if (!isPersoOwnerEmail(email)) {
     return NextResponse.json(
       {
