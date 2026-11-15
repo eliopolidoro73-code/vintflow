@@ -16,7 +16,7 @@ Sur téléphone, tablette ou PC : même lien, pas besoin de Cursor.
 
 ## Connexion Cursor (optionnel)
 
-Lien à mettre sur ton téléphone (app en **Public** sur Cursor) : `https://vintflow-perso.apps.grok.bot/app`
+Lien mobile (Vercel) : `https://vintflow-perso.vercel.app/app` — e-mail + mot de passe, pas Cursor.
 
 ## Local
 

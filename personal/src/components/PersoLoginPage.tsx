@@ -48,9 +48,9 @@ export function PersoLoginPage({ defaultEmail = "" }: { defaultEmail?: string })
           <span className="inline-block rounded-full border border-violet-500/40 bg-violet-500/15 px-3 py-1 text-[11px] font-bold text-violet-200">
             Édition perso · Pro Scale
           </span>
-          <h1 className="text-xl font-extrabold text-white">Connexion</h1>
+          <h1 className="text-xl font-extrabold text-white">VintFlow perso</h1>
           <p className="text-sm text-zinc-400">
-            Même lien sur mobile, tablette ou PC — ton e-mail et ton mot de passe.
+            Téléphone ou PC : e-mail et mot de passe, c&apos;est tout.
           </p>
           <form onSubmit={handleSubmit} className="space-y-4 text-left">
             <div className="space-y-2">
