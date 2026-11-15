@@ -3,6 +3,21 @@ import { hashPassword } from "./auth";
 import { getPersoAllowedEmails } from "./perso-access";
 import { sql } from "./db";
 
+/** Même compte sur chaque instance serverless (PGlite éphémère sur Vercel). */
+export function stablePersoUserId(email: string): string {
+  const hex = crypto
+    .createHash("sha256")
+    .update(`vintflow-perso:${email.toLowerCase()}`)
+    .digest("hex");
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    `4${hex.slice(13, 16)}`,
+    `a${hex.slice(17, 20)}`,
+    hex.slice(20, 32),
+  ].join("-");
+}
+
 function isPersonalProdHosted(): boolean {
   return Boolean(process.env.CURSOR_APP_ID) || process.env.NODE_ENV === "production";
 }
@@ -40,7 +55,10 @@ export async function ensurePersoUserForEmail(
     return existing.id;
   }
 
-  const userId = crypto.randomUUID();
+  const userId =
+    process.env.VERCEL || process.env.NODE_ENV === "production"
+      ? stablePersoUserId(normalized)
+      : crypto.randomUUID();
   const referralCode = `VF-${userId.slice(0, 6).toUpperCase()}`;
   const name =
     displayName.trim().slice(0, 80) ||

@@ -1,5 +1,10 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
+import {
+  ensurePersoUserForEmail,
+  stablePersoUserId,
+} from "@/lib/auto-session";
+import { getPrimaryOwnerEmail } from "@/lib/perso-access";
 import { sql } from "./db";
 import type { BillingCycle, PlanId } from "./plans";
 
@@ -199,7 +204,21 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     [userId],
   );
 
-  const row = rows[0];
+  let row = rows[0];
+  if (!row && process.env.VERCEL) {
+    const owner = getPrimaryOwnerEmail();
+    if (owner && userId === stablePersoUserId(owner)) {
+      await ensurePersoUserForEmail(owner, owner.split("@")[0] ?? "Perso");
+      const retry = await sql<typeof rows[0]>(
+        `select id, email, name, plan, billing_cycle, subscription_status, trial_ends_at,
+                company_name, siret, fiscal_regime, vat_threshold,
+                auto_crosslist, auto_delist, ai_credits_used, crosslist_used, referral_code, is_demo
+         from users where id = $1`,
+        [userId],
+      );
+      row = retry[0];
+    }
+  }
   if (!row) return null;
 
   if (row.subscription_status !== "personal_free") {
