@@ -16,7 +16,7 @@ Sur téléphone, tablette ou PC : même lien, pas besoin de Cursor.
 
 ## Connexion Cursor (optionnel)
 
-Lien mobile (Vercel) : `https://vintflow-perso.vercel.app/app` — e-mail + mot de passe, pas Cursor.
+Lien mobile (Vercel) : `https://vintflow-perso.vercel.app/app` — ouverture directe, sans connexion.
 
 ## Local
 
