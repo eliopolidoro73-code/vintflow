@@ -1,8 +1,7 @@
 import {
   callGeminiGenerate,
+  geminiModelsFor,
   readGeminiApiKey,
-  GEMINI_FAST_MODELS,
-  GEMINI_POWER_MODELS,
 } from "@/lib/gemini-api";
 
 export interface AiCallResult {
@@ -73,7 +72,10 @@ export async function callCloudAi(params: {
         }
       }
 
-      const geminiModels = power ? GEMINI_POWER_MODELS : GEMINI_FAST_MODELS;
+      const geminiModels = await geminiModelsFor(
+        geminiKey,
+        power ? "power" : "fast",
+      );
 
       for (const model of geminiModels) {
         const result = await callGeminiGenerate({

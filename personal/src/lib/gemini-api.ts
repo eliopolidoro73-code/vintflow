@@ -1,27 +1,92 @@
 /** Appels Gemini (clés AIza… et Auth AQ.…). */
 
-export const GEMINI_PROBE_MODELS = [
+const STATIC_PROBE_MODELS = [
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
   "gemini-2.0-flash",
   "gemini-2.0-flash-001",
   "gemini-1.5-flash",
   "gemini-1.5-flash-8b",
+  "gemini-flash-latest",
+  "gemini-pro-latest",
 ] as const;
 
-export const GEMINI_POWER_MODELS = [
+const STATIC_POWER_MODELS = [
   "gemini-2.5-pro",
   "gemini-2.5-flash",
   "gemini-2.0-flash",
   "gemini-1.5-pro",
   "gemini-1.5-flash",
+  "gemini-pro-latest",
 ] as const;
 
-export const GEMINI_FAST_MODELS = [
+const STATIC_FAST_MODELS = [
   "gemini-2.5-flash",
   "gemini-2.0-flash",
   "gemini-1.5-flash",
+  "gemini-flash-latest",
 ] as const;
+
+let cachedModelList: { at: number; models: string[] } | null = null;
+
+async function discoverGeminiModels(apiKey: string): Promise<string[]> {
+  const now = Date.now();
+  if (cachedModelList && now - cachedModelList.at < 5 * 60_000) {
+    return cachedModelList.models;
+  }
+  try {
+    const res = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models",
+      {
+        headers: { "x-goog-api-key": apiKey },
+        cache: "no-store",
+      },
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as {
+      models?: Array<{
+        name?: string;
+        supportedGenerationMethods?: string[];
+      }>;
+    };
+    const names =
+      data.models
+        ?.filter((m) =>
+          m.supportedGenerationMethods?.includes("generateContent"),
+        )
+        .map((m) => (m.name ?? "").replace(/^models\//, ""))
+        .filter(Boolean) ?? [];
+    const ranked = [
+      ...names.filter((n) => /2\.5-pro|2\.0-pro|1\.5-pro/i.test(n)),
+      ...names.filter((n) => /flash/i.test(n) && !/embedding|image|tts/i.test(n)),
+      ...names.filter((n) => !/embedding|image|tts|aqa|exp/i.test(n)),
+    ];
+    const unique = [...new Set(ranked)];
+    cachedModelList = { at: now, models: unique };
+    return unique;
+  } catch {
+    return [];
+  }
+}
+
+export async function geminiModelsFor(
+  apiKey: string,
+  mode: "probe" | "power" | "fast",
+): Promise<string[]> {
+  const discovered = await discoverGeminiModels(apiKey);
+  const staticList =
+    mode === "probe"
+      ? STATIC_PROBE_MODELS
+      : mode === "power"
+        ? STATIC_POWER_MODELS
+        : STATIC_FAST_MODELS;
+  if (discovered.length === 0) return [...staticList];
+  const merged = [...discovered];
+  for (const m of staticList) {
+    if (!merged.includes(m)) merged.push(m);
+  }
+  return merged;
+}
 
 export function readGeminiApiKey(): string | undefined {
   const raw =
@@ -103,7 +168,8 @@ export async function probeGeminiKey(
   apiKey: string,
 ): Promise<{ status: string; model?: string; detail?: string }> {
   let lastReason = "no_model_succeeded";
-  for (const model of GEMINI_PROBE_MODELS) {
+  const models = await geminiModelsFor(apiKey, "probe");
+  for (const model of models) {
     const result = await callGeminiGenerate({
       apiKey,
       model,
