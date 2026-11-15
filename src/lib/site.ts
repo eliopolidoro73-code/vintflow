@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { CURSOR_PUBLIC_APP_URL, FREE_INDEXABLE_URL } from "./live-url";
 
 /** Hôtes indexables (pas *.apps.grok.bot sauf politique plateforme — préférer vercel.app / workers.dev). */
@@ -35,6 +36,21 @@ export function isIndexableProductionHost(host: string | null | undefined): bool
   } catch {
     return false;
   }
+}
+
+/** URL de la requête courante (sitemap/robots sur Vercel). */
+export async function getRequestSiteUrl(): Promise<string> {
+  try {
+    const h = await headers();
+    const host = normalizeHost(h.get("x-forwarded-host") ?? h.get("host"));
+    const proto = h.get("x-forwarded-proto")?.trim() || "https";
+    if (host && !host.endsWith(".apps.grok.bot")) {
+      return `${proto}://${host}`.replace(/\/$/, "");
+    }
+  } catch {
+    // hors requête (build)
+  }
+  return getPublicSiteUrl();
 }
 
 export function getPublicSiteUrl(): string {

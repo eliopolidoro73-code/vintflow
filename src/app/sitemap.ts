@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
-import { getPublicSiteUrl } from "@/lib/site";
+import { getRequestSiteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const base = getPublicSiteUrl();
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const base = await getRequestSiteUrl();
   const now = new Date();
   const routes = [
     "",
