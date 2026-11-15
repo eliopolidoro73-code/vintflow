@@ -1347,6 +1347,36 @@ export function BackOffice({
                 </div>
               </div>
 
+              {dressingFilter === "dormant" && data && (() => {
+                const dormantCount = data.items.filter(
+                  (i) => i.status === "active" && i.days_listed >= 14,
+                ).length;
+                if (dormantCount === 0) return null;
+                return (
+                  <div className="rounded-2xl border border-amber-500/35 bg-amber-500/10 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                    <p className="text-sm text-amber-100 flex-1">
+                      <strong>{dormantCount}</strong> article
+                      {dormantCount > 1 ? "s" : ""} dormant
+                      {dormantCount > 1 ? "s" : ""} — relance photo + texte anti-ban.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const first = data.items.find(
+                          (i) => i.status === "active" && i.days_listed >= 14,
+                        );
+                        if (first) launchDressingAntiBan(first);
+                        else showToast("Aucun article dormant.");
+                      }}
+                      className="bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold h-10"
+                    >
+                      <ShieldAlert className="h-4 w-4 mr-2" />
+                      Pack anti-ban (1er dormant)
+                    </Button>
+                  </div>
+                );
+              })()}
+
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap gap-1.5">
                   {[

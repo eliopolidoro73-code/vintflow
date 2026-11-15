@@ -20,6 +20,7 @@ import {
 import { localAntiShadowbanRewrite } from "@/lib/antishadowban-engine";
 import { localDescriptionSafety } from "@/lib/description-safety";
 import { localPhotoSafetyFromImageSeed } from "@/lib/local-photo-safety";
+import { LUXURY_BRAND_CATALOG } from "@/lib/luxury-brands";
 
 function parseAiJson<T extends Record<string, unknown>>(text: string): T | null {
   try {
@@ -36,6 +37,12 @@ function cloudEngineTag(provider?: "gemini" | "openai") {
 }
 
 const BRAND_CATALOG = [
+  ...LUXURY_BRAND_CATALOG.map((b) => ({
+    key: b.key,
+    brand: b.brand,
+    cat: b.cat,
+    avgPrice: b.avgPrice,
+  })),
   { key: "carhartt", brand: "Carhartt", cat: "Vestes & Manteaux", avgPrice: 85 },
   { key: "ralph", brand: "Ralph Lauren", cat: "Pulls & Sweats", avgPrice: 52 },
   { key: "nike", brand: "Nike", cat: "Sneakers & Sport", avgPrice: 65 },
@@ -361,6 +368,7 @@ export async function POST(request: Request) {
           : matchedBrand?.cat ?? "Vestes & Manteaux";
 
     const guessedBrand = matchedBrand?.brand ?? "Sélection Vintage";
+    const isLuxeBrand = LUXURY_BRAND_CATALOG.some((b) => b.brand === guessedBrand);
     const formattedName = cleanName
       .split(/\s+/)
       .filter(Boolean)
@@ -384,20 +392,26 @@ export async function POST(request: Request) {
       brand: guessedBrand,
       category: guessedCategory,
       size: guessedCategory === "Chaussures" ? "42" : "M",
-      condition: "Très bon état",
+      condition: isLuxeBrand ? "Excellent état" : "Très bon état",
       defects: "",
       estimatedPrice: matchedBrand?.avgPrice ?? 48,
       seoKeywords: [
         guessedBrand.toLowerCase(),
         dominantColor.toLowerCase(),
         guessedCategory.toLowerCase(),
-        "secondemain",
+        isLuxeBrand ? "luxe" : "secondemain",
       ],
-      photoAntiBanTips: [
-        "Ajoute 5–8 % de marge blanche autour de l'article.",
-        "Change légèrement luminosité (+5 %) avant re-upload.",
-        "Utilise un fond studio différent (lin ou gris).",
-      ],
+      photoAntiBanTips: isLuxeBrand
+        ? [
+            "Fond neutre type lin ou dark luxe — photos coutures et quincaillerie.",
+            "Marge 8–10 % + rotation < 1° pour éviter l'empreinte.",
+            "Pas de filtre Instagram — luminosité +5 % max.",
+          ]
+        : [
+            "Ajoute 5–8 % de marge blanche autour de l'article.",
+            "Change légèrement luminosité (+5 %) avant re-upload.",
+            "Utilise un fond studio différent (lin ou gris).",
+          ],
     };
     return NextResponse.json(await attachListing(vision));
   }

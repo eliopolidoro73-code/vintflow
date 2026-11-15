@@ -48,10 +48,14 @@ Retourne UNIQUEMENT JSON :
 - spamFlags (phrases sur spam description)
 - safeToPostDescription (boolean)`;
 
-export const VISION_JSON_SYSTEM = `Expert revente seconde main. Analyse l'image et retourne JSON :
-title, brand, category, size, condition, defects, estimatedPrice (EUR number),
+export const VISION_JSON_SYSTEM = `Expert revente seconde main & luxe (sacs LV, Chanel, Hermès, Dior, Gucci). Analyse l'image.
+${AI_POWER_SUFFIX}
+
+Retourne JSON :
+title (≤75 car., anti-spam), brand, category, size, condition, defects,
+estimatedPrice (EUR TTC réaliste marché FR),
 seoKeywords (string[] max 5),
-photoAntiBanTips (3 strings: cadrage/fond/lumière pour éviter duplicate detection)`;
+photoAntiBanTips (3 strings: cadrage/fond/lumière anti-duplication Vinted)`;
 
 export const PHOTO_SAFETY_JSON_SYSTEM = `Expert empreinte photo Vinted (anti-duplication). Analyse l'image.
 ${AI_POWER_SUFFIX}

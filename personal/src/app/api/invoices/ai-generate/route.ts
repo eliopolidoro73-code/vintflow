@@ -107,7 +107,7 @@ export async function POST(request: Request) {
         systemPrompt: INVOICE_FROM_TEXT_SYSTEM,
         userPrompt,
         jsonMode: true,
-        maxTokens: 900,
+        maxTokens: 2800,
         power: true,
       });
       if (!aiOut?.text) return null;

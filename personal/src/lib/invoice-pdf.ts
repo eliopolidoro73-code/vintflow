@@ -227,6 +227,16 @@ function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
   if (isLuxe) {
     drawRetailBarcode(doc, sale.invoice_number, margin, y, 55);
     y += 18;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      "CONFORMITÉ — État et authenticité tels que décrits · VintFlow traçabilité.",
+      margin,
+      y,
+      { maxWidth: 177 },
+    );
+    y += 6;
   }
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);

@@ -469,11 +469,15 @@ export function ResellerToolsStudio({
     genCondition,
   ]);
 
-  function copyText(key: string, text: string) {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    onToast("Copié dans le presse-papiers !");
-    setTimeout(() => setCopiedKey(null), 2000);
+  async function copyText(key: string, text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      onToast("Copié dans le presse-papiers !");
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch {
+      onToast("Copie impossible — sélectionne le texte manuellement.");
+    }
   }
 
   function handleAutoEnhance() {
