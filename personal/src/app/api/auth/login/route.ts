@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
+import crypto from "node:crypto";
 import {
   assertSameOrigin,
   buildSessionCookieHeader,
   createSessionToken,
+  hashPassword,
   verifyPassword,
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { isPersoOwnerEmail, persoLoginConfigured } from "@/lib/perso-access";
+import {
+  getPersoOwnerPasswordFromEnv,
+  isPersoOwnerEmail,
+  persoLoginConfigured,
+} from "@/lib/perso-access";
 import { provisionOwnerOnLogin } from "@/lib/provision-owner";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
@@ -80,11 +86,27 @@ export async function POST(request: Request) {
     [email],
   );
   const user = rows[0];
-  if (
-    !user ||
-    user.subscription_status !== "personal_free" ||
-    !verifyPassword(password, user.password_hash)
-  ) {
+  let passwordOk =
+    user &&
+    user.subscription_status === "personal_free" &&
+    verifyPassword(password, user.password_hash);
+
+  if (user && user.subscription_status === "personal_free" && !passwordOk) {
+    const expected = getPersoOwnerPasswordFromEnv();
+    if (expected) {
+      const a = Buffer.from(password);
+      const b = Buffer.from(expected);
+      if (a.length === b.length && crypto.timingSafeEqual(a, b)) {
+        await sql("update users set password_hash = $1 where id = $2", [
+          hashPassword(password),
+          user.id,
+        ]);
+        passwordOk = true;
+      }
+    }
+  }
+
+  if (!user || !passwordOk) {
     await checkRateLimit({
       ...failBucket,
       limit: LOGIN_FAIL_LIMIT,
