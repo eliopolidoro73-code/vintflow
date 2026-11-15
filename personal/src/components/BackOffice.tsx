@@ -1454,9 +1454,9 @@ export function BackOffice({
           {/* TAB 2B: AI TOOLS STUDIO */}
           {tab === "tools" && (
             <ResellerToolsStudio
-              planId={user.plan}
+              planId="pro"
               aiCreditsUsed={user.ai_credits_used}
-              aiCreditsLimit={activePlan.aiCreditsMonthlyLimit}
+              aiCreditsLimit={-1}
               onItemCreated={fetchWorkspace}
               onUpgradeClick={() =>
                 showToast("Pro Scale actif — tous les outils sont débloqués.")

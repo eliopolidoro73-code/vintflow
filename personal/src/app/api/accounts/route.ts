@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { PLANS } from "@/lib/plans";
+import { getEffectivePlan } from "@/lib/perso-plan";
 
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nom du compte requis" }, { status: 400 });
   }
 
-  const plan = PLANS[auth.user.plan];
+  const plan = getEffectivePlan(auth.user);
   const existing = await sql<{ platform: string }>(
     "select platform from connected_accounts where user_id = $1",
     [auth.user.id],

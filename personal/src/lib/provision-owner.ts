@@ -18,6 +18,29 @@ function ownerPasswordMatches(supplied: string): boolean {
 /**
  * Crée le compte propriétaire au premier login (e-mail dans PERSO_ALLOWED_EMAILS + mot de passe secret).
  */
+/** Compte existant (ancienne version) → édition perso + mot de passe propriétaire. */
+export async function reconcilePersoOwnerAccount(
+  loginEmail: string,
+  password: string,
+): Promise<void> {
+  const email = loginEmail.trim().toLowerCase();
+  if (!isPersoOwnerEmail(email) || !ownerPasswordMatches(password)) return;
+
+  const existing = await sql<{ id: string; subscription_status: string }>(
+    "select id, subscription_status from users where email = $1",
+    [email],
+  );
+  const row = existing[0];
+  if (!row || row.subscription_status === "personal_free") return;
+
+  await sql(
+    `update users
+     set subscription_status = 'personal_free', password_hash = $1, is_demo = false
+     where id = $2`,
+    [hashPassword(password), row.id],
+  );
+}
+
 export async function provisionOwnerOnLogin(
   loginEmail: string,
   password: string,
@@ -25,6 +48,8 @@ export async function provisionOwnerOnLogin(
   const email = loginEmail.trim().toLowerCase();
   if (!isPersoOwnerEmail(email)) return;
   if (!ownerPasswordMatches(password)) return;
+
+  await reconcilePersoOwnerAccount(email, password);
 
   const existing = await sql<{ id: string }>(
     "select id from users where email = $1",

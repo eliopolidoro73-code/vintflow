@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { computeNetMargin } from "@/lib/format";
-import { PLANS } from "@/lib/plans";
+import { getEffectivePlan } from "@/lib/perso-plan";
 
 export async function PATCH(
   request: Request,
@@ -61,7 +61,7 @@ export async function PATCH(
   }
 
   if (body.action === "crosslist_lbc") {
-    const plan = PLANS[auth.user.plan];
+    const plan = getEffectivePlan(auth.user);
     if (plan.crosslistMonthlyLimit === 0) {
       return NextResponse.json(
         {

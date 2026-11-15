@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { generateListingCopy } from "@/lib/format";
-import { PLANS } from "@/lib/plans";
+import { getEffectivePlan } from "@/lib/perso-plan";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 const COLOR_PALETTE = [
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const plan = PLANS[auth.user.plan];
+  const plan = getEffectivePlan(auth.user);
 
   const countRows = await sql<{ cnt: string | number }>(
     "select count(*) as cnt from inventory_items where user_id = $1 and status = 'active'",

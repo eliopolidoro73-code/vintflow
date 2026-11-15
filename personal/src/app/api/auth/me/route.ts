@@ -5,7 +5,7 @@ import {
   requireAuthenticatedUser,
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { PLANS } from "@/lib/plans";
+import { getEffectivePlan } from "@/lib/perso-plan";
 
 export async function GET() {
   const user = await getAuthenticatedUser();
@@ -53,7 +53,7 @@ export async function PATCH(request: Request) {
     body.vat_threshold <= 500000
       ? Math.round(body.vat_threshold)
       : auth.user.vat_threshold;
-  const plan = PLANS[auth.user.plan];
+  const plan = getEffectivePlan(auth.user);
   const autoCrosslist =
     typeof body.auto_crosslist === "boolean"
       ? body.auto_crosslist && plan.autoCrosslistAllowed

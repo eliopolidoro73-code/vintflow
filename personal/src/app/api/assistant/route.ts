@@ -3,7 +3,7 @@ import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { callCloudAi } from "@/lib/ai";
 import { sql } from "@/lib/db";
 import { daysSince, formatEuro } from "@/lib/format";
-import { PLANS } from "@/lib/plans";
+import { getEffectivePlan, isPersoUnlimited } from "@/lib/perso-plan";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
@@ -14,8 +14,8 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
   const user = auth.user;
 
-  const plan = PLANS[user.plan];
-  const persoUnlimited = user.subscription_status === "personal_free";
+  const plan = getEffectivePlan(user);
+  const persoUnlimited = isPersoUnlimited(user);
   if (!persoUnlimited && !plan.novaAssistantAllowed) {
     return NextResponse.json(
       {
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
      returning ai_credits_used`,
     [
       user.id,
-      persoUnlimited ? 2_000_000 : plan.aiCreditsMonthlyLimit,
+      plan.aiCreditsMonthlyLimit === -1 ? 2_000_000 : plan.aiCreditsMonthlyLimit,
     ],
   );
   if (reserved.length === 0) {

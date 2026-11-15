@@ -3,7 +3,7 @@ import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { callCloudAi } from "@/lib/ai";
 import { sql } from "@/lib/db";
 import { computeNetMargin, generateListingCopy } from "@/lib/format";
-import { PLANS } from "@/lib/plans";
+import { getEffectivePlan } from "@/lib/perso-plan";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 const BRAND_CATALOG = [
@@ -41,11 +41,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const plan = PLANS[auth.user.plan];
-  const persoUnlimited = auth.user.subscription_status === "personal_free";
-  const monthlyCap = persoUnlimited ? 2_000_000 : plan.aiCreditsMonthlyLimit;
+  const plan = getEffectivePlan(auth.user);
+  const monthlyCap =
+    plan.aiCreditsMonthlyLimit === -1 ? 2_000_000 : plan.aiCreditsMonthlyLimit;
 
-  if (!persoUnlimited && monthlyCap === 0) {
+  if (monthlyCap === 0) {
     return NextResponse.json(
       { error: "Outils IA non disponibles sur ce forfait." },
       { status: 403 },
