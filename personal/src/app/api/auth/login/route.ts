@@ -7,7 +7,7 @@ import {
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { isPersoOwnerEmail, persoLoginConfigured } from "@/lib/perso-access";
-import { ensureServerProvisionedOwner } from "@/lib/provision-owner";
+import { provisionOwnerOnLogin } from "@/lib/provision-owner";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const LOGIN_FAIL_LIMIT = 20;
@@ -21,13 +21,11 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Connexion non configurée : ajoute PERSO_ALLOWED_EMAILS et PERSO_REGISTRATION_INVITE (ou PERSO_OWNER_PASSWORD) dans les secrets.",
+          "Connexion non configurée : secrets PERSO_ALLOWED_EMAILS et PERSO_OWNER_PASSWORD requis.",
       },
       { status: 503 },
     );
   }
-
-  await ensureServerProvisionedOwner();
 
   const ip = getClientIp(request);
   const limit = await checkRateLimit({
@@ -61,26 +59,42 @@ export async function POST(request: Request) {
 
   if (!isPersoOwnerEmail(email)) {
     return NextResponse.json(
-      { error: "Accès réservé à l'édition personnelle autorisée." },
+      {
+        error:
+          "Cet e-mail n'est pas autorisé. Dans Cursor → Secrets de vintflow-perso, mets exactement le même e-mail dans PERSO_ALLOWED_EMAILS.",
+      },
       { status: 403 },
     );
   }
 
+  await provisionOwnerOnLogin(email, password);
+
   const failBucket = { scope: "login_fail", key: `${ip}:${email}` };
 
-  const rows = await sql<{ id: string; password_hash: string }>(
-    "select id, password_hash from users where email = $1",
+  const rows = await sql<{
+    id: string;
+    password_hash: string;
+    subscription_status: string;
+  }>(
+    "select id, password_hash, subscription_status from users where email = $1",
     [email],
   );
   const user = rows[0];
-  if (!user || !verifyPassword(password, user.password_hash)) {
+  if (
+    !user ||
+    user.subscription_status !== "personal_free" ||
+    !verifyPassword(password, user.password_hash)
+  ) {
     await checkRateLimit({
       ...failBucket,
       limit: LOGIN_FAIL_LIMIT,
       windowSeconds: LOGIN_FAIL_WINDOW_SECONDS,
     });
     return NextResponse.json(
-      { error: "Identifiants incorrects" },
+      {
+        error:
+          "Identifiants incorrects. Utilise le mot de passe défini dans PERSO_OWNER_PASSWORD.",
+      },
       { status: 401 },
     );
   }

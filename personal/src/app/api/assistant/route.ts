@@ -15,7 +15,8 @@ export async function POST(request: Request) {
   const user = auth.user;
 
   const plan = PLANS[user.plan];
-  if (!plan.novaAssistantAllowed) {
+  const persoUnlimited = user.subscription_status === "personal_free";
+  if (!persoUnlimited && !plan.novaAssistantAllowed) {
     return NextResponse.json(
       {
         error:
@@ -43,12 +44,15 @@ export async function POST(request: Request) {
      set ai_credits_used = ai_credits_used + 1
      where id = $1 and ai_credits_used < $2
      returning ai_credits_used`,
-    [user.id, plan.aiCreditsMonthlyLimit],
+    [
+      user.id,
+      persoUnlimited ? 2_000_000 : plan.aiCreditsMonthlyLimit,
+    ],
   );
   if (reserved.length === 0) {
     return NextResponse.json(
       {
-        error: `Quota de ${plan.aiCreditsMonthlyLimit} crédits IA/mois atteint.`,
+        error: `Quota de crédits IA/mois atteint.`,
       },
       { status: 403 },
     );

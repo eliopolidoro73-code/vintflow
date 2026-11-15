@@ -698,7 +698,7 @@ export function BackOffice({
     kpis,
     integrations,
   } = data;
-  const activePlan = PLANS[user.plan];
+  const activePlan = PLANS.pro;
   const selectedMsg = messages.find((m) => m.id === selectedMsgId) ?? messages[0];
   const vatProgress = Math.min(
     100,

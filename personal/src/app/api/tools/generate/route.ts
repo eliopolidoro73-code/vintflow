@@ -42,12 +42,12 @@ export async function POST(request: Request) {
   }
 
   const plan = PLANS[auth.user.plan];
-  if (plan.aiCreditsMonthlyLimit === 0) {
+  const persoUnlimited = auth.user.subscription_status === "personal_free";
+  const monthlyCap = persoUnlimited ? 2_000_000 : plan.aiCreditsMonthlyLimit;
+
+  if (!persoUnlimited && monthlyCap === 0) {
     return NextResponse.json(
-      {
-        error:
-          "Les outils IA (Vision, Annonces 3-en-1, Anti-Shadowban, Sniper Négo) ne sont pas inclus dans le plan Essentiel (9 €). Passe à Vendeur Plus (29 €) ou Pro Scale (49 €).",
-      },
+      { error: "Outils IA non disponibles sur ce forfait." },
       { status: 403 },
     );
   }
@@ -56,12 +56,12 @@ export async function POST(request: Request) {
      set ai_credits_used = ai_credits_used + 1
      where id = $1 and ai_credits_used < $2
      returning ai_credits_used`,
-    [auth.user.id, plan.aiCreditsMonthlyLimit],
+    [auth.user.id, monthlyCap],
   );
   if (reserved.length === 0) {
     return NextResponse.json(
       {
-        error: `Quota de ${plan.aiCreditsMonthlyLimit} crédits IA/mois atteint sur ${plan.name}.`,
+        error: `Quota de ${monthlyCap} crédits IA/mois atteint.`,
       },
       { status: 403 },
     );

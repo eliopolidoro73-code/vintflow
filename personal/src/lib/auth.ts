@@ -1,7 +1,6 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { sql } from "./db";
-import { isPersoOwnerEmail } from "./perso-access";
 import type { BillingCycle, PlanId } from "./plans";
 
 export const SESSION_COOKIE_NAME = "vintflow_perso_session";
@@ -199,19 +198,17 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
   const row = rows[0];
   if (!row) return null;
 
-  if (!isPersoOwnerEmail(row.email)) {
+  if (row.subscription_status !== "personal_free") {
     return null;
   }
-
-  const personalOwner = row.subscription_status === "personal_free";
 
   return {
     id: row.id,
     email: row.email,
     name: row.name,
-    plan: personalOwner ? "pro" : "essentiel",
+    plan: "pro",
     billing_cycle: row.billing_cycle === "annual" ? "annual" : "monthly",
-    subscription_status: personalOwner ? "personal_free" : "expired",
+    subscription_status: "personal_free",
     trial_ends_at: String(row.trial_ends_at),
     company_name: row.company_name,
     siret: row.siret,

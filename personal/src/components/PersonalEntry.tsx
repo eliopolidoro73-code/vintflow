@@ -50,9 +50,9 @@ export function PersonalEntry() {
           </span>
           <h1 className="text-xl font-extrabold text-white">Connexion propriétaire</h1>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            Pas d&apos;inscription publique. Utilise l&apos;e-mail des secrets{" "}
-            <strong className="text-zinc-300">PERSO_ALLOWED_EMAILS</strong> et le mot de passe{" "}
-            <strong className="text-zinc-300">PERSO_REGISTRATION_INVITE</strong> (ton code secret déjà enregistré).
+            Édition perso : tout Pro Scale gratuit. Même e-mail que{" "}
+            <strong className="text-zinc-300">PERSO_ALLOWED_EMAILS</strong> et mot de passe{" "}
+            <strong className="text-zinc-300">PERSO_OWNER_PASSWORD</strong>.
           </p>
         </div>
 

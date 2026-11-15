@@ -1,13 +1,30 @@
 import crypto from "node:crypto";
 import { hashPassword } from "./auth";
-import { getPersoOwnerPasswordFromEnv, getPrimaryOwnerEmail } from "./perso-access";
+import {
+  getPersoOwnerPasswordFromEnv,
+  isPersoOwnerEmail,
+} from "./perso-access";
 import { sql } from "./db";
 
-/** Crée le compte propriétaire une seule fois à partir des secrets serveur. */
-export async function ensureServerProvisionedOwner(): Promise<void> {
-  const email = getPrimaryOwnerEmail();
-  const password = getPersoOwnerPasswordFromEnv();
-  if (!email || !password) return;
+function ownerPasswordMatches(supplied: string): boolean {
+  const expected = getPersoOwnerPasswordFromEnv();
+  if (!expected) return false;
+  const a = Buffer.from(supplied);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+/**
+ * Crée le compte propriétaire au premier login (e-mail dans PERSO_ALLOWED_EMAILS + mot de passe secret).
+ */
+export async function provisionOwnerOnLogin(
+  loginEmail: string,
+  password: string,
+): Promise<void> {
+  const email = loginEmail.trim().toLowerCase();
+  if (!isPersoOwnerEmail(email)) return;
+  if (!ownerPasswordMatches(password)) return;
 
   const existing = await sql<{ id: string }>(
     "select id from users where email = $1",
