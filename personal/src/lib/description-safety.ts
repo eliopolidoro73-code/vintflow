@@ -56,6 +56,8 @@ export function localDescriptionSafety(
     checklist: [
       "Réécrire la description (ne jamais republier le même texte mot pour mot).",
       "Max 3 hashtags en bas, jamais de listes de marques hors sujet.",
+      "Évite majuscules, URGENT, PayPal et liens externes.",
+      "Varie le 1er paragraphe (accroche différente du titre).",
       ...rewrite.checklist.slice(0, 4),
     ],
     summary:

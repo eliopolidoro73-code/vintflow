@@ -25,6 +25,7 @@ export type StudioPresets = {
   focusKick?: number;
   genTargetPrice?: number;
   genPurchasePrice?: number;
+  studioTargetItemId?: string;
 };
 
 export type PersoPreferences = {

@@ -246,7 +246,9 @@ export async function loadWorkspaceForUser(user: AuthUser) {
     },
     integrations: {
       stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY?.trim()),
-      openaiConfigured: Boolean(
+      geminiConfigured: Boolean(process.env.GEMINI_API_KEY?.trim()),
+      openaiConfigured: Boolean(process.env.OPENAI_API_KEY?.trim()),
+      cloudAiConfigured: Boolean(
         process.env.GEMINI_API_KEY?.trim() ||
           process.env.OPENAI_API_KEY?.trim(),
       ),

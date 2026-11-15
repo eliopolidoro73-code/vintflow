@@ -48,7 +48,10 @@ export async function PATCH(
     leboncoin_status?: string;
     tiktok_status?: string;
     ebay_status?: string;
-    action?: "crosslist_lbc" | "mark_sold" | "relist";
+    action?: "crosslist_lbc" | "mark_sold" | "relist" | "sync_studio";
+    description_vinted?: string;
+    description_lbc?: string;
+    studio_image_thumb?: string;
     sold_platform?: string;
     buyer_name?: string;
     carrier?: string;
@@ -58,6 +61,22 @@ export async function PATCH(
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Corps JSON invalide" }, { status: 400 });
+  }
+
+  if (body.action === "sync_studio") {
+    const thumb = (body.studio_image_thumb ?? "").trim().slice(0, 100_000);
+    const vinted = (body.description_vinted ?? "").trim().slice(0, 1200);
+    const lbc = (body.description_lbc ?? "").trim().slice(0, 1200);
+    await sql(
+      `update inventory_items set
+        studio_image_thumb = case when $1 <> '' then $1 else studio_image_thumb end,
+        description_vinted = case when $2 <> '' then $2 else description_vinted end,
+        description_lbc = case when $3 <> '' then $3 else description_lbc end,
+        listed_at = now()
+       where id = $4 and user_id = $5`,
+      [thumb, vinted, lbc, id, auth.user.id],
+    );
+    return NextResponse.json({ ok: true });
   }
 
   if (body.action === "crosslist_lbc") {

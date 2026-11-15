@@ -73,7 +73,13 @@ function retailItemBlock(ctx: RetailCtx, yStart: number): number {
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
   doc.text(sale.buyer_name, margin, y);
-  doc.text("Carte bancaire", 108, y);
+  doc.text("Carte bancaire — EUR", 108, y);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(90, 90, 90);
+  doc.text("TVA incluse · reçu boutique", 108, y + 4);
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
   y += 10;
 
   doc.setDrawColor(accent[0], accent[1], accent[2]);

@@ -82,6 +82,7 @@ const InvoiceAiStudio = dynamic(
   { loading: () => <StudioPanelSkeleton />, ssr: false },
 );
 import { VintflowLogo } from "@/components/VintflowLogo";
+import { CloudAiStatusBar } from "@/components/CloudAiStatusBar";
 
 interface ConnectedAccount {
   id: string;
@@ -180,7 +181,9 @@ interface WorkspacePayload {
   };
   integrations: {
     stripeConfigured: boolean;
+    geminiConfigured: boolean;
     openaiConfigured: boolean;
+    cloudAiConfigured: boolean;
   };
 }
 
@@ -383,6 +386,7 @@ export function BackOffice({
         genPurchasePrice: Math.round(item.purchase_price + item.extra_costs),
         genTargetListingDesc: item.description_vinted,
         studioImageThumb: item.studio_image_thumb || undefined,
+        studioTargetItemId: item.id,
         focusKick: Date.now(),
       };
       saveStudioPresets(studio);
@@ -1376,6 +1380,25 @@ export function BackOffice({
                   </div>
                 );
               })()}
+              {dressingFilter === "dormant" && data && (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {data.items
+                    .filter((i) => i.status === "active" && i.days_listed >= 14)
+                    .map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => launchDressingAntiBan(item)}
+                        className="shrink-0 rounded-xl border border-white/10 bg-[#131722] px-3 py-2 text-left hover:border-amber-500/40 min-w-[9rem]"
+                      >
+                        <span className="block text-[10px] font-bold text-white truncate max-w-[8.5rem]">
+                          {item.title}
+                        </span>
+                        <span className="text-[9px] text-zinc-500">{item.days_listed}j</span>
+                      </button>
+                    ))}
+                </div>
+              )}
 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap gap-1.5">
@@ -1598,6 +1621,8 @@ export function BackOffice({
 
           {/* TAB 2B: AI TOOLS STUDIO */}
           {tab === "tools" && (
+            <div className="space-y-3">
+              <CloudAiStatusBar />
             <ResellerToolsStudio
               planId="pro"
               aiCreditsUsed={user.ai_credits_used}
@@ -1610,18 +1635,22 @@ export function BackOffice({
               }
               onToast={showToast}
             />
+            </div>
           )}
 
           {tab === "invoices" && (
+            <div className="space-y-3">
+              <CloudAiStatusBar />
             <InvoiceAiStudio
               user={user}
-              cloudAiActive={integrations.openaiConfigured}
+              cloudAiActive={integrations.cloudAiConfigured}
               onRefresh={fetchWorkspace}
               onToast={showToast}
               onPreview={(sale) =>
                 setPrintModal({ open: true, mode: "invoice", sale })
               }
             />
+            </div>
           )}
 
           {/* TAB 3: SALES, LABELS & INVOICES */}

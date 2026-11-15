@@ -696,6 +696,11 @@ export function ResellerToolsStudio({
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 6 * 1024 * 1024) {
+      onToast(
+        "Photo lourde (>6 Mo) — risque erreur 413. Utilise export JPEG du studio.",
+      );
+    }
     setPhotoFileName(file.name);
     const reader = new FileReader();
     reader.onload = () => {
@@ -913,6 +918,39 @@ export function ResellerToolsStudio({
     } finally {
       setGenLoading(false);
     }
+  }
+
+  async function syncStudioToDressingItem() {
+    const itemId = studioPresets?.studioTargetItemId;
+    if (!itemId) {
+      onToast("Lance « Anti-ban » depuis le Dressing pour lier l'article.");
+      return;
+    }
+    if (!photoSrc && !genResult?.vinted && !shadowText) {
+      onToast("Photo ou description requise avant synchro.");
+      return;
+    }
+    const thumb = photoSrc ? studioThumbFromCanvas(canvasRef.current) : "";
+    const vinted =
+      shadowText.trim() || genResult?.vinted?.trim() || "";
+    const lbc = genResult?.leboncoin?.trim() || vinted.slice(0, 800);
+    const res = await fetch(`/api/items/${itemId}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        action: "sync_studio",
+        studio_image_thumb: thumb,
+        description_vinted: vinted,
+        description_lbc: lbc,
+      }),
+    });
+    const out = (await res.json()) as { error?: string };
+    if (!res.ok) {
+      onToast(out.error ?? "Sync dressing impossible.");
+      return;
+    }
+    onItemCreated();
+    onToast("Dressing mis à jour (photo + descriptions anti-ban).");
   }
 
   async function saveGeneratedToStock(includeStudioPhoto: boolean) {
@@ -1887,6 +1925,18 @@ export function ResellerToolsStudio({
               <Download className="h-3.5 w-3.5 mr-1.5" />
               Exporter les 3 formats (Vinted · LBC · TikTok)
             </Button>
+            {studioPresets?.studioTargetItemId && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!photoSrc && !shadowText && !genResult}
+                onClick={() => void syncStudioToDressingItem()}
+                className="w-full border-violet-500/35 text-violet-200 h-10 text-xs"
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                Pousser photo + texte vers le Dressing lié
+              </Button>
+            )}
           </div>
         </div>
       )}
