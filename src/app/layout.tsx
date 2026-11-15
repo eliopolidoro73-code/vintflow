@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import { SeoJsonLd } from "@/components/SeoJsonLd";
+import { getGoogleSiteVerificationMeta } from "@/lib/google-verification";
 import { getPublicSiteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -51,10 +52,10 @@ export const metadata: Metadata = {
       "Le cockpit des revendeurs pro : marge, crosslist, factures PDF et assistant Nova.",
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
-  ...(process.env.GOOGLE_SITE_VERIFICATION?.trim()
+  ...(getGoogleSiteVerificationMeta()
     ? {
         verification: {
-          google: process.env.GOOGLE_SITE_VERIFICATION.trim(),
+          google: getGoogleSiteVerificationMeta()!,
         },
       }
     : {}),

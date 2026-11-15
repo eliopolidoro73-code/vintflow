@@ -1,7 +1,18 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { GOOGLE_HTML_VERIFICATION_BODY } from "@/lib/google-verification";
 
-export function middleware(_request: NextRequest) {
+export function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname === "/google69a22bc60fd55e06.html") {
+    return new NextResponse(`${GOOGLE_HTML_VERIFICATION_BODY}\n`, {
+      status: 200,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "public, max-age=3600",
+      },
+    });
+  }
+
   const res = NextResponse.next();
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
