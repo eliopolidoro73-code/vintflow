@@ -21,6 +21,7 @@ import {
   Video,
   Wand2,
 } from "lucide-react";
+import { AiCreditsQuotaBar } from "@/components/AiCreditsQuotaBar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -293,6 +294,13 @@ export function ResellerToolsStudio({
   onUpgradeClick,
   onToast,
 }: ResellerToolsStudioProps) {
+  function guardStudioQuota() {
+    if (!studioTasksBlocked) return true;
+    onToast(
+      `Seuil ${aiThresholdPercent} % atteint (${aiUsagePercent ?? aiCreditsUsed}/${aiCreditsLimit}) — Studio IA bloqué jusqu'au 1er du mois.`,
+    );
+    return false;
+  }
   const initialBg =
     STUDIO_BACKGROUNDS.find((b) => b.id === studioPresets?.studioBgId) ??
     STUDIO_BACKGROUNDS[0];
@@ -800,6 +808,7 @@ export function ResellerToolsStudio({
       onToast("Importe d'abord une photo de ton article.");
       return;
     }
+    if (!guardStudioQuota()) return;
     setVisionLoading(true);
     try {
       let dominantColor = "Noir";
@@ -897,6 +906,7 @@ export function ResellerToolsStudio({
 
   async function handleGenerateListing(e: React.FormEvent) {
     e.preventDefault();
+    if (!guardStudioQuota()) return;
     setGenLoading(true);
     try {
       const res = await fetch("/api/tools/generate", {
@@ -1002,6 +1012,7 @@ export function ResellerToolsStudio({
       onToast("Colle au moins le titre ou la description.");
       return;
     }
+    if (!guardStudioQuota()) return;
     setShadowLoading(true);
     try {
       const out = (await postToolsGenerate({
@@ -1030,6 +1041,7 @@ export function ResellerToolsStudio({
       onToast("Importe une photo avant l'analyse anti-ban.");
       return;
     }
+    if (!guardStudioQuota()) return;
     setPhotoSafetyLoading(true);
     try {
       const imageDataUrl = await buildAiImageDataUrl({
@@ -1076,6 +1088,7 @@ export function ResellerToolsStudio({
       onToast("Saisis un titre et/ou une description à analyser.");
       return;
     }
+    if (!guardStudioQuota()) return;
     setDescSafetyLoading(true);
     try {
       const out = (await postToolsGenerate({
@@ -1139,6 +1152,7 @@ export function ResellerToolsStudio({
       onToast("Ajoute au moins un titre ou une description Vinted.");
       return;
     }
+    if (!guardStudioQuota()) return;
     setFullSafetyLoading(true);
     try {
       const imageDataUrl = await buildAiImageDataUrl({
@@ -1205,6 +1219,7 @@ export function ResellerToolsStudio({
       onToast("Importe une photo pour lancer le pipeline max.");
       return;
     }
+    if (!guardStudioQuota()) return;
     setPowerPipelineLoading(true);
     try {
       applyPhotoPreset("vinted_safe");
@@ -1327,6 +1342,7 @@ export function ResellerToolsStudio({
   }
 
   async function handleLoadVisibility() {
+    if (!guardStudioQuota()) return;
     setVisibilityLoading(true);
     try {
       const res = await fetch("/api/tools/generate", {
@@ -1408,17 +1424,25 @@ export function ResellerToolsStudio({
     <div className="space-y-5">
       {/* Quota bar for Vendeur Plus / Unlimited badge for Pro Scale */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0e111a] px-4 py-3 text-xs">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-emerald-400" />
-          <span className="font-semibold text-white">
-            {studioTasksBlocked
-              ? `Seuil ${aiThresholdPercent} % atteint (${aiUsagePercent ?? "—"} %) — Studio IA bloqué`
-              : aiCreditsLimit === -1
-                ? "Suite IA Illimitée (Pro Scale)"
-                : aiCreditsUsed >= aiCreditsLimit
-                  ? `Quota cloud épuisé — moteurs locaux (0 €) actifs`
-                  : `Crédits cloud : ${aiCreditsUsed} / ${aiCreditsLimit} (bloc à ${aiThresholdPercent} %) · local gratuit`}
-          </span>
+        <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-emerald-400 shrink-0" />
+            <span className="font-semibold text-white">
+              {studioTasksBlocked
+                ? `Seuil ${aiThresholdPercent} % — Studio bloqué jusqu'au 1er`
+                : aiCreditsLimit === -1
+                  ? "Suite IA Illimitée (Pro Scale)"
+                  : `Cloud ${aiCreditsUsed}/${aiCreditsLimit} · bloc ${aiThresholdPercent} %`}
+            </span>
+          </div>
+          {aiCreditsLimit > 0 && (
+            <AiCreditsQuotaBar
+              used={aiCreditsUsed}
+              limit={aiCreditsLimit}
+              thresholdPercent={aiThresholdPercent}
+              usagePercent={aiUsagePercent}
+            />
+          )}
         </div>
         {aiCreditsLimit > 0 && (
           <Button

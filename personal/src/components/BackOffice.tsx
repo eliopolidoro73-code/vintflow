@@ -196,6 +196,7 @@ interface WorkspacePayload {
     thresholdPercent?: number;
     thresholdReached?: boolean;
     studioTasksBlocked?: boolean;
+    invoicesBlocked?: boolean;
     strategy: "local_first";
   };
 }
@@ -1684,7 +1685,11 @@ export function BackOffice({
               />
             <InvoiceAiStudio
               user={user}
-              cloudAiActive={integrations.cloudAiConfigured}
+              cloudAiActive={integrations.cloudAiConfigured && aiQuota.cloudAllowed}
+              invoicesBlockedAtThreshold={aiQuota.invoicesBlocked ?? false}
+              aiCreditsUsed={aiQuota.creditsUsed}
+              aiCreditsLimit={aiQuota.creditsLimit}
+              aiThresholdPercent={aiQuota.thresholdPercent ?? 90}
               onRefresh={fetchWorkspace}
               onToast={showToast}
               onPreview={(sale) =>

@@ -1,0 +1,1 @@
+alter table users add column if not exists ai_credits_period text;

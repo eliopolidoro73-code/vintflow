@@ -28,6 +28,10 @@ import { InvoiceBrandedPreview } from "@/components/InvoiceBrandedPreview";
 interface InvoiceAiStudioProps {
   user: AuthUser;
   cloudAiActive?: boolean;
+  invoicesBlockedAtThreshold?: boolean;
+  aiCreditsUsed?: number;
+  aiCreditsLimit?: number;
+  aiThresholdPercent?: number;
   onRefresh: () => void;
   onToast: (msg: string) => void;
   onPreview: (sale: SaleRecord) => void;
@@ -60,6 +64,10 @@ function toEdit(sale: SaleRecord): EditFields {
 export function InvoiceAiStudio({
   user,
   cloudAiActive,
+  invoicesBlockedAtThreshold,
+  aiCreditsUsed = 0,
+  aiCreditsLimit = 120,
+  aiThresholdPercent = 90,
   onRefresh,
   onToast,
   onPreview,
@@ -98,8 +106,14 @@ export function InvoiceAiStudio({
 
   async function handleGenerate() {
     const text = prompt.trim();
+    if (invoicesBlockedAtThreshold) {
+      onToast(
+        `Quota à ${aiThresholdPercent} % atteint (${aiCreditsUsed}/${aiCreditsLimit}) — factures IA bloquées jusqu'au 1er du mois.`,
+      );
+      return;
+    }
     if (text.length < 8) {
-      onToast("Décris la vente (ex: sac Louis Vuitton 420€ à Marie Lyon).");
+      onToast("Décris la vente (ex: veste Moncler 520€ à Marie Lyon).");
       return;
     }
     setLoading(true);
@@ -220,8 +234,18 @@ export function InvoiceAiStudio({
               l&apos;aperçu.
             </p>
           </div>
-          <Badge className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30">
-            {cloudAiActive ? "IA cloud active" : "Mode local + cloud si clé"}
+          <Badge
+            className={
+              invoicesBlockedAtThreshold
+                ? "bg-rose-500/15 text-rose-200 border-rose-500/30"
+                : "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+            }
+          >
+            {invoicesBlockedAtThreshold
+              ? `Bloqué (${aiThresholdPercent} % quota)`
+              : cloudAiActive
+                ? "IA cloud active"
+                : "Local intelligent (0 €)"}
           </Badge>
         </div>
 
@@ -229,7 +253,7 @@ export function InvoiceAiStudio({
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={4}
-          placeholder="Ex : Fais une facture de ce sac Louis Vuitton Neverfull vendu 420€ à Sophie Martin à Lyon sur Vinted"
+          placeholder="Ex : Facture achat veste Moncler neuve 890€ Paris · ou revente Neverfull 420€ à Sophie Lyon Vinted"
           className="mt-4 bg-black/30 border-white/10 text-sm text-white min-h-[100px] touch-manipulation"
         />
 
@@ -248,7 +272,7 @@ export function InvoiceAiStudio({
 
         <Button
           type="button"
-          disabled={loading}
+          disabled={loading || invoicesBlockedAtThreshold}
           onClick={handleGenerate}
           className="mt-4 w-full sm:w-auto h-12 bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm touch-manipulation"
         >

@@ -1,30 +1,12 @@
-export const INVOICE_FROM_TEXT_SYSTEM = `Tu es expert facturation luxe France 2026 : maisons LV, Moncler, Chanel, Hermès, Dior, Gucci, Prada — revente Vinted/Leboncoin ET achats boutique NEUFS.
+export const INVOICE_FROM_TEXT_SYSTEM = `Facturation luxe FR 2026. JSON strict seul.
 
-RÈGLE MARQUE (obligatoire) :
-- Lis le prompt : si l'utilisateur cite Moncler, Chanel, Hermès, Dior, Gucci, LV, etc., le champ "brand" et item_title DOIVENT correspondre à CETTE marque uniquement.
-- NE JAMAIS mettre Louis Vuitton si le prompt dit Moncler, veste Moncler, Maya, etc.
+MARQUE : reprendre exactement celle du prompt (Moncler≠LV).
+invoice_kind retail_purchase = achat neuf boutique ; resale = Vinted/LBC/TikTok avec acheteur.
 
-Règle invoice_kind :
-- "retail_purchase" : achat NEUF boutique/magasin (jamais de mention vendu à X sur Vinted).
-- "resale" : vente seconde main avec acheteur (Vinted, Leboncoin, TikTok Shop, eBay).
+retail : platform boutique_* , fees 0, SKU *-ACHAT-*, Moncler MON-ACHAT / LV / CHANEL / etc.
+resale : platform_fees ~5% Vinted, titres précis, luxury_brand si luxe.
 
-retail_purchase par maison (platform boutique_* , carrier "Retrait boutique", platform_fees 0, gross = purchase = prix TTC) :
-- Moncler : platform boutique_moncler, Maya ~1490€, SKU MON-ACHAT-*, en-tête MONCLER (pas LV)
-- LV : platform boutique_lv, Neverfull MM ref M41113 ~1890€, Speedy 25, SKU LV-ACHAT-*
-- Chanel : boutique_chanel, Classic Flap medium ~9200€, rue Cambon
-- Hermès : boutique_hermes, Birkin/Kelly, SKU HER-ACHAT-*
-- Dior : boutique_dior, Lady Dior / Saddle, SKU DIOR-ACHAT-*
-- Gucci : boutique_gucci, Marmont, SKU GUCCI-ACHAT-*
-condition_label "Neuf — emballage d'origine", payment_method "Carte bancaire"
-
-resale luxe :
-- Titres précis (modèle, toile, taille), marque explicite, notes contrôle authenticité sans promesse légale absolue.
-- platform_fees ~5% Vinted, ~0 sur Leboncoin selon contexte, purchase_cost réaliste marge seconde main.
-
-JSON strict uniquement :
-invoice_kind, item_title, brand, sku, buyer_name, buyer_city, gross_amount, purchase_cost,
-platform, account_handle, carrier, platform_fees, notes, product_line, condition_label,
-payment_method, store_name, store_city, boutique_ref, luxury_brand (bool)`;
+Champs : invoice_kind, item_title, brand, sku, buyer_name, buyer_city, gross_amount, purchase_cost, platform, account_handle, carrier, platform_fees, notes, product_line, condition_label, payment_method, store_name, store_city, boutique_ref, luxury_brand`;
 
 export type InvoiceKind = "resale" | "retail_purchase";
 

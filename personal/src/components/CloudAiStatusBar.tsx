@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Cloud, CloudOff, Loader2 } from "lucide-react";
+import { AiCreditsQuotaBar } from "@/components/AiCreditsQuotaBar";
 
 type AiHealth = {
   ok?: boolean;
@@ -98,13 +99,23 @@ export function CloudAiStatusBar({
               : "Mode local (0 €) — moteurs intégrés actifs"}
         </span>
       </div>
+      {typeof creditsLimit === "number" &&
+        creditsLimit > 0 &&
+        typeof creditsUsed === "number" && (
+          <AiCreditsQuotaBar
+            used={creditsUsed}
+            limit={creditsLimit}
+            thresholdPercent={thresholdPercent}
+            usagePercent={usagePercent}
+          />
+        )}
       {typeof creditsLimit === "number" && creditsLimit > 0 && (
         <p className={quotaBlocked ? "text-rose-200/90" : "text-emerald-200/90"}>
-          Crédits cloud ce mois : {creditsUsed ?? "—"} / {creditsLimit} utilisés
-          {typeof creditsRemaining === "number"
-            ? ` · ${creditsRemaining} restant(s)`
-            : ""}
-          . Factures & anti-ban locaux restent gratuits.
+          {studioTasksBlocked
+            ? "Réinitialisation automatique le 1er du mois (heure Paris)."
+            : typeof creditsRemaining === "number"
+              ? `${creditsRemaining} crédit(s) cloud avant blocage à ${thresholdPercent} %.`
+              : "Local factures & anti-ban = 0 €."}
         </p>
       )}
       {!quotaBlocked && !cloudUp && health?.gemini?.status === "quota_or_rate_limit" && (

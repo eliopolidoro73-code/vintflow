@@ -53,10 +53,33 @@ export type AiCreditSnapshot = {
   exhausted: boolean;
   /** Studio / outils IA : bloqués dès le seuil (90 % par défaut). */
   studioTasksBlocked: boolean;
+  invoicesBlocked: boolean;
   localEnginesAvailable: boolean;
 };
 
+function currentCreditsPeriod(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+  })
+    .format(new Date())
+    .slice(0, 7);
+}
+
+/** Remet le compteur à 0 au début de chaque mois (heure Paris). */
+export async function ensureMonthlyCreditsPeriod(userId: string): Promise<void> {
+  const period = currentCreditsPeriod();
+  await sql(
+    `update users
+     set ai_credits_used = 0, ai_credits_period = $2
+     where id = $1 and (ai_credits_period is null or ai_credits_period is distinct from $2)`,
+    [userId, period],
+  );
+}
+
 export async function readAiCreditsUsed(userId: string): Promise<number> {
+  await ensureMonthlyCreditsPeriod(userId);
   const rows = await sql<{ ai_credits_used: number }>(
     "select ai_credits_used from users where id = $1",
     [userId],
@@ -75,6 +98,9 @@ export function buildAiCreditSnapshot(used: number, limit: number): AiCreditSnap
   const thresholdReached = limit > 0 && used >= effectiveCap;
   const studioBlocked =
     thresholdReached && isStudioBlockAtThresholdEnabled();
+  const invoicesBlocked =
+    thresholdReached &&
+    process.env.PERSO_AI_BLOCK_INVOICES_AT_THRESHOLD !== "false";
 
   return {
     used,
@@ -88,6 +114,7 @@ export function buildAiCreditSnapshot(used: number, limit: number): AiCreditSnap
     cloudAllowed: limit > 0 && !thresholdReached && used < effectiveCap,
     exhausted: thresholdReached || (limit > 0 && remaining <= 0),
     studioTasksBlocked: studioBlocked,
+    invoicesBlocked,
     localEnginesAvailable: isLocalAllowedWhenThresholdReached(),
   };
 }
