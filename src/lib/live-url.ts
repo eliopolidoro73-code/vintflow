@@ -15,6 +15,4 @@ export const BRAND_NAME = "VintFlow";
  * Miroir actuel qui fonctionne :
  */
 export const FREE_INDEXABLE_URL: string =
-  "https://turbo-sitar-4pw2aia.tmp.now";
-
-export const BROKEN_VERCEL_URL = "https://vintflow.vercel.app";
+  "https://vintflow-vint4.vercel.app";

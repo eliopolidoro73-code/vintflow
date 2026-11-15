@@ -1,10 +1,8 @@
 VintFlow — site (comptes, cockpit) :
 https://https-vintflow-io.apps.grok.bot
 
-VintFlow — Google / SEO (fonctionne maintenant) :
-https://turbo-sitar-4pw2aia.tmp.now
-
-vintflow.vercel.app = mauvais projet (Route not found) — voir deploy/vercel-fix.md
+VintFlow — site public + Google (gratuit) :
+https://vintflow-vint4.vercel.app
 
 Ne pas utiliser (login Grok) :
 https://vintflow-io.apps.grok.bot
