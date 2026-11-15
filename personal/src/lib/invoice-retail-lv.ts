@@ -11,7 +11,7 @@ const LUXE_RETAIL: Array<{
   title: (model: string) => string;
 }> = [
   {
-    re: /\bmoncler\b|maya|grenoble|doudoune\s+moncler/i,
+    re: /\bmoncler\b|veste\s+moncler|maya|grenoble|doudoune\s+moncler/i,
     brand: "Moncler",
     platform: "boutique_moncler",
     skuPrefix: "MON-ACHAT",
@@ -63,6 +63,7 @@ const MONCLER_RETAIL_REFS: Array<{
   ref: string;
   defaultPrice: number;
 }> = [
+  { match: /veste/i, model: "Veste", ref: "9B101", defaultPrice: 890 },
   { match: /maya/i, model: "Maya", ref: "1A203", defaultPrice: 1490 },
   { match: /grenoble/i, model: "Grenoble", ref: "3B109", defaultPrice: 1290 },
   { match: /genius/i, model: "Genius", ref: "4A118", defaultPrice: 1890 },

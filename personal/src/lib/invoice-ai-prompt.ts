@@ -1,5 +1,9 @@
 export const INVOICE_FROM_TEXT_SYSTEM = `Tu es expert facturation luxe France 2026 : maisons LV, Moncler, Chanel, Hermès, Dior, Gucci, Prada — revente Vinted/Leboncoin ET achats boutique NEUFS.
 
+RÈGLE MARQUE (obligatoire) :
+- Lis le prompt : si l'utilisateur cite Moncler, Chanel, Hermès, Dior, Gucci, LV, etc., le champ "brand" et item_title DOIVENT correspondre à CETTE marque uniquement.
+- NE JAMAIS mettre Louis Vuitton si le prompt dit Moncler, veste Moncler, Maya, etc.
+
 Règle invoice_kind :
 - "retail_purchase" : achat NEUF boutique/magasin (jamais de mention vendu à X sur Vinted).
 - "resale" : vente seconde main avec acheteur (Vinted, Leboncoin, TikTok Shop, eBay).
@@ -48,6 +52,7 @@ export type InvoiceAiDraft = {
 };
 
 export const INVOICE_EXAMPLE_PROMPTS = [
+  "Facture d'achat veste Moncler homme neuf boutique Paris 890€ client Martin",
   "Facture d'achat sac Louis Vuitton Neverfull MM neuf acheté boutique Champs-Élysées Paris 1890€",
   "Facture d'achat Chanel Classic Flap medium noir neuf boutique Rue Cambon 9200€",
   "Facture achat Hermès Birkin 30 gold Togo neuve boutique Faubourg Saint-Honoré 8800€",

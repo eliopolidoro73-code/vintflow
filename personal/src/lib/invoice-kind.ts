@@ -6,7 +6,8 @@ const RESALE_HINTS =
 const RETAIL_HINTS =
   /facture\s+d['']achat|ticket\s+(de\s+)?caisse|reçu\s+boutique|achat\s+(chez|en\s+boutique|au\s+magasin|magasin)|achet[ée]\s+neuf|article\s+neuf|boutique\s+louis|magasin\s+lv|en\s+boutique\s+lv|boutique\s+moncler|magasin\s+moncler|cours\s+des\s+champs|printemps|galeries/i;
 
-const MONCLER_ITEM = /\bmoncler\b|maya|grenoble|doudoune\s+moncler/i;
+const MONCLER_ITEM =
+  /\bmoncler\b|veste\s+moncler|moncler\s+veste|maya|grenoble|doudoune\s+moncler/i;
 
 const LV_ITEM =
   /louis\s*vuitton|\blv\b|neverfull|speedy|keepall|alma|pochette\s+accessoires/i;

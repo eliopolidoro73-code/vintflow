@@ -45,7 +45,7 @@ function buildRetailBoutiquePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
   const template = detectInvoiceBrandTemplate(
     sale.item_title,
     sale.sku,
-    luxury.brand,
+    luxury.brand ?? "",
   );
   return renderLuxuryRetailPdf(template, sale, user);
 }
@@ -60,7 +60,7 @@ function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
   const template = detectInvoiceBrandTemplate(
     sale.item_title,
     sale.sku,
-    luxury.brand,
+    luxury.brand ?? "",
   );
   const style = brandStyleFor(template);
   const isLuxe = style.template !== "default";

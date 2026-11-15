@@ -4,6 +4,7 @@ import type { AuthUser } from "@/lib/auth";
 import type { SaleRecord } from "@/components/DocumentPrintModal";
 import { isRetailPurchasePlatform } from "@/lib/invoice-kind";
 import { invoicePreviewTheme } from "@/lib/invoice-pdf";
+import { INVOICE_BRAND_WORDMARK } from "@/lib/invoice-brand-styles";
 import { formatDateFr, formatEuro } from "@/lib/format";
 
 export function InvoiceBrandedPreview({
@@ -24,6 +25,7 @@ export function InvoiceBrandedPreview({
     ? (style.retailLabel ?? "FACTURE D'ACHAT · BOUTIQUE")
     : style.invoiceLabel;
   const print = variant === "print";
+  const wordmark = INVOICE_BRAND_WORDMARK[style.template];
 
   const headerBand = print
     ? "bg-zinc-50 border-b border-zinc-200"
@@ -49,16 +51,24 @@ export function InvoiceBrandedPreview({
         className={`px-5 py-4 flex flex-wrap items-center justify-between gap-3 ${headerBand}`}
         style={print ? { backgroundColor: `rgb(${bg.join(",")})` } : undefined}
       >
-        <div className={isRetail && style.template === "moncler" ? "w-full text-center" : undefined}>
-          {isRetail && style.template === "moncler" ? (
+        <div
+          className={
+            wordmark || (isLuxe && style.displayName)
+              ? "flex flex-col justify-center gap-1"
+              : undefined
+          }
+        >
+          {wordmark ? (
             <img
-              src="/brands/moncler-wordmark.svg"
-              alt="Moncler"
-              className="mx-auto h-8 w-auto max-w-[220px] object-contain"
+              src={wordmark}
+              alt={style.displayName || luxury.brand || "Marque"}
+              className={`h-8 w-auto max-w-[220px] object-contain ${
+                isRetail && style.template === "moncler" ? "mx-auto" : ""
+              }`}
             />
-          ) : isLuxe && luxury.brand ? (
+          ) : isLuxe && (style.displayName || luxury.brand) ? (
             <p
-              className="text-[10px] font-bold tracking-[0.2em] uppercase"
+              className="text-sm font-bold tracking-[0.18em] uppercase"
               style={{ color: `rgb(${accent.join(",")})` }}
             >
               {style.displayName || luxury.brand}

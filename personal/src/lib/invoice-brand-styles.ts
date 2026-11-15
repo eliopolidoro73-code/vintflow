@@ -29,7 +29,7 @@ export type BrandStyle = {
 const BRAND_MATCHERS: Array<{ template: InvoiceBrandTemplate; re: RegExp }> = [
   {
     template: "moncler",
-    re: /\bmoncler\b|MON-ACHAT|maya|grenoble|genius\s*crew|puffer|doudoune\s+moncler/i,
+    re: /\bmoncler\b|MON-ACHAT|veste\s+moncler|moncler\s+veste|maya|grenoble|genius\s*crew|puffer|doudoune\s+moncler/i,
   },
   { template: "louis_vuitton", re: /louis\s*vuitton|\blv\b|neverfull|monogram|damier/i },
   { template: "chanel", re: /\bchanel\b|boy\s*bag|classic\s*flap|2\.55/i },
@@ -48,8 +48,32 @@ export function detectInvoiceBrandTemplate(
     if (re.test(blob)) return template;
   }
   const luxury = luxuryMetaFromTitle(itemTitle, sku);
-  if (luxury.isLuxury || isLouisVuitton(blob)) return "generic_luxe";
+  if (/\bmoncler\b/i.test(blob)) return "moncler";
+  if (luxury.isLuxury || (isLouisVuitton(blob) && !/\bmoncler\b/i.test(blob))) {
+    return "generic_luxe";
+  }
   return "default";
+}
+
+/** Wordmarks servis depuis `public/brands/` (pas de logos déposés tiers). */
+export const INVOICE_BRAND_WORDMARK: Partial<Record<InvoiceBrandTemplate, string>> = {
+  moncler: "/brands/moncler-wordmark.svg",
+};
+
+export const BOUTIQUE_PLATFORM_BY_TEMPLATE: Partial<
+  Record<InvoiceBrandTemplate, string>
+> = {
+  louis_vuitton: "boutique_lv",
+  moncler: "boutique_moncler",
+  chanel: "boutique_chanel",
+  hermes: "boutique_hermes",
+  dior: "boutique_dior",
+  gucci: "boutique_gucci",
+};
+
+/** Marque explicitement citée dans le texte utilisateur (prioritaire sur l’IA). */
+export function detectBrandTemplateFromPrompt(prompt: string): InvoiceBrandTemplate {
+  return detectInvoiceBrandTemplate(prompt, "", "");
 }
 
 export function brandStyleFor(template: InvoiceBrandTemplate): BrandStyle {

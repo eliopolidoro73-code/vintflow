@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { callCloudAi, isPersoCloudAiEnabled } from "@/lib/ai";
 import { INVOICE_FROM_TEXT_SYSTEM } from "@/lib/invoice-ai-prompt";
-import { enrichInvoiceDraft } from "@/lib/invoice-luxury";
+import { finalizeInvoiceDraft } from "@/lib/invoice-enrich";
 import {
   createSaleFromInvoiceDraft,
   draftInvoiceFromPrompt,
@@ -206,7 +206,7 @@ export async function POST(request: Request) {
         }
       },
     );
-    const finalized = enrichInvoiceDraft(draft);
+    const finalized = finalizeInvoiceDraft(draft, userPrompt);
     const sale = await createSaleFromInvoiceDraft(user.id, finalized);
     return NextResponse.json({
       answer: `Facture **${sale.invoice_number}** créée pour « ${finalized.item_title} » (${formatEuro(finalized.gross_amount)} TTC) — acheteur ${finalized.buyer_name}, ${finalized.buyer_city}. PDF prêt (mise en page ${finalized.brand === "Louis Vuitton" ? "luxe LV" : "pro"}).`,
