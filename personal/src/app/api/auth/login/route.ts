@@ -6,7 +6,8 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { isPersoOwnerEmail } from "@/lib/perso-access";
+import { isPersoOwnerEmail, persoLoginConfigured } from "@/lib/perso-access";
+import { ensureServerProvisionedOwner } from "@/lib/provision-owner";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const LOGIN_FAIL_LIMIT = 20;
@@ -15,6 +16,18 @@ const LOGIN_FAIL_WINDOW_SECONDS = 900;
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
   if (originError) return originError;
+
+  if (!persoLoginConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          "Connexion non configurée : ajoute PERSO_ALLOWED_EMAILS et PERSO_OWNER_PASSWORD dans les secrets.",
+      },
+      { status: 503 },
+    );
+  }
+
+  await ensureServerProvisionedOwner();
 
   const ip = getClientIp(request);
   const limit = await checkRateLimit({

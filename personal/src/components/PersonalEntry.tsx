@@ -10,11 +10,8 @@ import { VintflowLogo } from "@/components/VintflowLogo";
 
 export function PersonalEntry() {
   const router = useRouter();
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,16 +20,10 @@ export function PersonalEntry() {
     setError(null);
     setLoading(true);
     try {
-      const endpoint =
-        mode === "register" ? "/api/auth/register" : "/api/auth/login";
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(
-          mode === "register"
-            ? { name, email, password, invite_code: inviteCode }
-            : { email, password },
-        ),
+        body: JSON.stringify({ email, password }),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
@@ -57,69 +48,15 @@ export function PersonalEntry() {
           <span className="rounded-full border border-violet-500/40 bg-violet-500/15 px-3 py-1 text-[11px] font-bold text-violet-200">
             Édition perso · Pro Scale · sans abonnement
           </span>
-          <h1 className="text-xl font-extrabold text-white">
-            Connexion email et mot de passe
-          </h1>
+          <h1 className="text-xl font-extrabold text-white">Connexion propriétaire</h1>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            Inscription : ton e-mail autorisé plus le code secret d&apos;activation
-            (PERSO_REGISTRATION_INVITE) que seul toi connais.
+            Pas d&apos;inscription publique. Utilise l&apos;e-mail des secrets{" "}
+            <strong className="text-zinc-300">PERSO_ALLOWED_EMAILS</strong> et le mot de passe{" "}
+            <strong className="text-zinc-300">PERSO_OWNER_PASSWORD</strong>.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-white/5 p-1 text-xs font-semibold">
-          <button
-            type="button"
-            onClick={() => {
-              setMode("login");
-              setError(null);
-            }}
-            className={`rounded-md py-2 transition ${mode === "login" ? "bg-violet-600 text-white" : "text-zinc-400"}`}
-          >
-            Connexion
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMode("register");
-              setError(null);
-            }}
-            className={`rounded-md py-2 transition ${mode === "register" ? "bg-violet-600 text-white" : "text-zinc-400"}`}
-          >
-            Créer un compte
-          </button>
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-4">
-          {mode === "register" && (
-            <div className="space-y-1.5">
-              <Label htmlFor="invite" className="text-zinc-300">
-                Code d&apos;activation (secret perso)
-              </Label>
-              <Input
-                id="invite"
-                type="password"
-                autoComplete="off"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                className="border-white/15 bg-white/5"
-                required
-              />
-            </div>
-          )}
-          {mode === "register" && (
-            <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-zinc-300">
-                Prénom ou pseudo
-              </Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="border-white/15 bg-white/5"
-                required
-              />
-            </div>
-          )}
           <div className="space-y-1.5">
             <Label htmlFor="email" className="text-zinc-300">
               Email
@@ -141,9 +78,7 @@ export function PersonalEntry() {
             <Input
               id="password"
               type="password"
-              autoComplete={
-                mode === "register" ? "new-password" : "current-password"
-              }
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="border-white/15 bg-white/5"
@@ -163,8 +98,6 @@ export function PersonalEntry() {
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
-            ) : mode === "register" ? (
-              "Créer mon espace Pro"
             ) : (
               "Se connecter"
             )}
