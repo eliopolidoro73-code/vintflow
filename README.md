@@ -22,7 +22,7 @@ npm run dev
 
 Sans `STRIPE_SECRET_KEY`, seul l'**essai Essentiel 14 jours** est disponible : toutes les API cockpit renvoient **402** une fois l'essai terminé. Les formules **Vendeur Plus** et **Pro Scale** ne s'activent qu'après paiement Stripe vérifié (`/api/billing/verify`).
 
-**Référencement** : `sitemap.xml`, `robots.txt`, page guide `/guide-revente-vinted` et données structurées Schema.org sur la home.
+**Référencement** : `sitemap.xml`, `robots.txt`, page guide `/guide-revente-vinted` et données structurées Schema.org sur la home. L’indexation Google nécessite le domaine **`https://vintflow.io`** branché sur l’app (les URLs `*.apps.grok.bot` renvoient `X-Robots-Tag: noindex`). Vérifier : `node scripts/check-seo-headers.mjs https://vintflow.io`.
 
 ## Vintflow Perso (`personal/`)
 
