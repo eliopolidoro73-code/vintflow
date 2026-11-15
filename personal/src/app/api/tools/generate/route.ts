@@ -15,6 +15,7 @@ import {
   VISION_JSON_SYSTEM,
   VISIBILITY_JSON_SYSTEM,
 } from "@/lib/vinted-ai-prompts";
+import { localAntiShadowbanRewrite } from "@/lib/antishadowban-engine";
 
 function parseAiJson<T extends Record<string, unknown>>(text: string): T | null {
   try {
@@ -250,6 +251,7 @@ export async function POST(request: Request) {
     fileName?: string;
     dominantColor?: string;
     withListing?: boolean;
+    isRepost?: boolean;
   };
   try {
     body = await request.json();
@@ -512,72 +514,39 @@ export async function POST(request: Request) {
 
     const baseTitle =
       title || raw.split("\n")[0]?.slice(0, 65) || "Pièce seconde main";
-    const words = baseTitle.split(/\s+/).filter(Boolean);
-    let reorderedTitle =
-      words.length >= 3
-        ? `${words[words.length - 1]} · ${words.slice(0, -1).join(" ")}`.slice(
-            0,
-            72,
-          )
-        : `Sélection ${baseTitle}`.slice(0, 72);
-
     const cleanedBody = raw
       .replace(/#[a-zA-Z0-9_]+/g, "")
       .replace(/\s+/g, " ")
       .trim();
 
-    let refreshedDescription = `${reorderedTitle}
+    const local = localAntiShadowbanRewrite(baseTitle, cleanedBody || raw, {
+      isRepost: Boolean(body.isRepost),
+      category: (body.category ?? "").trim() || undefined,
+    });
 
-Pièce vérifiée en détail avant mise en ligne.
-${cleanedBody ? `\nDétails : ${cleanedBody}\n` : ""}
-• Expédition rapide sous 24h (Mondial Relay, Vinted Go ou Chronopost)
-• Emballage soigné, environnement non-fumeur
-• Remise possible sur création de lot dans mon dressing
-
-Tu peux demander les mesures exactes en message avant achat.`;
-
-    let bestSlots = [
-      {
-        day: "Dimanche",
-        window: "18h00 – 21h30",
-        score: "+42 %",
-        reason: "Pic trafic soirée",
-      },
-      {
-        day: "Mercredi",
-        window: "19h00 – 21h00",
-        score: "+28 %",
-        reason: "Milieu de semaine",
-      },
-      {
-        day: "Vendredi",
-        window: "17h30 – 20h30",
-        score: "+31 %",
-        reason: "Pré-week-end",
-      },
-    ];
-    let checklist = [
-      "Passe la photo dans le Studio Photo Vintflow (détourage + luminosité) avant republication.",
-      "Supprime les blocs de hashtags copiés-collés.",
-      "Espace les republications de 3–5 minutes.",
-      "Varie le titre (synonymes, ordre des mots).",
-      "Max 3 hashtags en fin de description.",
-    ];
-    let riskLevel = "medium";
-    let riskReasons = ["Texte potentiellement dupliqué — variante locale appliquée."];
-    let photoFingerprintTips = [
-      "Change le fond ou le cadrage avant re-upload.",
-      "Ajoute 6–10 % de marge autour du produit.",
-      "Exporte depuis Vintflow, pas la photo d'origine.",
-    ];
-    let engine = "local_antishadowban";
+    let reorderedTitle = local.reorderedTitle;
+    let refreshedDescription = local.refreshedDescription;
+    let bestSlots = local.bestSlots;
+    let checklist = local.checklist;
+    let riskLevel = local.riskLevel;
+    let riskReasons = local.riskReasons;
+    let photoFingerprintTips = local.photoFingerprintTips;
+    let titleAlternatives = local.titleAlternatives;
+    let avoidWords = local.avoidWords;
+    let waitMinutesBeforeRepost = local.waitMinutesBeforeRepost;
+    let safeToPostNow = local.safeToPostNow;
+    let engine = "local_antishadowban_expert";
 
     if (allowCloudAi) {
       const aiOut = await callCloudAi({
         systemPrompt: ANTISHADOWBAN_JSON_SYSTEM,
-        userPrompt: `Titre actuel: ${baseTitle}\nDescription: ${cleanedBody || raw}`,
+        userPrompt: `Titre actuel: ${baseTitle}
+Description: ${cleanedBody || raw}
+Republication: ${body.isRepost ? "oui" : "non"}
+Catégorie: ${body.category ?? "non précisée"}
+Analyse locale risque: ${riskLevel} — ${riskReasons.join("; ")}`,
         jsonMode: true,
-        maxTokens: 1800,
+        maxTokens: 2600,
         power: true,
       });
       if (aiOut) {
@@ -592,11 +561,20 @@ Tu peux demander les mesures exactes en message avant achat.`;
             bestSlots = parsed.bestSlots.slice(0, 5) as typeof bestSlots;
           if (Array.isArray(parsed.checklist))
             checklist = parsed.checklist.slice(0, 8) as string[];
-          if (parsed.riskLevel) riskLevel = String(parsed.riskLevel);
+          if (parsed.riskLevel === "low" || parsed.riskLevel === "medium" || parsed.riskLevel === "high")
+            riskLevel = parsed.riskLevel;
           if (Array.isArray(parsed.riskReasons))
-            riskReasons = parsed.riskReasons.slice(0, 6) as string[];
+            riskReasons = parsed.riskReasons.slice(0, 8) as string[];
           if (Array.isArray(parsed.photoFingerprintTips))
-            photoFingerprintTips = parsed.photoFingerprintTips.slice(0, 5) as string[];
+            photoFingerprintTips = parsed.photoFingerprintTips.slice(0, 6) as string[];
+          if (Array.isArray(parsed.titleAlternatives))
+            titleAlternatives = parsed.titleAlternatives.slice(0, 3) as string[];
+          if (Array.isArray(parsed.avoidWords))
+            avoidWords = parsed.avoidWords.slice(0, 12) as string[];
+          if (parsed.waitMinutesBeforeRepost)
+            waitMinutesBeforeRepost = Number(parsed.waitMinutesBeforeRepost);
+          if (typeof parsed.safeToPostNow === "boolean")
+            safeToPostNow = parsed.safeToPostNow;
         }
       }
     }
@@ -605,12 +583,16 @@ Tu peux demander les mesures exactes en message avant achat.`;
       engine,
       cloudAiActive: isPersoCloudAiEnabled(),
       reorderedTitle,
+      titleAlternatives,
       refreshedDescription,
       bestSlots,
       checklist,
       riskLevel,
       riskReasons,
+      avoidWords,
       photoFingerprintTips,
+      waitMinutesBeforeRepost,
+      safeToPostNow,
     });
   }
 

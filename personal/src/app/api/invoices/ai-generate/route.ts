@@ -6,6 +6,7 @@ import {
   INVOICE_FROM_TEXT_SYSTEM,
   type InvoiceAiDraft,
 } from "@/lib/invoice-ai-prompt";
+import { enrichInvoiceDraft } from "@/lib/invoice-luxury";
 import { createSaleFromInvoiceDraft, draftInvoiceFromPrompt } from "@/lib/invoice-sales";
 import { getEffectivePlan } from "@/lib/perso-plan";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -29,6 +30,10 @@ function parseAiJson(text: string): InvoiceAiDraft | null {
       carrier: String(parsed.carrier ?? "Mondial Relay"),
       platform_fees: Math.max(0, Number(parsed.platform_fees ?? 0)),
       notes: parsed.notes ? String(parsed.notes) : undefined,
+      product_line: parsed.product_line ? String(parsed.product_line) : undefined,
+      condition_label: parsed.condition_label
+        ? String(parsed.condition_label)
+        : undefined,
     };
   } catch {
     return null;
@@ -97,11 +102,15 @@ export async function POST(request: Request) {
         power: true,
       });
       if (!aiOut?.text) return null;
-      return parseAiJson(aiOut.text);
+      const parsed = parseAiJson(aiOut.text);
+      return parsed ? enrichInvoiceDraft(parsed) : null;
     },
   );
 
-  const sale = await createSaleFromInvoiceDraft(auth.user.id, draft);
+  const sale = await createSaleFromInvoiceDraft(
+    auth.user.id,
+    enrichInvoiceDraft(draft),
+  );
 
   return NextResponse.json({
     engine,

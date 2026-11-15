@@ -300,16 +300,22 @@ export function ResellerToolsStudio({
 
   const [shadowTitle, setShadowTitle] = useState("");
   const [shadowText, setShadowText] = useState("");
+  const [shadowCategory, setShadowCategory] = useState("");
+  const [shadowIsRepost, setShadowIsRepost] = useState(true);
   const [shadowLoading, setShadowLoading] = useState(false);
   const [shadowResult, setShadowResult] = useState<{
     engine?: string;
     reorderedTitle: string;
+    titleAlternatives?: string[];
     refreshedDescription: string;
     bestSlots: PublishSlot[];
     checklist: string[];
     riskLevel?: string;
     riskReasons?: string[];
+    avoidWords?: string[];
     photoFingerprintTips?: string[];
+    waitMinutesBeforeRepost?: number;
+    safeToPostNow?: boolean;
   } | null>(null);
 
   const [visCategory, setVisCategory] = useState(
@@ -726,24 +732,28 @@ export function ResellerToolsStudio({
 
   async function handleAntiShadowban(e: React.FormEvent) {
     e.preventDefault();
+    if (!shadowTitle.trim() && !shadowText.trim()) {
+      onToast("Colle au moins le titre ou la description.");
+      return;
+    }
     setShadowLoading(true);
     try {
-      const res = await fetch("/api/tools/generate", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          mode: "antishadowban",
-          title: shadowTitle,
-          originalText: shadowText,
-        }),
-      });
-      const out = await res.json();
-      if (!res.ok) {
-        onToast(out.error ?? "Quota IA atteint");
-        return;
-      }
+      const out = (await postToolsGenerate({
+        mode: "antishadowban",
+        title: shadowTitle,
+        originalText: shadowText,
+        category: shadowCategory,
+        isRepost: shadowIsRepost,
+      })) as typeof shadowResult;
       setShadowResult(out);
       onItemCreated();
+      onToast(
+        out?.safeToPostNow
+          ? "Variante sûre — tu peux publier après photo studio."
+          : `Attends ${out?.waitMinutesBeforeRepost ?? 5} min entre 2 posts.`,
+      );
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : "Analyse anti-ban impossible.");
     } finally {
       setShadowLoading(false);
     }
@@ -1618,17 +1628,32 @@ export function ResellerToolsStudio({
                 className="bg-white/5 border-white/10 text-white"
               />
             </div>
+            <div className="space-y-1">
+              <Label className="text-zinc-400">Catégorie (optionnel)</Label>
+              <Input
+                value={shadowCategory}
+                onChange={(e) => setShadowCategory(e.target.value)}
+                placeholder="Ex : Sacs luxe, Sneakers…"
+                className="bg-white/5 border-white/10 text-white"
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+              <span className="text-zinc-300 font-medium">
+                C&apos;est une republication ?
+              </span>
+              <Switch checked={shadowIsRepost} onCheckedChange={setShadowIsRepost} />
+            </div>
             <Button
               type="submit"
               disabled={shadowLoading}
-              className="w-full bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold h-10"
+              className="w-full bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold h-11 touch-manipulation"
             >
               {shadowLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
               ) : (
                 <ShieldAlert className="h-4 w-4 mr-1.5" />
               )}
-              Générer une variante sûre
+              Analyse anti-shadowban (IA Pro)
             </Button>
           </form>
 
@@ -1682,6 +1707,50 @@ export function ResellerToolsStudio({
                     )}
                   </div>
                 )}
+                {shadowResult.riskReasons && shadowResult.riskReasons.length > 0 && (
+                  <ul className="rounded-xl border border-rose-500/20 bg-rose-500/[0.06] p-3 space-y-1 text-[11px] text-zinc-300">
+                    {shadowResult.riskReasons.map((r) => (
+                      <li key={r}>• {r}</li>
+                    ))}
+                  </ul>
+                )}
+
+                {typeof shadowResult.waitMinutesBeforeRepost === "number" && (
+                  <p className="text-amber-200 font-semibold">
+                    {shadowResult.safeToPostNow
+                      ? "Feu vert publication (après photo modifiée)."
+                      : `Attendre ${shadowResult.waitMinutesBeforeRepost} minutes avant republication.`}
+                  </p>
+                )}
+
+                {shadowResult.titleAlternatives &&
+                  shadowResult.titleAlternatives.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="font-bold text-white">Titres alternatifs sûrs</p>
+                      {shadowResult.titleAlternatives.map((alt, i) => (
+                        <div
+                          key={alt}
+                          className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-[#07080d] px-3 py-2"
+                        >
+                          <span className="text-zinc-200">{alt}</span>
+                          <button
+                            type="button"
+                            onClick={() => copyText(`alt-${i}`, alt)}
+                            className="text-zinc-400 hover:text-white"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                {shadowResult.avoidWords && shadowResult.avoidWords.length > 0 && (
+                  <p className="text-[10px] text-zinc-500">
+                    Mots interdits : {shadowResult.avoidWords.join(", ")}
+                  </p>
+                )}
+
                 <div className="rounded-xl border border-emerald-500/30 bg-[#07080d] p-3.5 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-emerald-300">

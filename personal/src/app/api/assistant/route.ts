@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { callCloudAi, isPersoCloudAiEnabled } from "@/lib/ai";
 import { INVOICE_FROM_TEXT_SYSTEM } from "@/lib/invoice-ai-prompt";
+import { enrichInvoiceDraft } from "@/lib/invoice-luxury";
 import {
   createSaleFromInvoiceDraft,
   draftInvoiceFromPrompt,
@@ -205,9 +206,10 @@ export async function POST(request: Request) {
         }
       },
     );
-    const sale = await createSaleFromInvoiceDraft(user.id, draft);
+    const finalized = enrichInvoiceDraft(draft);
+    const sale = await createSaleFromInvoiceDraft(user.id, finalized);
     return NextResponse.json({
-      answer: `Facture **${sale.invoice_number}** créée pour « ${draft.item_title} » (${formatEuro(draft.gross_amount)} TTC) — acheteur ${draft.buyer_name}, ${draft.buyer_city}. Utilise le bouton ci-dessous pour télécharger le PDF, ou l'onglet **Factures PDF · IA**.`,
+      answer: `Facture **${sale.invoice_number}** créée pour « ${finalized.item_title} » (${formatEuro(finalized.gross_amount)} TTC) — acheteur ${finalized.buyer_name}, ${finalized.buyer_city}. PDF prêt (mise en page ${finalized.brand === "Louis Vuitton" ? "luxe LV" : "pro"}).`,
       proposedAction: {
         id: "download_invoice_pdf",
         label: `Télécharger ${sale.invoice_number}.pdf`,

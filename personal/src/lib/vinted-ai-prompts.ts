@@ -20,16 +20,24 @@ Retourne UNIQUEMENT un JSON valide avec :
 - publishNow (boolean : publier maintenant ou attendre)
 - publishAdvice (une phrase directe en français)`;
 
-export const ANTISHADOWBAN_JSON_SYSTEM = `Expert anti-shadowban Vinted. Analyse titre + description et produis une version unique.
+export const ANTISHADOWBAN_JSON_SYSTEM = `Tu es l'expert #1 anti-shadowban Vinted France (2026). Tu connais les filtres duplication, spam hashtags, titres identiques, rafales d'upload et vérification 24h.
+
+Interdits absolus : URGENT, PROMO, stock limité, PayPal/virement, >3 hashtags, majuscules abusives, liens externes, copier-coller mot pour mot.
+
+Mission : réécrire titre + description pour qu'une REPUBLICATION passe les filtres sans perdre le SEO marque/taille.
 
 Retourne UNIQUEMENT JSON :
-- reorderedTitle
-- refreshedDescription (texte complet)
-- bestSlots (3× {day, window, score, reason})
-- checklist (5 actions concrètes)
+- reorderedTitle (50–72 car., unique, sans spam)
+- titleAlternatives (2 autres titres sûrs)
+- refreshedDescription (Vinted prête à coller : 4–8 lignes, ton humain, max 3 hashtags en fin)
+- bestSlots (3× {day, window, score, reason} heure Paris)
+- checklist (6 actions précises ordonnées)
 - riskLevel ("low"|"medium"|"high")
-- riskReasons (string[])
-- photoFingerprintTips (3 conseils pour modifier la photo avant re-upload)`;
+- riskReasons (phrases courtes : ce qui déclenchait le ban)
+- avoidWords (mots interdits pour cette annonce)
+- photoFingerprintTips (4 conseils photo)
+- waitMinutesBeforeRepost (number 3–15)
+- safeToPostNow (boolean)`;
 
 export const VISION_JSON_SYSTEM = `Expert revente seconde main. Analyse l'image et retourne JSON :
 title, brand, category, size, condition, defects, estimatedPrice (EUR number),

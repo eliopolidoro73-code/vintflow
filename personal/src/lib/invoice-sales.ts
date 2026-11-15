@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { computeNetMargin } from "@/lib/format";
 import type { InvoicePdfSale } from "@/lib/invoice-pdf";
 import type { InvoiceAiDraft } from "@/lib/invoice-ai-prompt";
+import { enrichInvoiceDraft, isLouisVuitton } from "@/lib/invoice-luxury";
 
 export async function createSaleFromInvoiceDraft(
   userId: string,
@@ -124,16 +125,33 @@ function parseDraftLocal(prompt: string): InvoiceAiDraft {
   );
   const buyer_city = cityMatch?.[1]?.trim().slice(0, 40) || "Paris";
 
-  const item_title = prompt
+  let item_title = prompt
     .replace(/facture|génère|fais|fait|une|de|ce|du|la|le/gi, "")
     .replace(/\d+\s*€?/g, "")
     .trim()
     .slice(0, 120);
 
-  return {
+  let productLine: string | undefined;
+  if (isLouisVuitton(prompt)) {
+    brand = "Louis Vuitton";
+    const model = /neverfull/i.test(prompt)
+      ? "Neverfull MM"
+      : /speedy/i.test(prompt)
+        ? "Speedy"
+        : "Sac à main";
+    productLine = model;
+    item_title = `Sac Louis Vuitton ${model} — toile Monogram · occasion authentique`;
+  }
+
+  const sku =
+    brand === "Louis Vuitton"
+      ? `LV-${modelSku(prompt)}-${price}`
+      : `${brand.slice(0, 3).toUpperCase()}-${Date.now().toString(36).slice(-4)}`;
+
+  return enrichInvoiceDraft({
     item_title: item_title || `Article ${brand}`,
     brand,
-    sku: `${brand.slice(0, 3).toUpperCase()}-${Date.now().toString(36).slice(-4)}`,
+    sku,
     buyer_name,
     buyer_city,
     gross_amount: price,
@@ -142,8 +160,21 @@ function parseDraftLocal(prompt: string): InvoiceAiDraft {
     account_handle: "@dressing_vintflow",
     carrier: "Mondial Relay",
     platform_fees: Math.round(price * 0.05 * 100) / 100,
-    notes: prompt.slice(0, 200),
-  };
+    notes: isLouisVuitton(prompt)
+      ? `Vente Louis Vuitton seconde main — contrôle avant expédition.`
+      : prompt.slice(0, 200),
+    product_line: productLine,
+    condition_label: isLouisVuitton(prompt)
+      ? "Très bon état — occasion authentique"
+      : undefined,
+    luxury_brand: isLouisVuitton(prompt),
+  });
+}
+
+function modelSku(prompt: string): string {
+  if (/neverfull/i.test(prompt)) return "NEVERFULL";
+  if (/speedy/i.test(prompt)) return "SPEEDY";
+  return "SAC";
 }
 
 export async function draftInvoiceFromPrompt(
@@ -155,8 +186,14 @@ export async function draftInvoiceFromPrompt(
   if (allowCloudAi) {
     const aiDraft = await callAi(trimmed);
     if (aiDraft) {
-      return { draft: aiDraft, engine: "gemini_or_openai_power" };
+      return {
+        draft: enrichInvoiceDraft(aiDraft),
+        engine: "gemini_or_openai_power",
+      };
     }
   }
-  return { draft: parseDraftLocal(trimmed), engine: "local_invoice_parse" };
+  return {
+    draft: parseDraftLocal(trimmed),
+    engine: "local_invoice_parse",
+  };
 }

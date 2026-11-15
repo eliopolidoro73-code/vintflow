@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import type { AuthUser } from "@/lib/auth";
 import { formatDateFr, formatEuro } from "@/lib/format";
+import { isLouisVuitton, luxuryMetaFromTitle } from "@/lib/invoice-luxury";
 
 export interface InvoicePdfSale {
   invoice_number: string;
@@ -24,9 +25,21 @@ function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const margin = 18;
   let y = margin;
+  const luxury = luxuryMetaFromTitle(sale.item_title, sale.sku);
+  const lv = luxury.isLuxury || isLouisVuitton(sale.item_title);
+  const accent = lv ? [92, 64, 51] as const : [5, 120, 85] as const;
+
+  if (lv) {
+    doc.setFillColor(250, 246, 240);
+    doc.rect(0, 0, 210, 42, "F");
+    doc.setDrawColor(accent[0], accent[1], accent[2]);
+    doc.setLineWidth(0.6);
+    doc.line(margin, 40, 195, 40);
+  }
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
+  doc.setFontSize(lv ? 17 : 16);
+  doc.setTextColor(30, 30, 30);
   doc.text(user.company_name || user.name, margin, y);
 
   doc.setFont("helvetica", "normal");
@@ -38,8 +51,8 @@ function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
-  doc.setTextColor(5, 120, 85);
-  doc.text("FACTURE", 195, margin, { align: "right" });
+  doc.setTextColor(accent[0], accent[1], accent[2]);
+  doc.text(lv ? "FACTURE · LUXE" : "FACTURE", 195, margin, { align: "right" });
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(10);
   doc.text(sale.invoice_number, 195, margin + 7, { align: "right" });
@@ -85,17 +98,32 @@ function buildInvoicePdf(sale: InvoicePdfSale, user: AuthUser): jsPDF {
   doc.text("Montant TTC", 175, y + 2, { align: "right" });
   y += 10;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
+  doc.setFontSize(lv ? 11 : 10);
   const titleLines = doc.splitTextToSize(sale.item_title, 105);
   doc.text(titleLines, margin + 2, y);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text(`Réf. SKU : ${sale.sku} · Article d'occasion`, margin + 2, y + 6);
-  doc.text("1", 132, y);
+  if (luxury.brand) {
+    doc.setTextColor(accent[0], accent[1], accent[2]);
+    doc.text(`Marque : ${luxury.brand}`, margin + 2, y + 6);
+    doc.setTextColor(60, 60, 60);
+    if (luxury.productLine) {
+      doc.text(`Modèle : ${luxury.productLine}`, margin + 2, y + 11);
+    }
+    if (luxury.conditionLabel) {
+      doc.text(luxury.conditionLabel, margin + 2, y + 16);
+    }
+    doc.text(`Réf. SKU : ${sale.sku}`, margin + 2, y + 21);
+  } else {
+    doc.text(`Réf. SKU : ${sale.sku} · Article d'occasion`, margin + 2, y + 6);
+  }
+  doc.text("1", 132, y + (lv ? 10 : 0));
   doc.setFont("helvetica", "bold");
-  doc.text(formatEuro(sale.gross_amount), 193, y, { align: "right" });
+  doc.text(formatEuro(sale.gross_amount), 193, y + (lv ? 5 : 0), {
+    align: "right",
+  });
 
-  y += 22;
+  y += lv ? 32 : 22;
   doc.setFont("helvetica", "normal");
   doc.text("Total HT", 140, y);
   doc.text(formatEuro(sale.gross_amount), 193, y, { align: "right" });
