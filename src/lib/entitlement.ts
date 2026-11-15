@@ -1,6 +1,10 @@
 import type { AuthUser } from "./auth";
 import { PLANS, type PlanId } from "./plans";
 
+export function isStripeCheckoutEnabled(): boolean {
+  return Boolean(process.env.STRIPE_SECRET_KEY?.trim());
+}
+
 export type SubscriptionAccess = "active" | "trialing" | "expired";
 
 export function getSubscriptionAccess(user: AuthUser): SubscriptionAccess {
@@ -29,11 +33,9 @@ export function getSubscriptionAccess(user: AuthUser): SubscriptionAccess {
   return "expired";
 }
 
-/**
- * Cockpit complet : abonnement Stripe payé uniquement.
- * Exception : bac à sable démo (6 h, plan Essentiel, quotas limités).
- */
+/** Cockpit : Stripe branché + abonnement payé (la démo suit la même règle). */
 export function canUseCockpit(user: AuthUser): boolean {
+  if (!isStripeCheckoutEnabled()) return false;
   if (user.subscription_status === "active") return true;
   if (user.is_demo && getSubscriptionAccess(user) === "trialing") return true;
   return false;
@@ -60,5 +62,8 @@ export function canUsePlanTier(user: AuthUser, required: PlanId): boolean {
 
 export function subscriptionBlockedMessage(user: AuthUser): string {
   if (canUseCockpit(user)) return "";
+  if (!isStripeCheckoutEnabled()) {
+    return "Site public ouvert à tous : les outils restent fermés jusqu'à l'activation des paiements Stripe par le propriétaire.";
+  }
   return `Choisis un forfait et paie via Stripe pour débloquer Vintflow (à partir de ${PLANS.essentiel.monthlyPrice} €/mois).`;
 }

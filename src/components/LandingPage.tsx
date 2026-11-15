@@ -265,6 +265,11 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
             tout au même endroit : ventes, marge commerciale, crosslisting Vinted ↔
             Leboncoin, studio photo IA, factures PDF et bordereaux 10×15.
           </p>
+          <p className="vf-fade-up-delay-2 mx-auto mt-4 max-w-xl rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-2.5 text-xs text-violet-100">
+            Site public sur internet : tout le monde peut découvrir Vintflow et créer un compte. Le cockpit
+            (outils, IA, crosslisting) s&apos;ouvre uniquement après paiement Stripe — dès que le
+            propriétaire aura branché sa clé.
+          </p>
 
           <div className="vf-fade-up-delay-2 mt-9 flex flex-col sm:flex-row items-center justify-center gap-3.5">
             <Button

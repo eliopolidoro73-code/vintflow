@@ -14,6 +14,16 @@ export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
   if (originError) return originError;
 
+  if (!process.env.STRIPE_SECRET_KEY?.trim()) {
+    return NextResponse.json(
+      {
+        error:
+          "La démo est indisponible tant que les paiements Stripe ne sont pas activés sur ce site.",
+      },
+      { status: 503 },
+    );
+  }
+
   const ip = getClientIp(request);
   const limit = await checkRateLimit({
     scope: "demo",
