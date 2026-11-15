@@ -1,7 +1,9 @@
 VintFlow — envoyer le code sur GitHub (1 fois)
 
-GitHub connecté dans Cursor : OK pour le compte eliopolidoro73-code.
+GitHub connecté dans Cursor : OK pour eliopolidoro73-code.
+Import depuis origin.cursor.com : REFUSE (dépôt privé) — ne pas utiliser github.com/new/import.
 Le dépôt github.com/eliopolidoro73-code/vintflow est encore VIDE sans git push.
+Utiliser le dépôt vintflow (pas vintflow-).
 
 Sur ton PC, terminal Cursor dans le projet :
 

@@ -7,15 +7,21 @@ Le code à jour est sur **Cursor/Origin**. Tant que GitHub est **vide**, Vercel 
 
 ## À faire une fois (10 min) — sync GitHub → Vercel
 
-### Option A — Importer Origin dans GitHub (recommandé)
+### Option A — `git push` depuis Cursor (la seule qui marche)
 
-1. Va sur [github.com/new/import](https://github.com/new/import)
-2. **Clone URL** : `https://origin.cursor.com/charles-oliveira/vintflow.git`
-3. Nom du dépôt : `vintflow` (remplace l’ancien si besoin)
-4. **Begin import** (connecte-toi à Origin si demandé)
-5. Sur **Vercel** → projet `vintflow` → **Deployments** → un nouveau build démarre tout seul
-6. Quand c’est **Ready**, ouvre : `https://vintflow-vint4.vercel.app/sitemap.xml`  
-   → tu dois voir uniquement `vintflow-vint4.vercel.app`
+GitHub **Import** échoue en général avec Origin privé (`could not read Username for origin.cursor.com`).  
+Il faut **pousser** le code depuis Cursor sur **ton PC** (GitHub déjà connecté) :
+
+```bash
+git pull origin main
+git remote remove github 2>/dev/null
+git remote add github https://github.com/eliopolidoro73-code/vintflow.git
+git push -u github main
+```
+
+Dépôt cible : **`vintflow`** (pas `vintflow-`). Tu peux supprimer [vintflow-](https://github.com/eliopolidoro73-code/vintflow-) sur GitHub si tu l’as créé par erreur.
+
+Puis sur **Vercel** → **Deployments** → attendre **Ready** → vérifier `https://vintflow-vint4.vercel.app/sitemap.xml`.
 
 ### Option B — Redeploy manuel (si GitHub est déjà à jour)
 

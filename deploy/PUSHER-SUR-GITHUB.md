@@ -1,6 +1,8 @@
 # GitHub refuse l’import Origin → ce qu’il faut faire
 
-L’erreur **« could not read Username for origin.cursor.com »** = le dépôt Cursor/Origin est **privé**. GitHub ne peut pas le télécharger tout seul.
+L’erreur **« could not read Username for origin.cursor.com »** = le dépôt Cursor/Origin est **privé**.  
+GitHub **Import** ([new/import](https://github.com/new/import)) ne peut pas le cloner : ça échoue même avec ton compte GitHub connecté dans Cursor.  
+**Seule solution fiable : `git push`** depuis le terminal Cursor sur ton ordinateur.
 
 ## Tu viens de connecter GitHub dans Cursor
 
@@ -17,8 +19,6 @@ git push -u github main
 ```
 
 Quand GitHub affiche du code sur `main`, Vercel redéploie (si le projet est branché sur ce dépôt). Vérifie ensuite : **https://vintflow-vint4.vercel.app/sitemap.xml** → URLs **`vintflow-vint4.vercel.app`** uniquement.
-
-**Option pour que l’agent cloud pousse à ta place** : dans [Secrets Cursor](https://cursor.com/dashboard?tab=secrets), ajoute un secret perso nommé **`GH_TOKEN`** (PAT GitHub classique, coche **`repo`**), puis écris dans le chat : *« GH_TOKEN ajouté »*. L’agent pourra alors `git push github main` depuis ici.
 
 ## Méthode simple (depuis ton PC, avec Cursor)
 
