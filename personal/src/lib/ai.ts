@@ -54,38 +54,46 @@ export async function callCloudAi(params: {
         }
       }
 
-      const res = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "x-goog-api-key": geminiKey,
-          },
-          body: JSON.stringify({
-            systemInstruction: {
-              parts: [{ text: params.systemPrompt }],
-            },
-            contents: [{ role: "user", parts }],
-            generationConfig: {
-              maxOutputTokens: params.maxTokens ?? 400,
-              ...(params.jsonMode
-                ? { responseMimeType: "application/json" }
-                : {}),
-            },
-          }),
-        },
-      );
+      const geminiModels = [
+        "gemini-2.0-flash",
+        "gemini-2.5-flash",
+        "gemini-1.5-flash",
+      ];
 
-      if (res.ok) {
-        const data = (await res.json()) as {
-          candidates?: Array<{
-            content?: { parts?: Array<{ text?: string }> };
-          }>;
-        };
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-        if (text) {
-          return { provider: "gemini", text };
+      for (const model of geminiModels) {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              "x-goog-api-key": geminiKey,
+            },
+            body: JSON.stringify({
+              systemInstruction: {
+                parts: [{ text: params.systemPrompt }],
+              },
+              contents: [{ role: "user", parts }],
+              generationConfig: {
+                maxOutputTokens: params.maxTokens ?? 400,
+                ...(params.jsonMode
+                  ? { responseMimeType: "application/json" }
+                  : {}),
+              },
+            }),
+          },
+        );
+
+        if (res.ok) {
+          const data = (await res.json()) as {
+            candidates?: Array<{
+              content?: { parts?: Array<{ text?: string }> };
+            }>;
+          };
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+          if (text) {
+            return { provider: "gemini", text };
+          }
         }
       }
     } catch {
@@ -121,7 +129,7 @@ export async function callCloudAi(params: {
           authorization: `Bearer ${openaiKey}`,
         },
         body: JSON.stringify({
-          model: "gpt-4o",
+          model: "gpt-4o-mini",
           ...(params.jsonMode ? { response_format: { type: "json_object" } } : {}),
           messages: [
             { role: "system", content: params.systemPrompt },

@@ -813,7 +813,7 @@ export function BackOffice({
   return (
     <div className="min-h-screen bg-[#07080d] text-zinc-100 flex flex-col lg:flex-row">
       {toast && (
-        <div className="fixed bottom-5 right-5 z-50 rounded-xl border border-emerald-500/40 bg-[#0e111a] px-4 py-3 text-xs font-semibold text-emerald-200 shadow-2xl">
+        <div className="fixed z-50 max-lg:top-[max(1rem,env(safe-area-inset-top))] max-lg:left-1/2 max-lg:-translate-x-1/2 max-lg:w-[min(92vw,24rem)] lg:bottom-5 lg:right-5 rounded-xl border border-emerald-500/40 bg-[#0e111a] px-4 py-3 text-xs font-semibold text-emerald-200 shadow-2xl text-center lg:text-left">
           {toast}
         </div>
       )}
@@ -925,28 +925,11 @@ export function BackOffice({
             </div>
           </div>
 
-          <div className="mt-3 flex lg:hidden gap-1.5 overflow-x-auto pb-1">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => selectTab(item.id)}
-                className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium ${
-                  tab === item.id
-                    ? "bg-violet-600 text-white font-bold"
-                    : "bg-white/5 text-zinc-400"
-                }`}
-              >
-                {item.icon}
-                {item.label}
-              </button>
-            ))}
-          </div>
         </header>
 
         <main
           key={tab}
-          className="vf-tab-enter flex-1 p-4 sm:p-6 space-y-6 max-w-7xl w-full mx-auto"
+          className="vf-tab-enter flex-1 p-4 sm:p-6 pb-24 lg:pb-6 space-y-6 max-w-7xl w-full mx-auto"
         >
           {/* TAB 1: OVERVIEW */}
           {tab === "overview" && (
@@ -2558,6 +2541,45 @@ export function BackOffice({
           )}
         </DialogContent>
       </Dialog>
+      <nav
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-[#0a0c12]/95 backdrop-blur-xl"
+        style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+      >
+        <div className="grid grid-cols-5 gap-0.5 px-1 pt-1.5">
+          {(
+            [
+              { id: "overview", label: "Accueil" },
+              { id: "dressing", label: "Stock" },
+              { id: "tools", label: "Outils IA" },
+              { id: "sales", label: "Ventes" },
+              { id: "accounts", label: "Réglages" },
+            ] as const satisfies ReadonlyArray<{ id: TabId; label: string }>
+          ).map((item) => {
+            const full = navItems.find((n) => n.id === item.id);
+            if (!full) return null;
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => selectTab(item.id)}
+                className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 min-h-[3.25rem] touch-manipulation ${
+                  active
+                    ? "bg-violet-600/90 text-white"
+                    : "text-zinc-400 active:bg-white/5"
+                }`}
+              >
+                <span className={active ? "text-white" : "text-zinc-500"}>
+                  {full.icon}
+                </span>
+                <span className="text-[10px] font-semibold leading-tight">
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

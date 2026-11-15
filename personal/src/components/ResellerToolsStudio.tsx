@@ -30,6 +30,7 @@ import { Switch } from "@/components/ui/switch";
 import { formatEuro } from "@/lib/format";
 import type { PlanId } from "@/lib/plans";
 import type { StudioPresets } from "@/lib/user-preferences";
+import { buildAiImageDataUrl } from "@/lib/client-ai-image";
 
 interface ResellerToolsStudioProps {
   planId: PlanId;
@@ -61,6 +62,36 @@ function aiEngineBadge(engine?: string) {
   if (engine.includes("gemini")) return "Gemini cloud";
   if (engine.includes("openai")) return "OpenAI cloud";
   return "Assistant local";
+}
+
+async function postToolsGenerate(
+  body: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  let res: Response;
+  try {
+    res = await fetch("/api/tools/generate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error("Connexion coupée — vérifie Wi‑Fi ou 4G.");
+  }
+  const raw = await res.text();
+  let parsed: Record<string, unknown> & { error?: string };
+  try {
+    parsed = JSON.parse(raw) as typeof parsed;
+  } catch {
+    if (res.status === 413) {
+      throw new Error("Photo trop lourde pour le serveur. Réessaie.");
+    }
+    throw new Error(`Réponse serveur invalide (${res.status}).`);
+  }
+  if (!res.ok) {
+    throw new Error(parsed.error ?? `Erreur ${res.status}`);
+  }
+  return parsed;
 }
 
 const PHOTO_FORMATS = {
@@ -572,22 +603,19 @@ export function ResellerToolsStudio({
         }
       }
 
-      const res = await fetch("/api/tools/generate", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          mode: "vision_analyze",
-          imageDataUrl: photoSrc ?? undefined,
-          fileName: photoFileName,
-          dominantColor,
-        }),
+      const imageDataUrl = await buildAiImageDataUrl({
+        canvas,
+        originalSrc: photoSrc,
       });
-      if (!res.ok) {
-        const err = (await res.json()) as { error?: string };
-        onToast(err.error ?? "Action bloquée sur ton plan actuel");
-        return;
-      }
-      const analysis = (await res.json()) as {
+
+      const analysis = (await postToolsGenerate({
+        mode: "vision_analyze",
+        imageDataUrl,
+        fileName: photoFileName,
+        dominantColor,
+        withListing: true,
+        purchasePrice: Number(genBuyPrice) || 15,
+      })) as {
         engine: string;
         title: string;
         brand: string;
@@ -596,20 +624,22 @@ export function ResellerToolsStudio({
         condition: string;
         defects: string;
         estimatedPrice: number;
+        listing?: typeof genResult;
       };
-      setGenTitle(analysis.title);
-      setGenBrand(analysis.brand);
-      setGenCategory(analysis.category);
-      setGenSize(analysis.size);
-      setGenCondition(analysis.condition);
-      setGenDefects(analysis.defects);
+
+      setGenTitle(String(analysis.title));
+      setGenBrand(String(analysis.brand));
+      setGenCategory(String(analysis.category));
+      setGenSize(String(analysis.size));
+      setGenCondition(String(analysis.condition));
+      setGenDefects(String(analysis.defects ?? ""));
       setGenTargetPrice(String(analysis.estimatedPrice));
       setSubTab("listing");
 
-      const genRes = await fetch("/api/tools/generate", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
+      if (analysis.listing) {
+        setGenResult(analysis.listing as NonNullable<typeof genResult>);
+      } else {
+        const listing = (await postToolsGenerate({
           mode: "listing",
           title: analysis.title,
           brand: analysis.brand,
@@ -619,17 +649,17 @@ export function ResellerToolsStudio({
           defects: analysis.defects,
           purchasePrice: Number(genBuyPrice) || 15,
           targetPrice: analysis.estimatedPrice,
-        }),
-      });
-      if (genRes.ok) {
-        setGenResult(await genRes.json());
+        })) as typeof genResult;
+        setGenResult(listing as NonNullable<typeof genResult>);
       }
       onItemCreated();
       onToast(
-        analysis.engine === "openai_vision"
-          ? "Photo analysée par OpenAI Vision + 3 annonces générées !"
-          : `Analyse IA (${dominantColor}) : fiche pré-remplie et prête !`,
+        analysis.listing
+          ? `Scan OK (${aiEngineBadge(analysis.engine)}) — annonces prêtes !`
+          : `Fiche pré-remplie (${dominantColor}) — génération en cours.`,
       );
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : "Scan impossible.");
     } finally {
       setVisionLoading(false);
     }
@@ -726,16 +756,14 @@ export function ResellerToolsStudio({
     }
     setPhotoSafetyLoading(true);
     try {
-      const res = await fetch("/api/tools/generate", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          mode: "photo_safety",
-          imageDataUrl: photoSrc,
-        }),
+      const imageDataUrl = await buildAiImageDataUrl({
+        canvas: canvasRef.current,
+        originalSrc: photoSrc,
       });
-      const out = (await res.json()) as {
-        error?: string;
+      const out = (await postToolsGenerate({
+        mode: "photo_safety",
+        imageDataUrl,
+      })) as {
         engine: string;
         fingerprintRisk: string;
         recommendedBrightness: number;
@@ -745,10 +773,6 @@ export function ResellerToolsStudio({
         checklist: string[];
         summary: string;
       };
-      if (!res.ok) {
-        onToast(out.error ?? "Quota IA atteint");
-        return;
-      }
       setPhotoSafetyResult(out);
       setBrightness(out.recommendedBrightness);
       setContrast(out.recommendedContrast);
@@ -758,6 +782,8 @@ export function ResellerToolsStudio({
       onToast(
         `${aiEngineBadge(out.engine)} — réglages appliqués (${out.fingerprintRisk}).`,
       );
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : "Analyse photo impossible.");
     } finally {
       setPhotoSafetyLoading(false);
     }
@@ -866,35 +892,40 @@ export function ResellerToolsStudio({
       </div>
 
       {/* Sub-navigation */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
+      <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-1 -mx-1 px-1 lg:grid lg:grid-cols-5 lg:overflow-visible">
         {[
           {
             id: "photo" as ToolSubTab,
             title: "Studio Photo & Détourage",
+            short: "Photo",
             sub: "Anti-ban + Scan IA",
             icon: <Camera className="h-4 w-4 text-emerald-400" />,
           },
           {
             id: "listing" as ToolSubTab,
             title: "Générateur IA 3-en-1",
+            short: "Annonces",
             sub: "Titres & desc anti-ban",
             icon: <Sparkles className="h-4 w-4 text-cyan-400" />,
           },
           {
             id: "visibility" as ToolSubTab,
             title: "Quand publier ?",
+            short: "Timing",
             sub: "Créneaux Vinted IA",
             icon: <Clock className="h-4 w-4 text-violet-400" />,
           },
           {
             id: "antishadowban" as ToolSubTab,
             title: "Bouclier Anti-Shadowban",
+            short: "Anti-ban",
             sub: "Re-listing & Créneaux",
             icon: <ShieldAlert className="h-4 w-4 text-amber-400" />,
           },
           {
             id: "negotiation" as ToolSubTab,
             title: "Sniper Négo & Lots",
+            short: "Négo",
             sub: "Contre-offres & Seuil",
             icon: <Swords className="h-4 w-4 text-rose-400" />,
           },
@@ -903,7 +934,7 @@ export function ResellerToolsStudio({
             key={item.id}
             type="button"
             onClick={() => setSubTab(item.id)}
-            className={`vf-click-press rounded-2xl border p-3.5 text-left transition-all ${
+            className={`vf-click-press snap-start shrink-0 min-w-[7.5rem] lg:min-w-0 rounded-2xl border p-3 lg:p-3.5 text-left transition-all min-h-[3.25rem] touch-manipulation ${
               subTab === item.id
                 ? "border-violet-500/60 bg-violet-500/12 shadow-[0_0_24px_rgba(139,92,246,0.18)]"
                 : "border-white/10 bg-[#0e111a] hover:border-white/25"
@@ -911,16 +942,17 @@ export function ResellerToolsStudio({
           >
             <div className="flex items-center gap-2 font-bold text-xs text-white">
               {item.icon}
-              <span>{item.title}</span>
+              <span className="lg:hidden">{item.short}</span>
+              <span className="hidden lg:inline">{item.title}</span>
             </div>
-            <p className="mt-1 text-[11px] text-zinc-400">{item.sub}</p>
+            <p className="mt-1 text-[11px] text-zinc-400 hidden lg:block">{item.sub}</p>
           </button>
         ))}
       </div>
 
       {/* TOOL 1: STUDIO PHOTO */}
       {subTab === "photo" && (
-        <div key="photo" className="vf-tab-enter grid gap-6 lg:grid-cols-12 rounded-2xl border border-white/10 bg-[#0e111a] p-5">
+        <div key="photo" className="vf-tab-enter flex flex-col-reverse gap-5 lg:grid lg:grid-cols-12 lg:gap-6 rounded-2xl border border-white/10 bg-[#0e111a] p-4 sm:p-5">
           <div className="lg:col-span-5 space-y-4">
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -943,18 +975,64 @@ export function ResellerToolsStudio({
               </Button>
             </div>
 
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-500/40 bg-emerald-500/[0.06] px-4 py-3 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10 transition">
-              <ImagePlus className="h-4 w-4" />
-              {photoSrc ? "Changer la photo" : "Importer une photo de mon article"}
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-500/40 bg-emerald-500/[0.06] px-4 py-4 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/10 transition touch-manipulation">
+              <ImagePlus className="h-5 w-5" />
+              {photoSrc ? "Changer la photo" : "Prendre ou choisir une photo"}
               <input
                 type="file"
                 accept="image/*"
+                capture="environment"
                 onChange={handleFileChange}
                 className="hidden"
               />
             </label>
 
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-2.5">
+            <div className="grid grid-cols-1 gap-2 lg:hidden">
+              <Button
+                type="button"
+                disabled={photoSafetyLoading || !photoSrc}
+                onClick={handlePhotoSafetyAi}
+                className="h-12 w-full bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold text-sm touch-manipulation"
+              >
+                {photoSafetyLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                ) : (
+                  <ShieldAlert className="h-5 w-5 mr-2" />
+                )}
+                Photo anti-ban IA
+              </Button>
+              <Button
+                type="button"
+                disabled={visionLoading || !photoSrc}
+                onClick={handleAnalyzePhotoToListing}
+                className="h-12 w-full bg-violet-600 text-white hover:bg-violet-500 font-bold text-sm touch-manipulation"
+              >
+                {visionLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                ) : (
+                  <ScanSearch className="h-5 w-5 mr-2" />
+                )}
+                Scanner → annonce complète
+              </Button>
+              <Button
+                type="button"
+                onClick={handleDownloadCanvas}
+                variant="outline"
+                className="h-11 border-white/15 bg-white/5 text-white text-sm touch-manipulation"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Télécharger la photo finale
+              </Button>
+            </div>
+
+            <div className="lg:hidden rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-white">Détourage rapide</span>
+                <Switch checked={removeBg} onCheckedChange={setRemoveBg} />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-2.5 hidden lg:block">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-xs font-semibold text-white">
                   <Eraser className="h-3.5 w-3.5 text-emerald-400" />
@@ -999,7 +1077,7 @@ export function ResellerToolsStudio({
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 hidden lg:block">
               <Label className="text-xs text-zinc-400">Fond studio</Label>
               <div className="grid grid-cols-4 gap-1.5">
                 {STUDIO_BACKGROUNDS.map((bg) => (
@@ -1023,7 +1101,7 @@ export function ResellerToolsStudio({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="hidden lg:grid grid-cols-2 gap-3 text-xs">
               <label className="space-y-1">
                 <span className="text-zinc-400">Luminosité ({brightness}%)</span>
                 <input
@@ -1082,7 +1160,7 @@ export function ResellerToolsStudio({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="hidden lg:grid grid-cols-1 sm:grid-cols-3 gap-2">
               <Button
                 type="button"
                 onClick={handleDownloadCanvas}

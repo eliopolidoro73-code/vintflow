@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const maxDuration = 60;
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { callCloudAi, isPersoCloudAiEnabled } from "@/lib/ai";
 import { sql } from "@/lib/db";
@@ -42,6 +44,142 @@ const BRAND_CATALOG = [
   { key: "stone island", brand: "Stone Island", cat: "Streetwear Luxe", avgPrice: 195 },
   { key: "stussy", brand: "Stüssy", cat: "Streetwear", avgPrice: 75 },
 ];
+
+async function buildListingPayload(
+  input: {
+    title: string;
+    brand: string;
+    category: string;
+    size: string;
+    condition: string;
+    defects: string;
+    purchasePrice: number;
+    targetPrice: number;
+  },
+  allowCloudAi: boolean,
+) {
+  const { title, brand, category, size, condition, defects, purchasePrice, targetPrice } =
+    input;
+
+  const baseCopy = generateListingCopy({
+    title,
+    brand,
+    category,
+    size,
+    condition,
+    listingPrice: targetPrice,
+  });
+
+  const defectLine = defects
+    ? `\nÉtat transparent : ${defects} (visible sur les dernières photos).\n`
+    : "\nAucun défaut constaté (ni trou, ni tâche).\n";
+
+  let vintedFull = `${baseCopy.seoTitle}
+${defectLine}
+Mesures à plat (cm) :
+• Largeur aisselle à aisselle : __ cm
+• Longueur totale : __ cm
+
+${baseCopy.vinted}`;
+
+  let leboncoinFull = `${baseCopy.leboncoin}
+${defects ? `\nÀ noter : ${defects}.` : ""}
+Disponible tant que l'annonce est en ligne.`;
+
+  let tiktokScript = `[0–3s HOOK] "Regarde cette ${title} (${brand || "pépite seconde main"}) que je viens de sourcer — et voici son état réel."
+[3–10s PREUVE] "Taille ${size}, ${condition.toLowerCase()}${defects ? ` (${defects})` : ", zéro défaut"}. Je montre les coutures et l'étiquette de près."
+[10–15s CTA] "Dispo maintenant à ${targetPrice} € dans ma boutique TikTok Shop / lien Vinted en bio. Envoi en 24h !"`;
+
+  let engine = "local_listing";
+  let publishAdvice = defaultVintedSlots().headline;
+  let publishNow = defaultVintedSlots().publishNow;
+  let publishSlots = defaultVintedSlots().bestSlots.slice(0, 3);
+  let avoidWords: string[] = [];
+  let hashtags: string[] = [];
+  let antiBanTitle = baseCopy.seoTitle;
+
+  if (allowCloudAi) {
+    const aiOut = await callCloudAi({
+      systemPrompt: LISTING_JSON_SYSTEM,
+      userPrompt: `Article: ${title}, Marque: ${brand}, Catégorie: ${category}, Taille: ${size}, État: ${condition}, Défauts: ${defects || "Aucun"}, Prix achat: ${purchasePrice} €, Prix vente: ${targetPrice} €.`,
+      jsonMode: true,
+      maxTokens: 1100,
+    });
+    if (aiOut) {
+      const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
+      if (parsed) {
+        engine = cloudEngineTag(aiOut.provider);
+        if (parsed.seoTitle) antiBanTitle = String(parsed.seoTitle).slice(0, 80);
+        if (parsed.vinted) vintedFull = String(parsed.vinted);
+        if (parsed.leboncoin) leboncoinFull = String(parsed.leboncoin);
+        if (parsed.tiktokScript) tiktokScript = String(parsed.tiktokScript);
+        if (parsed.publishAdvice) publishAdvice = String(parsed.publishAdvice);
+        if (typeof parsed.publishNow === "boolean") publishNow = parsed.publishNow;
+        if (Array.isArray(parsed.publishSlots))
+          publishSlots = parsed.publishSlots.slice(0, 5) as typeof publishSlots;
+        if (Array.isArray(parsed.avoidWords))
+          avoidWords = parsed.avoidWords.slice(0, 12) as string[];
+        if (Array.isArray(parsed.hashtags))
+          hashtags = parsed.hashtags.slice(0, 3) as string[];
+      }
+    }
+  }
+
+  const fastPrice = Math.max(5, Math.round(targetPrice * 0.85));
+  const idealPrice = Math.round(targetPrice);
+  const premiumPrice = Math.round(targetPrice * 1.18);
+
+  const pricingTiers = [
+    {
+      label: "Vente rapide",
+      price: fastPrice,
+      ...computeNetMargin({
+        grossAmount: fastPrice,
+        purchaseCost: purchasePrice,
+        platformFees: 0,
+        boostCost: 0,
+        shippingCost: 0,
+      }),
+    },
+    {
+      label: "Prix idéal",
+      price: idealPrice,
+      ...computeNetMargin({
+        grossAmount: idealPrice,
+        purchaseCost: purchasePrice,
+        platformFees: 0,
+        boostCost: 0,
+        shippingCost: 0,
+      }),
+    },
+    {
+      label: "Premium",
+      price: premiumPrice,
+      ...computeNetMargin({
+        grossAmount: premiumPrice,
+        purchaseCost: purchasePrice,
+        platformFees: 0,
+        boostCost: 0,
+        shippingCost: 0,
+      }),
+    },
+  ];
+
+  return {
+    engine,
+    cloudAiActive: isPersoCloudAiEnabled(),
+    seoTitle: antiBanTitle,
+    vinted: vintedFull,
+    leboncoin: leboncoinFull,
+    tiktokScript,
+    pricingTiers,
+    publishAdvice,
+    publishNow,
+    publishSlots,
+    avoidWords,
+    hashtags,
+  };
+}
 
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
@@ -110,6 +248,7 @@ export async function POST(request: Request) {
     imageDataUrl?: string;
     fileName?: string;
     dominantColor?: string;
+    withListing?: boolean;
   };
   try {
     body = await request.json();
@@ -125,6 +264,25 @@ export async function POST(request: Request) {
     const imageDataUrl = (body.imageDataUrl ?? "").trim();
     const fileName = (body.fileName ?? "").trim().slice(0, 120);
     const dominantColor = (body.dominantColor ?? "Noir").trim().slice(0, 40);
+    const purchasePrice = Math.max(0, Number(body.purchasePrice ?? 15));
+
+    const attachListing = async (vision: Record<string, unknown>) => {
+      if (!body.withListing) return vision;
+      const listing = await buildListingPayload(
+        {
+          title: String(vision.title ?? "Pièce seconde main"),
+          brand: String(vision.brand ?? ""),
+          category: String(vision.category ?? "Vêtements"),
+          size: String(vision.size ?? "M"),
+          condition: String(vision.condition ?? "Très bon état"),
+          defects: String(vision.defects ?? ""),
+          purchasePrice,
+          targetPrice: Math.max(2, Number(vision.estimatedPrice ?? 45)),
+        },
+        allowCloudAi,
+      );
+      return { ...vision, listing };
+    };
 
     if (allowCloudAi && imageDataUrl.startsWith("data:image/")) {
       const aiOut = await callCloudAi({
@@ -137,7 +295,7 @@ export async function POST(request: Request) {
       if (aiOut) {
         const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
         if (parsed) {
-          return NextResponse.json({
+          const vision = {
             engine: cloudEngineTag(aiOut.provider),
             cloudAiActive: isPersoCloudAiEnabled(),
             title: String(parsed.title ?? "Pièce Seconde Main"),
@@ -153,7 +311,8 @@ export async function POST(request: Request) {
             photoAntiBanTips: Array.isArray(parsed.photoAntiBanTips)
               ? parsed.photoAntiBanTips.slice(0, 5)
               : [],
-          });
+          };
+          return NextResponse.json(await attachListing(vision));
         }
       }
     }
@@ -192,7 +351,7 @@ export async function POST(request: Request) {
             .slice(0, 80)
         : `${guessedCategory === "Chaussures" ? "Sneakers" : "Pièce"} ${guessedBrand} ${dominantColor}`;
 
-    return NextResponse.json({
+    const vision = {
       engine: "local_smart_vision",
       cloudAiActive: isPersoCloudAiEnabled(),
       title: guessedTitle,
@@ -213,7 +372,8 @@ export async function POST(request: Request) {
         "Change légèrement luminosité (+5 %) avant re-upload.",
         "Utilise un fond studio différent (lin ou gris).",
       ],
-    });
+    };
+    return NextResponse.json(await attachListing(vision));
   }
 
   if (mode === "photo_safety") {
@@ -517,122 +677,19 @@ Tu peux demander les mesures exactes en message avant achat.`;
   const purchasePrice = Math.max(0, Number(body.purchasePrice ?? 15));
   const targetPrice = Math.max(2, Number(body.targetPrice ?? 45));
 
-  const baseCopy = generateListingCopy({
-    title,
-    brand,
-    category,
-    size,
-    condition,
-    listingPrice: targetPrice,
-  });
-
-  const defectLine = defects
-    ? `\nÉtat transparent : ${defects} (visible sur les dernières photos).\n`
-    : "\nAucun défaut constaté (ni trou, ni tâche).\n";
-
-  let vintedFull = `${baseCopy.seoTitle}
-${defectLine}
-Mesures à plat (cm) :
-• Largeur aisselle à aisselle : __ cm
-• Longueur totale : __ cm
-
-${baseCopy.vinted}`;
-
-  let leboncoinFull = `${baseCopy.leboncoin}
-${defects ? `\nÀ noter : ${defects}.` : ""}
-Disponible tant que l'annonce est en ligne.`;
-
-  let tiktokScript = `[0–3s HOOK] "Regarde cette ${title} (${brand || "pépite seconde main"}) que je viens de sourcer — et voici son état réel."
-[3–10s PREUVE] "Taille ${size}, ${condition.toLowerCase()}${defects ? ` (${defects})` : ", zéro défaut"}. Je montre les coutures et l'étiquette de près."
-[10–15s CTA] "Dispo maintenant à ${targetPrice} € dans ma boutique TikTok Shop / lien Vinted en bio. Envoi en 24h !"`;
-
-  let engine = "local_listing";
-  let publishAdvice = defaultVintedSlots().headline;
-  let publishNow = defaultVintedSlots().publishNow;
-  let publishSlots = defaultVintedSlots().bestSlots.slice(0, 3);
-  let avoidWords: string[] = [];
-  let hashtags: string[] = [];
-  let antiBanTitle = baseCopy.seoTitle;
-
-  if (allowCloudAi) {
-    const aiOut = await callCloudAi({
-      systemPrompt: LISTING_JSON_SYSTEM,
-      userPrompt: `Article: ${title}, Marque: ${brand}, Catégorie: ${category}, Taille: ${size}, État: ${condition}, Défauts: ${defects || "Aucun"}, Prix achat: ${purchasePrice} €, Prix vente: ${targetPrice} €.`,
-      jsonMode: true,
-      maxTokens: 1100,
-    });
-    if (aiOut) {
-      const parsed = parseAiJson<Record<string, unknown>>(aiOut.text);
-      if (parsed) {
-        engine = cloudEngineTag(aiOut.provider);
-        if (parsed.seoTitle) antiBanTitle = String(parsed.seoTitle).slice(0, 80);
-        if (parsed.vinted) vintedFull = String(parsed.vinted);
-        if (parsed.leboncoin) leboncoinFull = String(parsed.leboncoin);
-        if (parsed.tiktokScript) tiktokScript = String(parsed.tiktokScript);
-        if (parsed.publishAdvice) publishAdvice = String(parsed.publishAdvice);
-        if (typeof parsed.publishNow === "boolean") publishNow = parsed.publishNow;
-        if (Array.isArray(parsed.publishSlots))
-          publishSlots = parsed.publishSlots.slice(0, 5) as typeof publishSlots;
-        if (Array.isArray(parsed.avoidWords))
-          avoidWords = parsed.avoidWords.slice(0, 12) as string[];
-        if (Array.isArray(parsed.hashtags))
-          hashtags = parsed.hashtags.slice(0, 3) as string[];
-      }
-    }
-  }
-
-  const fastPrice = Math.max(5, Math.round(targetPrice * 0.85));
-  const idealPrice = Math.round(targetPrice);
-  const premiumPrice = Math.round(targetPrice * 1.18);
-
-  const pricingTiers = [
+  const listing = await buildListingPayload(
     {
-      label: "Vente rapide",
-      price: fastPrice,
-      ...computeNetMargin({
-        grossAmount: fastPrice,
-        purchaseCost: purchasePrice,
-        platformFees: 0,
-        boostCost: 0,
-        shippingCost: 0,
-      }),
+      title,
+      brand,
+      category,
+      size,
+      condition,
+      defects,
+      purchasePrice,
+      targetPrice,
     },
-    {
-      label: "Prix idéal",
-      price: idealPrice,
-      ...computeNetMargin({
-        grossAmount: idealPrice,
-        purchaseCost: purchasePrice,
-        platformFees: 0,
-        boostCost: 0,
-        shippingCost: 0,
-      }),
-    },
-    {
-      label: "Premium",
-      price: premiumPrice,
-      ...computeNetMargin({
-        grossAmount: premiumPrice,
-        purchaseCost: purchasePrice,
-        platformFees: 0,
-        boostCost: 0,
-        shippingCost: 0,
-      }),
-    },
-  ];
+    allowCloudAi,
+  );
 
-  return NextResponse.json({
-    engine,
-    cloudAiActive: isPersoCloudAiEnabled(),
-    seoTitle: antiBanTitle,
-    vinted: vintedFull,
-    leboncoin: leboncoinFull,
-    tiktokScript,
-    pricingTiers,
-    publishAdvice,
-    publishNow,
-    publishSlots,
-    avoidWords,
-    hashtags,
-  });
+  return NextResponse.json(listing);
 }
