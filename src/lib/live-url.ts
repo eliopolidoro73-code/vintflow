@@ -10,10 +10,11 @@ export const CURSOR_PRIVATE_GATE_URL =
 /** Marque + URL courte gratuite pour Google (projet Vercel « vintflow »). */
 export const BRAND_NAME = "VintFlow";
 
-/** URL cible SEO : projet Vercel nommé « vintflow ». */
+/**
+ * URL SEO indexable. `vintflow.vercel.app` = autre projet Vercel (à remplacer après import du repo).
+ * Miroir actuel qui fonctionne :
+ */
 export const FREE_INDEXABLE_URL: string =
-  "https://vintflow.vercel.app";
-
-/** Miroir temporaire tant que vintflow.vercel.app n’est pas déployé. */
-export const FREE_INDEXABLE_URL_MIRROR =
   "https://turbo-sitar-4pw2aia.tmp.now";
+
+export const BROKEN_VERCEL_URL = "https://vintflow.vercel.app";
