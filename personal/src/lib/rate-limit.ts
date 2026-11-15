@@ -1,19 +1,31 @@
 import crypto from "node:crypto";
 import { sql } from "./db";
 
-/**
- * Ne fait pas confiance aux en-têtes IP que le client peut forger (x-real-ip, etc.).
- * Utilise la première entrée de X-Forwarded-For (adresse client).
- */
+const TRUSTED_CLIENT_IP_HEADERS = [
+  "cf-connecting-ip",
+  "true-client-ip",
+  "fly-client-ip",
+  "x-vercel-forwarded-for",
+  "x-real-ip",
+] as const;
+
 export function getClientIp(request: Request): string {
+  for (const name of TRUSTED_CLIENT_IP_HEADERS) {
+    const value = request.headers.get(name)?.trim();
+    if (value) {
+      const first = value.split(",")[0]?.trim();
+      if (first) return first.slice(0, 64);
+    }
+  }
+
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
     const parts = forwarded
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    const client = parts[0];
-    if (client) return client.slice(0, 64);
+    const peer = parts[parts.length - 1];
+    if (peer) return peer.slice(0, 64);
   }
 
   const host = request.headers.get("host")?.trim();

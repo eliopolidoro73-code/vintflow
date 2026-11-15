@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { normalizePlanId } from "@/lib/plans";
+import {
+  fetchStripeSubscription,
+  stripeSubscriptionGrantsAccess,
+} from "@/lib/stripe-subscription";
 
 export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
@@ -84,6 +88,18 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Cette session Stripe appartient à un autre utilisateur" },
       { status: 403 },
+    );
+  }
+
+  const subscriptionId = String(session.subscription);
+  const liveSub = await fetchStripeSubscription(subscriptionId, stripeKey);
+  if (!liveSub || !stripeSubscriptionGrantsAccess(liveSub)) {
+    return NextResponse.json(
+      {
+        error:
+          "Cet abonnement Stripe n'est plus actif. Souscrivez à nouveau via l'onglet Abonnement.",
+      },
+      { status: 402 },
     );
   }
 

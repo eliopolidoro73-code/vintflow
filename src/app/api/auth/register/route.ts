@@ -76,16 +76,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nom requis" }, { status: 400 });
   }
 
+  const passwordHash = hashPassword(password);
   const existing = await sql<{ id: string }>(
     "select id from users where email = $1",
     [email],
   );
-  const passwordHash = hashPassword(password);
   if (existing.length > 0) {
     return NextResponse.json(
       {
         error:
-          "Impossible de finaliser l'inscription avec ces informations. Essaie de te connecter ou utilise une autre adresse.",
+          "Impossible de créer le compte. Vérifie tes informations ou connecte-toi.",
       },
       { status: 400 },
     );
