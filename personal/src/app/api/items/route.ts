@@ -88,7 +88,7 @@ export async function POST(request: Request) {
   const purchasePrice = Math.max(0, Number(body.purchase_price ?? 0));
   const extraCosts = Math.max(0, Number(body.extra_costs ?? 0));
   const listingPrice = Math.max(1, Number(body.listing_price ?? 25));
-  const vintedAccount = (body.vinted_account ?? "@atelier_demo")
+  const vintedAccount = (body.vinted_account ?? "")
     .trim()
     .slice(0, 60);
 

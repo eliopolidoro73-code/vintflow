@@ -2,7 +2,6 @@ import crypto from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { getIdentity } from "../../cursor/identity";
 import { sql } from "./db";
-import { seedUserWorkspace } from "./seed";
 import type { BillingCycle, PlanId } from "./plans";
 
 export const SESSION_COOKIE_NAME = "vintflow_perso_session";
@@ -184,7 +183,6 @@ export async function ensureOwnerFromVerifiedIdentity(): Promise<string | null> 
         referralCode,
       ],
     );
-    await seedUserWorkspace(userId);
   } else {
     await sql(
       "update users set email = $1, name = $2 where id = $3 and is_demo = false",

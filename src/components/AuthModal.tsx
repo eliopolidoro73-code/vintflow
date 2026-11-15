@@ -51,7 +51,7 @@ export function AuthModal({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
-  const [withSampleData, setWithSampleData] = useState(true);
+  const [withSampleData] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -367,15 +367,6 @@ export function AuthModal({
                 />
               </div>
 
-              <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={withSampleData}
-                  onChange={(e) => setWithSampleData(e.target.checked)}
-                  className="rounded border-white/20 bg-white/5 accent-violet-500"
-                />
-                Pré-remplir avec des articles &amp; ventes d&apos;exemple
-              </label>
             </>
           )}
 

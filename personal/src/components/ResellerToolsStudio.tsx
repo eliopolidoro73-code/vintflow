@@ -79,7 +79,7 @@ function removeBackgroundByEdgeFlood(
   const off = document.createElement("canvas");
   off.width = w;
   off.height = h;
-  const octx = off.getContext("2d");
+  const octx = off.getContext("2d", { willReadFrequently: true });
   if (!octx) return off;
 
   octx.drawImage(srcImg, 0, 0, w, h);
@@ -189,20 +189,20 @@ export function ResellerToolsStudio({
   const [contrast, setContrast] = useState(108);
   const [saturation, setSaturation] = useState(105);
   const [paddingPct, setPaddingPct] = useState(7);
-  const [badgeText, setBadgeText] = useState("ENVOI 24H · VÉRIFIÉ");
+  const [badgeText, setBadgeText] = useState("");
   const [removeBg, setRemoveBg] = useState(false);
   const [bgTolerance, setBgTolerance] = useState(38);
   const [showOriginal, setShowOriginal] = useState(false);
   const [visionLoading, setVisionLoading] = useState(false);
 
-  const [genTitle, setGenTitle] = useState("Veste Carhartt Detroit Canvas Noir");
-  const [genBrand, setGenBrand] = useState("Carhartt");
-  const [genCategory, setGenCategory] = useState("Vestes & Manteaux");
-  const [genSize, setGenSize] = useState("L");
-  const [genCondition, setGenCondition] = useState("Très bon état");
+  const [genTitle, setGenTitle] = useState("");
+  const [genBrand, setGenBrand] = useState("");
+  const [genCategory, setGenCategory] = useState("");
+  const [genSize, setGenSize] = useState("");
+  const [genCondition, setGenCondition] = useState("");
   const [genDefects, setGenDefects] = useState("");
-  const [genBuyPrice, setGenBuyPrice] = useState("28");
-  const [genTargetPrice, setGenTargetPrice] = useState("89");
+  const [genBuyPrice, setGenBuyPrice] = useState("");
+  const [genTargetPrice, setGenTargetPrice] = useState("");
   const [genLoading, setGenLoading] = useState(false);
   const [genResult, setGenResult] = useState<{
     seoTitle: string;
@@ -216,10 +216,8 @@ export function ResellerToolsStudio({
     }>;
   } | null>(null);
 
-  const [shadowTitle, setShadowTitle] = useState("Pull Ralph Lauren Marine Taille M");
-  const [shadowText, setShadowText] = useState(
-    "Pull Ralph Lauren très bon état taille M envoi rapide #ralphlauren #vintage #mode #pascher #vintedfrance",
-  );
+  const [shadowTitle, setShadowTitle] = useState("");
+  const [shadowText, setShadowText] = useState("");
   const [shadowLoading, setShadowLoading] = useState(false);
   const [shadowResult, setShadowResult] = useState<{
     reorderedTitle: string;
@@ -228,13 +226,13 @@ export function ResellerToolsStudio({
     checklist: string[];
   } | null>(null);
 
-  const [lotTotalCost, setLotTotalCost] = useState("140");
-  const [lotShipping, setLotShipping] = useState("12");
-  const [lotCount, setLotCount] = useState("10");
-  const [boostCost, setBoostCost] = useState("1.95");
-  const [negTarget, setNegTarget] = useState("65");
-  const [negBuy, setNegBuy] = useState("18");
-  const [negOffer, setNegOffer] = useState("40");
+  const [lotTotalCost, setLotTotalCost] = useState("");
+  const [lotShipping, setLotShipping] = useState("");
+  const [lotCount, setLotCount] = useState("");
+  const [boostCost, setBoostCost] = useState("");
+  const [negTarget, setNegTarget] = useState("");
+  const [negBuy, setNegBuy] = useState("");
+  const [negOffer, setNegOffer] = useState("");
   const [negLoading, setNegLoading] = useState(false);
   const [negResult, setNegResult] = useState<{
     offerNetMargin: number;
@@ -264,7 +262,7 @@ export function ResellerToolsStudio({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     const fmt = PHOTO_FORMATS[photoFormat];
@@ -346,10 +344,10 @@ export function ResellerToolsStudio({
         ctx.closePath();
         ctx.fill();
 
-        ctx.fillStyle = studioBg.id === "dark" ? "#94a3b8" : "#475569";
-        ctx.font = "600 28px sans-serif";
+        ctx.fillStyle = studioBg.id === "dark" ? "#94a3b8" : "#64748b";
+        ctx.font = "600 22px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("Importe ta photo pour activer le Studio IA", cx, cy + 305);
+        ctx.fillText("Aperçu — importe une photo à gauche", cx, cy + 285);
         ctx.restore();
       }
 
@@ -412,6 +410,10 @@ export function ResellerToolsStudio({
   }
 
   function handleDownloadCanvas() {
+    if (!photoSrc) {
+      onToast("Importe d'abord une photo avant d'exporter.");
+      return;
+    }
     const canvas = canvasRef.current;
     if (!canvas) return;
     const link = document.createElement("a");
@@ -422,6 +424,10 @@ export function ResellerToolsStudio({
   }
 
   async function handleAnalyzePhotoToListing() {
+    if (!photoSrc) {
+      onToast("Importe d'abord une photo de ton article.");
+      return;
+    }
     setVisionLoading(true);
     try {
       let dominantColor = "Noir";
@@ -904,7 +910,7 @@ export function ResellerToolsStudio({
               </Button>
               <Button
                 type="button"
-                disabled={visionLoading}
+                disabled={visionLoading || !photoSrc}
                 onClick={handleAnalyzePhotoToListing}
                 className="bg-violet-600 text-white hover:bg-violet-500 font-bold text-xs h-10"
               >

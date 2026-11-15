@@ -412,7 +412,7 @@ export function BackOffice({
     });
     await fetchWorkspace();
     setSyncing(false);
-    showToast("Comptes Vinted, Leboncoin, TikTok Shop & eBay synchronisés.");
+    showToast("Données de ton espace actualisées.");
   }
 
   async function handleToggleUserFlag(
@@ -432,7 +432,7 @@ export function BackOffice({
     await fetchWorkspace();
     showToast(
       field === "auto_crosslist"
-        ? `Publication auto Leboncoin (8h–23h) ${value ? "activée" : "désactivée"}.`
+        ? `Crosslist Leboncoin à l'ajout ${value ? "activé" : "désactivé"} (dans Vintflow uniquement).`
         : `Retrait auto à la vente ${value ? "activé" : "désactivé"}.`,
     );
   }
@@ -927,7 +927,7 @@ export function BackOffice({
                 <RefreshCw
                   className={`h-3.5 w-3.5 mr-1.5 ${syncing ? "animate-spin" : ""}`}
                 />
-                Synchroniser
+                Actualiser
               </Button>
               <Button
                 size="sm"
@@ -1263,7 +1263,7 @@ export function BackOffice({
                     onClick={() => setTab("billing")}
                     className="font-bold underline hover:text-white"
                   >
-                    Passer à Pro Scale (Illimité + Auto 8h–23h)
+                    Passer à Pro Scale (crosslist illimité)
                   </button>
                 </div>
               )}
@@ -1272,7 +1272,7 @@ export function BackOffice({
                 <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#0e111a] p-4">
                   <div>
                     <p className="text-sm font-bold text-white flex items-center gap-2">
-                      Publier tout seul sur Leboncoin (8h–23h)
+                      Crosslist Leboncoin à chaque nouvel article
                       {!activePlan.autoCrosslistAllowed && (
                         <Badge className="bg-amber-500/15 text-amber-300 border-amber-500/30 text-[10px]">
                           Pro Scale
@@ -1280,7 +1280,8 @@ export function BackOffice({
                       )}
                     </p>
                     <p className="text-xs text-zinc-400">
-                      Crossliste automatiquement chaque nouvel article ajouté.
+                      Marque l&apos;article pour Leboncoin dans Vintflow. La publication
+                      se fait sur leboncoin.fr par tes soins.
                     </p>
                   </div>
                   <Switch
@@ -1296,7 +1297,8 @@ export function BackOffice({
                       Retirer quand ça se vend
                     </p>
                     <p className="text-xs text-zinc-400">
-                      Masque automatiquement l&apos;annonce sur les autres plateformes.
+                      Met à jour les statuts dans ton dressing quand tu marques une vente
+                      (sans retrait automatique sur Vinted ou Leboncoin).
                     </p>
                   </div>
                   <Switch

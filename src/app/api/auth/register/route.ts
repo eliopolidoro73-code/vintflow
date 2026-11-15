@@ -61,7 +61,7 @@ export async function POST(request: Request) {
   const name = (body.name ?? "").trim();
   const requestedPlan = normalizePlanId(body.plan);
   const billingCycle = body.billing_cycle === "annual" ? "annual" : "monthly";
-  const withSampleData = body.withSampleData !== false;
+  const withSampleData = body.withSampleData === true;
 
   if (!email || !email.includes("@") || email.length > 160) {
     return NextResponse.json({ error: "Email invalide" }, { status: 400 });

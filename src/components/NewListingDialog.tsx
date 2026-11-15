@@ -42,7 +42,7 @@ export function NewListingDialog({
   const [extraCosts, setExtraCosts] = useState("0");
   const [listingPrice, setListingPrice] = useState("49");
   const [vintedAccount, setVintedAccount] = useState(
-    vintedAccounts[0]?.handle ?? "@atelier_demo",
+    vintedAccounts[0]?.handle ?? "",
   );
   const [crosslistLbc, setCrosslistLbc] = useState(canCrosslist);
   const [crosslistTiktok, setCrosslistTiktok] = useState(false);
@@ -294,7 +294,7 @@ export function NewListingDialog({
                 >
                   {(vintedAccounts.length > 0
                     ? vintedAccounts
-                    : [{ handle: "@atelier_demo" }]
+                    : []
                   ).map((acc) => (
                     <option key={acc.handle} value={acc.handle}>
                       {acc.handle}

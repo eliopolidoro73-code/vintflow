@@ -295,8 +295,8 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               ))}
             </div>
             <span>
-              <strong className="text-white">+4 200 vendeurs actifs</strong> · Note
-              4,8/5 · Essai 14 jours sans engagement
+              Outils pensés pour les revendeurs Vinted &amp; Leboncoin · Essai 14
+              jours sans engagement
             </span>
           </div>
 
@@ -755,9 +755,11 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                       <Zap className="h-4 w-4" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white">Publier tout seul (8h–23h)</h3>
+                      <h3 className="text-sm font-bold text-white">
+                        Crosslist depuis Vintflow (aperçu)
+                      </h3>
                       <p className="text-xs text-zinc-400">
-                        Inclus dans Pro Scale pour automatiser 100 % de tes nouvelles mises en ligne.
+                        Prépare tes annonces Leboncoin ; tu publies sur leboncoin.fr toi-même.
                       </p>
                     </div>
                   </div>
@@ -767,8 +769,8 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               <div className="vf-card-interactive rounded-2xl border border-white/10 bg-[#07080d] p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div>
-                    <p className="text-xs text-zinc-400">Mode automatique Pro Scale (8h–23h)</p>
-                    <p className="text-sm font-bold text-white">Publier tout seul sur Leboncoin</p>
+                    <p className="text-xs text-zinc-400">Aperçu interactif (données fictives)</p>
+                    <p className="text-sm font-bold text-white">Crosslist Leboncoin</p>
                   </div>
                   <Switch
                     checked={autoPublishDemo}
