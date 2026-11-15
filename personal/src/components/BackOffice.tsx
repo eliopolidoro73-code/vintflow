@@ -21,7 +21,6 @@ import {
   LayoutDashboard,
   Loader2,
   Lock,
-  LogOut,
   MessageSquare,
   Plus,
   Printer,
@@ -602,12 +601,6 @@ export function BackOffice({
     showToast("Édition perso · Pro Scale déjà débloqué pour toi.");
   }
 
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/");
-    router.refresh();
-  }
-
   async function handleCreateLot(e: React.FormEvent) {
     e.preventDefault();
     if (!lotForm.title.trim()) return;
@@ -814,19 +807,10 @@ export function BackOffice({
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs">
             <p className="font-bold text-white truncate">{user.name}</p>
             <p className="text-[11px] text-zinc-400 truncate">{user.company_name}</p>
-            <p className="mt-1 text-[10px] font-medium text-emerald-400">
-              Essai 14j · {activePlan.name} ({activePlan.monthlyPrice} €/m)
+            <p className="mt-1 text-[10px] font-medium text-violet-300">
+              Édition perso · {activePlan.name} · sans abonnement
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="w-full justify-start text-zinc-400 hover:text-white hover:bg-white/5 text-xs"
-          >
-            <LogOut className="h-3.5 w-3.5 mr-2" />
-            Déconnexion
-          </Button>
           <div className="flex items-center gap-3 px-2 text-[10px] text-zinc-500">
             <Link href="/legal/cgv" className="hover:text-zinc-300">
               CGV

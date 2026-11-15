@@ -11,7 +11,7 @@ export default async function PersonalAppPage({
 }) {
   const user = await getAuthenticatedUser();
   if (!user) {
-    redirect("/");
+    redirect("/api/auth/enter");
   }
   const params = await searchParams;
   return <BackOffice initialTab={params.tab} />;

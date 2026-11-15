@@ -1,13 +1,8 @@
 import { redirect } from "next/navigation";
-import { getAuthenticatedUser } from "@/lib/auth";
-import { PersonalEntry } from "@/components/PersonalEntry";
 
 export const dynamic = "force-dynamic";
 
-export default async function PersonalHomePage() {
-  const user = await getAuthenticatedUser();
-  if (user) {
-    redirect("/app");
-  }
-  return <PersonalEntry />;
+/** Édition perso : accès direct au cockpit, sans connexion propriétaire. */
+export default function PersonalHomePage() {
+  redirect("/app");
 }
