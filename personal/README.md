@@ -18,6 +18,17 @@ Sur téléphone, tablette ou PC : même lien, pas besoin de Cursor.
 
 Lien mobile (Vercel) : `https://vintflow-perso.vercel.app/app` — ouverture directe, données sauvegardées (Vercel Blob). Paramètres studio et onglet mémorisés automatiquement.
 
+### Vercel (`vint4/vintflow-perso`)
+
+- **Root Directory** du projet : `personal` (pas la racine du monorepo).
+- Variables **Production** (Secret) :
+  - `GEMINI_API_KEY` — clé [AI Studio](https://aistudio.google.com/apikey) (`AQ.…` ou `AIza…`)
+  - `OPENAI_API_KEY` — secours si Gemini échoue (recommandé)
+  - `PERSO_ENABLE_CLOUD_AI` = `true`, `PERSO_AI_POWER` = `true`
+  - `SESSION_SECRET`, `PERSO_PASSWORD`, `PERSO_ALLOWED_EMAILS`, clés Blob si utilisées
+- Après toute modification : **Redeploy** → test `GET /api/health/ai`  
+  Réponse OK attendue : `"ok": true`, `gemini.keyFormat`, `gemini.status: "ok"`.
+
 ## Local
 
 ```bash
