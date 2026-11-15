@@ -35,13 +35,17 @@ async function discoverGeminiModels(apiKey: string): Promise<string[]> {
     return cachedModelList.models;
   }
   try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8_000);
     const res = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models",
       {
         headers: { "x-goog-api-key": apiKey },
         cache: "no-store",
+        signal: ctrl.signal,
       },
     );
+    clearTimeout(timer);
     if (!res.ok) return [];
     const data = (await res.json()) as {
       models?: Array<{

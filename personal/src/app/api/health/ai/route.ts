@@ -51,25 +51,17 @@ export async function GET() {
     : { status: "not_configured" as const };
 
   let unified: { status: string; provider?: string } = { status: "skipped" };
-  if (isPersoCloudAiEnabled()) {
-    const out = await callCloudAi({
-      systemPrompt: "Tu réponds en JSON.",
-      userPrompt: 'Retourne {"ping":"vintflow"}',
-      jsonMode: true,
-      maxTokens: 32,
-      power: true,
-    });
-    unified = out
-      ? { status: "ok", provider: out.provider }
-      : { status: "call_failed" };
+  if (gemini.status === "ok") {
+    unified = { status: "ok", provider: "gemini" };
+  } else if (openai.status === "ok") {
+    unified = { status: "ok", provider: "openai" };
+  } else if (isPersoCloudAiEnabled()) {
+    unified = { status: "call_failed" };
   } else {
     unified = { status: "cloud_disabled" };
   }
 
-  const anyOk =
-    gemini.status === "ok" ||
-    openai.status === "ok" ||
-    unified.status === "ok";
+  const anyOk = gemini.status === "ok" || openai.status === "ok";
 
   return NextResponse.json({
     ok: anyOk,
