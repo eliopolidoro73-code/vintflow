@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
-import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
+import { assertSameOrigin, requireActiveSubscription } from "@/lib/auth";
+
 import { sql } from "@/lib/db";
 import { PLANS } from "@/lib/plans";
 
@@ -8,7 +9,7 @@ export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
   if (originError) return originError;
 
-  const auth = await requireAuthenticatedUser();
+  const auth = await requireActiveSubscription();
   if ("response" in auth) return auth.response;
 
   let body: { action?: "connect" | "sync" | "disconnect"; platform?: string; handle?: string; id?: string };

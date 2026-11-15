@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
+import { assertSameOrigin, requireActiveSubscription } from "@/lib/auth";
+
 import { callCloudAi } from "@/lib/ai";
 import { sql } from "@/lib/db";
 import { computeNetMargin, generateListingCopy } from "@/lib/format";
@@ -25,8 +26,20 @@ export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
   if (originError) return originError;
 
-  const auth = await requireAuthenticatedUser();
+  const auth = await requireActiveSubscription();
   if ("response" in auth) return auth.response;
+
+  const { canUsePlanTier } = await import("@/lib/entitlement");
+  if (!canUsePlanTier(auth.user, "plus")) {
+    return NextResponse.json(
+      {
+        error:
+          "Outils IA réservés à Vendeur Plus ou Pro Scale avec essai actif ou abonnement payé.",
+        code: "plan_upgrade_required",
+      },
+      { status: 403 },
+    );
+  }
 
   const rl = await checkRateLimit({
     scope: "ai_tools",

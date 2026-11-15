@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
-import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
+import { assertSameOrigin, requireActiveSubscription } from "@/lib/auth";
+
 import { sql } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -8,7 +9,7 @@ export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
   if (originError) return originError;
 
-  const auth = await requireAuthenticatedUser();
+  const auth = await requireActiveSubscription();
   if ("response" in auth) return auth.response;
 
   const rl = await checkRateLimit({

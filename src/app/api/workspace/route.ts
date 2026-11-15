@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireAuthenticatedUser } from "@/lib/auth";
+import { requireActiveSubscription } from "@/lib/auth";
+
 import { sql } from "@/lib/db";
 import { daysSince } from "@/lib/format";
 
 export async function GET() {
-  const auth = await requireAuthenticatedUser();
+  const auth = await requireActiveSubscription();
   if ("response" in auth) return auth.response;
   const user = auth.user;
 

@@ -59,6 +59,10 @@ import {
 } from "@/lib/plans";
 import type { AuthUser } from "@/lib/auth";
 import {
+  canUseCockpit,
+  subscriptionBlockedMessage,
+} from "@/lib/entitlement";
+import {
   DocumentPrintModal,
   type SaleRecord,
 } from "@/components/DocumentPrintModal";
@@ -321,6 +325,42 @@ export function BackOffice({
       const res = await fetch("/api/workspace", { cache: "no-store" });
       if (res.status === 401) {
         router.push("/");
+        return;
+      }
+      if (res.status === 402) {
+        const meRes = await fetch("/api/auth/me", { cache: "no-store" });
+        const mePayload = (await meRes.json()) as { user?: AuthUser };
+        if (mePayload.user) {
+          setData({
+            user: mePayload.user,
+            accounts: [],
+            items: [],
+            sales: [],
+            messages: [],
+            lots: [],
+            expenses: [],
+            referralsCount: 0,
+            kpis: {
+              totalRevenue: 0,
+              totalNetMargin: 0,
+              totalExpenses: 0,
+              trueProfitAfterExpenses: 0,
+              settledNet: 0,
+              pendingCashflow: 0,
+              marginPercent: 0,
+              activeListingsCount: 0,
+              stockCostValue: 0,
+              stockListingValue: 0,
+              toShipCount: 0,
+              unreadCount: 0,
+              dormantCount: 0,
+              crosslistedCount: 0,
+            },
+            integrations: { stripeConfigured: false, openaiConfigured: false },
+          });
+          setTab("billing");
+        }
+        setLoading(false);
         return;
       }
       if (!res.ok) return;
@@ -750,10 +790,20 @@ export function BackOffice({
     integrations,
   } = data;
   const activePlan = PLANS[user.plan];
+  const subscriptionOpen = canUseCockpit(user);
   const selectedMsg = messages.find((m) => m.id === selectedMsgId) ?? messages[0];
+  const guardTab = (id: TabId) => {
+    if (!subscriptionOpen && id !== "billing") {
+      showToast(subscriptionBlockedMessage(user));
+      setTab("billing");
+      return;
+    }
+    setTab(id);
+  };
+
   const vatProgress = Math.min(
     100,
-    Math.round((kpis.totalRevenue / user.vat_threshold) * 100),
+    Math.round((kpis.totalRevenue / Math.max(1, user.vat_threshold)) * 100),
   );
 
   const navItems: Array<{
@@ -841,7 +891,7 @@ export function BackOffice({
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setTab(item.id)}
+                onClick={() => guardTab(item.id)}
                 className={`vf-click-press flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
                   tab === item.id
                     ? "bg-violet-500/15 text-violet-300 border border-violet-500/40 font-bold shadow-[0_0_18px_rgba(139,92,246,0.16)]"
@@ -870,8 +920,16 @@ export function BackOffice({
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs">
             <p className="font-bold text-white truncate">{user.name}</p>
             <p className="text-[11px] text-zinc-400 truncate">{user.company_name}</p>
-            <p className="mt-1 text-[10px] font-medium text-emerald-400">
-              Essai 14j · {activePlan.name} ({activePlan.monthlyPrice} €/m)
+            <p
+              className={`mt-1 text-[10px] font-medium ${
+                subscriptionOpen ? "text-emerald-400" : "text-red-300"
+              }`}
+            >
+              {subscriptionOpen
+                ? user.subscription_status === "active"
+                  ? `Abonnement actif · ${activePlan.name}`
+                  : `Essai jusqu'au ${formatDateFr(user.trial_ends_at)} · ${activePlan.name}`
+                : "Essai terminé — abonnement requis"}
             </p>
           </div>
           <Button
@@ -931,8 +989,9 @@ export function BackOffice({
               </Button>
               <Button
                 size="sm"
+                disabled={!subscriptionOpen}
                 onClick={() => setNewListingOpen(true)}
-                className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 font-bold text-xs"
+                className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500 font-bold text-xs disabled:opacity-40"
               >
                 <Plus className="h-3.5 w-3.5 mr-1" />
                 Nouvel article
@@ -940,12 +999,25 @@ export function BackOffice({
             </div>
           </div>
 
+          {!subscriptionOpen && (
+            <div className="mt-3 rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-xs text-red-200">
+              {subscriptionBlockedMessage(user)}{" "}
+              <button
+                type="button"
+                onClick={() => setTab("billing")}
+                className="font-bold underline text-white"
+              >
+                Voir l&apos;abonnement
+              </button>
+            </div>
+          )}
+
           <div className="mt-3 flex lg:hidden gap-1.5 overflow-x-auto pb-1">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setTab(item.id)}
+                onClick={() => guardTab(item.id)}
                 className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium ${
                   tab === item.id
                     ? "bg-violet-600 text-white font-bold"

@@ -1,4 +1,5 @@
-import { requireAuthenticatedUser } from "@/lib/auth";
+import { requireActiveSubscription } from "@/lib/auth";
+
 import { sql } from "@/lib/db";
 
 function csvCell(value: string | number): string {
@@ -8,7 +9,7 @@ function csvCell(value: string | number): string {
 }
 
 export async function GET() {
-  const auth = await requireAuthenticatedUser();
+  const auth = await requireActiveSubscription();
   if ("response" in auth) return auth.response;
 
   const sales = await sql<{

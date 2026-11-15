@@ -7,7 +7,7 @@ import {
   hashPassword,
 } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { normalizePlanId } from "@/lib/plans";
+import { normalizePlanId, type PlanId } from "@/lib/plans";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { seedUserWorkspace } from "@/lib/seed";
 
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
 
   // The requested plan only runs for the 14-day trial window; past trial_ends_at,
   // getAuthenticatedUser downgrades it unless Stripe verified a subscription.
-  const initialPlan = requestedPlan;
+  const initialPlan: PlanId = "essentiel";
 
   await sql(
     `insert into users (id, email, name, password_hash, plan, billing_cycle, subscription_status, company_name, siret, referral_code, referred_by, is_demo)

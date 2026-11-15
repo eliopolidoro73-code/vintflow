@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
+import { assertSameOrigin, requireActiveSubscription } from "@/lib/auth";
+
 import { callCloudAi } from "@/lib/ai";
 import { sql } from "@/lib/db";
 import { daysSince, formatEuro } from "@/lib/format";
@@ -10,9 +11,21 @@ export async function POST(request: Request) {
   const originError = assertSameOrigin(request);
   if (originError) return originError;
 
-  const auth = await requireAuthenticatedUser();
+  const auth = await requireActiveSubscription();
   if ("response" in auth) return auth.response;
   const user = auth.user;
+
+  const { canUsePlanTier } = await import("@/lib/entitlement");
+  if (!canUsePlanTier(user, "pro")) {
+    return NextResponse.json(
+      {
+        error:
+          "Assistant Nova réservé au plan Pro Scale avec abonnement actif ou essai en cours.",
+        code: "plan_upgrade_required",
+      },
+      { status: 403 },
+    );
+  }
 
   const plan = PLANS[user.plan];
   if (!plan.novaAssistantAllowed) {

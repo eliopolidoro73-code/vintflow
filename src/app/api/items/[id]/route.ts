@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
-import { assertSameOrigin, requireAuthenticatedUser } from "@/lib/auth";
+import { assertSameOrigin, requireActiveSubscription } from "@/lib/auth";
+
 import { sql } from "@/lib/db";
 import { computeNetMargin } from "@/lib/format";
 import { PLANS } from "@/lib/plans";
@@ -12,7 +13,7 @@ export async function PATCH(
   const originError = assertSameOrigin(request);
   if (originError) return originError;
 
-  const auth = await requireAuthenticatedUser();
+  const auth = await requireActiveSubscription();
   if ("response" in auth) return auth.response;
 
   const { id } = await context.params;
@@ -244,7 +245,7 @@ export async function DELETE(
   const originError = assertSameOrigin(request);
   if (originError) return originError;
 
-  const auth = await requireAuthenticatedUser();
+  const auth = await requireActiveSubscription();
   if ("response" in auth) return auth.response;
 
   const { id } = await context.params;

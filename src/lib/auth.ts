@@ -249,6 +249,29 @@ export async function requireAuthenticatedUser(): Promise<
   return { user };
 }
 
+export async function requireActiveSubscription(): Promise<
+  { user: AuthUser } | { response: Response }
+> {
+  const auth = await requireAuthenticatedUser();
+  if ("response" in auth) return auth;
+
+  const { canUseCockpit, subscriptionBlockedMessage } = await import(
+    "./entitlement"
+  );
+  if (!canUseCockpit(auth.user)) {
+    return {
+      response: Response.json(
+        {
+          error: subscriptionBlockedMessage(auth.user),
+          code: "subscription_required",
+        },
+        { status: 402 },
+      ),
+    };
+  }
+  return auth;
+}
+
 export function assertSameOrigin(request: Request): Response | null {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite) {
