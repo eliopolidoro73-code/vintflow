@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/auth";
-import { LandingPage } from "@/components/LandingPage";
+import { PersonalEntry } from "@/components/PersonalEntry";
 
 export const dynamic = "force-dynamic";
 
@@ -9,5 +9,5 @@ export default async function PersonalHomePage() {
   if (user) {
     redirect("/app");
   }
-  return <LandingPage isLoggedIn={false} persoEdition />;
+  return <PersonalEntry />;
 }
